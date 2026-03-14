@@ -1,0 +1,39 @@
+{
+  "name": "llmtap",
+  "version": "0.1.0",
+  "description": "DevTools for AI Agents - See every LLM call, trace agent workflows, track costs",
+  "type": "module",
+  "bin": {
+    "llmtap": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "prebuild": "node -e \"\"",
+    "build": "tsup",
+    "postbuild": "node -e \"const fs=require('fs');const path=require('path');const src=path.resolve(__dirname,'..','dashboard','dist');const dst=path.resolve(__dirname,'dist','dashboard');if(fs.existsSync(src)){fs.cpSync(src,dst,{recursive:true});console.log('Dashboard bundled into CLI dist')}else{console.log('Dashboard dist not found at',src)}\"",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@llmtap/collector": "workspace:*",
+    "@llmtap/shared": "workspace:*",
+    "chalk": "^5.4.0",
+    "commander": "^13.0.0",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "llm", "ai", "agent", "observability", "devtools",
+    "openai", "anthropic", "gemini", "groq", "tracing", "debugging"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llmtap/llmtap",
+    "directory": "packages/cli"
+  }
+}

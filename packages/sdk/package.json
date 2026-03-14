@@ -1,0 +1,40 @@
+{
+  "name": "@llmtap/sdk",
+  "version": "0.1.0",
+  "description": "LLMTap SDK - Instrument your LLM calls with one line of code",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@llmtap/shared": "workspace:*",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "keywords": ["llm", "ai", "sdk", "observability", "tracing", "openai", "anthropic", "gemini", "groq"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llmtap/llmtap",
+    "directory": "packages/sdk"
+  }
+}

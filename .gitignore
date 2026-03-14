@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Turbo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+
+# Testing
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# Cache
+.cache/
+__pycache__/
+*.pyc
+
+# Database files
+*.db
+*.sqlite
+
+# Claude temp files
+tmpclaude-*
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Vite
+*.local
+
+# SQLite (local dev data)
+.llmtap/
+
+# Skills lock
+skills-lock.json
+
+# Internal planning/tooling
+.planning/
+get-shit-done/
+PHASE_COMPLETION.md
+
+# AI agent instructions
+.github/instructions/
+design-system/
+rules.md
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf

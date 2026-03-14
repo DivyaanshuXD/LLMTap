@@ -1,0 +1,47 @@
+{
+  "name": "@llmtap/collector",
+  "version": "0.1.0",
+  "description": "LLMTap Collector - Local ingestion server and storage",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/static": "^8.0.0",
+    "@llmtap/shared": "workspace:*",
+    "better-sqlite3": "^11.0.0",
+    "fastify": "^5.2.0",
+    "pino-pretty": "^13.1.3",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^25.4.0",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "keywords": ["llm", "ai", "collector", "observability", "tracing", "sqlite", "fastify"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llmtap/llmtap",
+    "directory": "packages/collector"
+  }
+}

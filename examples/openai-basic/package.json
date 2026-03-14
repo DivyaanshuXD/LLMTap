@@ -1,0 +1,12 @@
+{
+  "name": "llmtap-example-openai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "openai": "^4.77.0",
+    "@llmtap/sdk": "workspace:*"
+  }
+}
