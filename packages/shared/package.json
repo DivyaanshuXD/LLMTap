@@ -1,10 +1,11 @@
 {
   "name": "@llmtap/shared",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Shared types, constants, and utilities for LLMTap",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,8 +13,8 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
   "scripts": {
+    "prepack": "node ../../scripts/verify-publish-manifests.mjs .",
     "build": "tsup",
     "test": "vitest run",
     "clean": "rimraf dist"
@@ -23,12 +24,5 @@
     "typescript": "^5.7.0",
     "rimraf": "^6.0.0",
     "vitest": "^3.0.0"
-  },
-  "keywords": ["llm", "ai", "observability", "tracing", "openai", "anthropic"],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/llmtap/llmtap",
-    "directory": "packages/shared"
   }
 }

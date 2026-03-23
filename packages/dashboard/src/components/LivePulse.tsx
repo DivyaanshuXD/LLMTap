@@ -46,7 +46,7 @@ export function LivePulse() {
       <span className="relative flex h-2.5 w-2.5">
         <span
           className={`absolute inline-flex h-full w-full rounded-full ${statusConfig.halo} ${
-            statusConfig.ping ? "animate-ping opacity-80" : ""
+            statusConfig.ping ? "animate-pulse opacity-80" : ""
           }`}
         />
         <span

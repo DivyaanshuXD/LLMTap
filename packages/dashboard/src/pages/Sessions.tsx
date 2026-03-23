@@ -9,8 +9,13 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { DataTable } from "../components/DataTable.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import { NumberTicker } from "../components/magicui/number-ticker.tsx";
 import {
   formatCompactNumber,
   formatCost,
@@ -18,6 +23,9 @@ import {
 } from "../lib/format.ts";
 
 export default function Sessions() {
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "lastSeen", desc: true },
+  ]);
   const { data, isLoading } = useQuery({
     queryKey: ["sessions"],
     queryFn: () => fetchSessions(168),
@@ -27,6 +35,101 @@ export default function Sessions() {
   const totalSessions = data?.total ?? 0;
   const totalCost = sessions.reduce((sum, s) => sum + s.totalCost, 0);
   const totalTraces = sessions.reduce((sum, s) => sum + s.traceCount, 0);
+  const sessionColumns = useMemo<ColumnDef<(typeof sessions)[number]>[]>(
+    () => [
+      {
+        accessorKey: "sessionId",
+        header: "Session ID",
+        cell: ({ row }) => (
+          <Link
+            to={`/traces?q=${encodeURIComponent(row.original.sessionId)}`}
+            className="group inline-flex min-w-0 items-center gap-3"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-sky-300 transition-colors group-hover:border-emerald-400/20 group-hover:text-emerald-300">
+              <MessageSquareMore className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-mono text-xs font-semibold text-slate-100 transition-colors group-hover:text-emerald-300">
+                {row.original.sessionId.length > 28
+                  ? `${row.original.sessionId.slice(0, 26)}...`
+                  : row.original.sessionId}
+              </span>
+              <span className="mt-1 block text-[11px] text-slate-500">
+                Last active {formatTimeAgo(row.original.lastSeen)}
+              </span>
+            </span>
+          </Link>
+        ),
+      },
+      {
+        accessorKey: "traceCount",
+        header: "Traces",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-300">{row.original.traceCount}</span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "spanCount",
+        header: "Spans",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-300">{row.original.spanCount}</span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalTokens",
+        header: "Tokens",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-300">
+            {formatCompactNumber(row.original.totalTokens)}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalCost",
+        header: "Cost",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-semibold text-white">
+            {formatCost(row.original.totalCost)}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "errorCount",
+        header: "Errors",
+        cell: ({ row }) =>
+          row.original.errorCount > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 text-[10px] font-bold text-rose-300">
+              <AlertTriangle className="h-3 w-3" />
+              {row.original.errorCount}
+            </span>
+          ) : (
+            <span className="font-mono text-xs text-slate-500">0</span>
+          ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "firstSeen",
+        header: "First Seen",
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-500">{formatTimeAgo(row.original.firstSeen)}</span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "lastSeen",
+        header: "Last Active",
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-500">{formatTimeAgo(row.original.lastSeen)}</span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+    ],
+    []
+  );
 
   if (isLoading) {
     return (
@@ -49,7 +152,7 @@ export default function Sessions() {
             <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
               <div className="hud-label">Active sessions</div>
               <div className="mt-2 text-lg font-medium text-white">
-                {totalSessions}
+                <NumberTicker value={totalSessions} />
               </div>
               <div className="mt-1 text-sm text-slate-400">
                 {totalTraces} traces across all sessions
@@ -87,72 +190,7 @@ export default function Sessions() {
               <span>{totalSessions} sessions</span>
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-2 text-sm">
-              <thead>
-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                  <th className="px-4 py-2">Session ID</th>
-                  <th className="px-4 py-2 text-right">Traces</th>
-                  <th className="px-4 py-2 text-right">Spans</th>
-                  <th className="px-4 py-2 text-right">Tokens</th>
-                  <th className="px-4 py-2 text-right">Cost</th>
-                  <th className="px-4 py-2 text-right">Errors</th>
-                  <th className="px-4 py-2 text-right">First Seen</th>
-                  <th className="px-4 py-2 text-right">Last Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session, index) => (
-                  <motion.tr
-                    key={session.sessionId}
-                    className="rounded-2xl border border-white/6 bg-white/4"
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.03 * index, duration: 0.3 }}
-                  >
-                    <td className="rounded-l-2xl px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <MessageSquareMore className="h-4 w-4 text-sky-300" />
-                        <span className="font-mono text-xs font-semibold text-slate-100">
-                          {session.sessionId.length > 28
-                            ? `${session.sessionId.slice(0, 26)}...`
-                            : session.sessionId}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">
-                      {session.traceCount}
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">
-                      {session.spanCount}
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">
-                      {formatCompactNumber(session.totalTokens)}
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono text-xs font-semibold text-white">
-                      {formatCost(session.totalCost)}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      {session.errorCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 text-[10px] font-bold text-rose-300">
-                          <AlertTriangle className="h-3 w-3" />
-                          {session.errorCount}
-                        </span>
-                      ) : (
-                        <span className="font-mono text-xs text-slate-500">0</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-right text-xs text-slate-500">
-                      {formatTimeAgo(session.firstSeen)}
-                    </td>
-                    <td className="rounded-r-2xl px-4 py-4 text-right text-xs text-slate-500">
-                      {formatTimeAgo(session.lastSeen)}
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable columns={sessionColumns} data={sessions} sorting={sorting} onSortingChange={setSorting} />
         </motion.div>
       ) : (
         <div className="dashboard-shell rounded-[26px] p-16">

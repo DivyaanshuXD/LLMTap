@@ -2,6 +2,9 @@ import { Command } from "commander";
 import { startCommand } from "./commands/start.js";
 import { resetCommand } from "./commands/reset.js";
 import { exportCommand } from "./commands/export.js";
+import { backupCommand } from "./commands/backup.js";
+import { restoreCommand } from "./commands/restore.js";
+import { importCommand } from "./commands/import.js";
 import { statusCommand } from "./commands/status.js";
 import { tailCommand } from "./commands/tail.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -29,6 +32,7 @@ program
 program
   .command("status")
   .description("Show collector status, database info, and span count")
+  .option("--host <url>", "Collector URL", "http://localhost:4781")
   .action(statusCommand);
 
 program
@@ -47,6 +51,25 @@ program
   .action(exportCommand);
 
 program
+  .command("backup")
+  .description("Create a portable SQLite backup of your local LLMTap data")
+  .option("-o, --output <path>", "Backup output path")
+  .action(backupCommand);
+
+program
+  .command("restore <input>")
+  .description("Restore the local LLMTap database from a backup file")
+  .option("--host <url>", "Collector URL to check before restoring", "http://localhost:4781")
+  .action(restoreCommand);
+
+program
+  .command("import <input>")
+  .description("Import LLMTap JSON exports back into local storage")
+  .option("--replace", "Replace the existing local database contents before importing")
+  .option("--host <url>", "Collector URL for live ingest when running", "http://localhost:4781")
+  .action(importCommand);
+
+program
   .command("tail")
   .description("Stream traces to terminal in real-time")
   .option("-f, --format <format>", "Output format (pretty or json)", "pretty")
@@ -55,6 +78,7 @@ program
 program
   .command("doctor")
   .description("Diagnose common setup issues")
+  .option("--host <url>", "Collector URL", "http://localhost:4781")
   .action(doctorCommand);
 
 program

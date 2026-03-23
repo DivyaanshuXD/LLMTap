@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchTraces, fetchTraceSpans } from "../api/client.ts";
 import type { Trace, Span } from "../api/client.ts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   Activity,
   ArrowLeft,
@@ -24,50 +25,40 @@ import {
   Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { GettingStartedPanel } from "../components/GettingStartedPanel.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
+import { StatusDot } from "../components/StatusDot.tsx";
+import { Button } from "../components/ui/button.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select.tsx";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "../components/ui/sheet.tsx";
 import {
   formatCompactNumber,
   formatCost,
   formatDuration,
   formatTimeAgo,
 } from "../lib/format.ts";
+import { PERIOD_OPTIONS } from "../lib/constants.ts";
+import { getTextContent } from "../lib/content.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200] as const;
-const PERIOD_OPTIONS = [
-  { value: 1, label: "1h" },
-  { value: 6, label: "6h" },
-  { value: 24, label: "24h" },
-  { value: 168, label: "7d" },
-  { value: 720, label: "30d" },
-] as const;
-
 type SortKey = "spanCount" | "totalTokens" | "totalCost" | "startTime";
-
-/* ------------------------------------------------------------------ */
-/*  StatusDot                                                          */
-/* ------------------------------------------------------------------ */
-
-function StatusDot({ status }: { status: string }) {
-  const isError = status === "error";
-  return (
-    <span className="relative flex h-3.5 w-3.5 items-center justify-center">
-      <span
-        className={`absolute inset-0 rounded-full ${
-          isError ? "bg-rose-400/25" : "bg-emerald-400/25"
-        }`}
-      />
-      <span
-        className={`relative h-2 w-2 rounded-full ${
-          isError ? "bg-rose-400" : "bg-emerald-300"
-        }`}
-      />
-    </span>
-  );
-}
+type ComparisonMetric = "cost" | "latency" | "tokens";
 
 /* ------------------------------------------------------------------ */
 /*  Preview Panel                                                      */
@@ -83,33 +74,15 @@ function PreviewPanel({
   const duration = trace.totalDuration ?? (trace.endTime ? trace.endTime - trace.startTime : 0);
 
   return (
-    <motion.aside
-      initial={{ x: "100%", opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: "100%", opacity: 0 }}
-      transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
-      className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/8 bg-[rgba(6,10,22,0.97)] shadow-[−40px_0_80px_rgba(0,0,0,0.5)] backdrop-blur-xl"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/6 px-5 py-4">
-        <div className="min-w-0">
+    <Sheet open onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="right" className="flex flex-col overflow-y-auto">
+        <SheetHeader className="border-b border-white/6">
           <div className="hud-label">Quick preview</div>
-          <h3 className="mt-1 truncate text-lg font-semibold tracking-[-0.04em] text-white">
-            {trace.name}
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-slate-400 transition-colors hover:bg-white/8 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+          <SheetTitle className="truncate">{trace.name}</SheetTitle>
+          <SheetDescription className="sr-only">Trace preview panel</SheetDescription>
+        </SheetHeader>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 p-5">
           {/* Trace ID */}
           <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
             <div className="hud-label">Trace ID</div>
@@ -186,34 +159,24 @@ function PreviewPanel({
               </>
             )}
           </div>
-        </div>
 
-        {/* Full detail link */}
-        <Link
-          to={`/trace/${trace.traceId}`}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-400/20 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),rgba(14,165,233,0.08))] px-5 py-3 text-sm font-medium text-emerald-300 transition-colors hover:bg-[linear-gradient(135deg,rgba(16,185,129,0.22),rgba(14,165,233,0.14))]"
-        >
-          Open full trace detail
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </motion.aside>
+          {/* Full detail link */}
+          <Link
+            to={`/trace/${trace.traceId}`}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-400/20 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),rgba(14,165,233,0.08))] px-5 py-3 text-sm font-medium text-emerald-300 transition-colors hover:bg-[linear-gradient(135deg,rgba(16,185,129,0.22),rgba(14,165,233,0.14))]"
+          >
+            Open full trace detail
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
 /* ------------------------------------------------------------------ */
 /*  Comparison Panel                                                   */
 /* ------------------------------------------------------------------ */
-
-function getTextContent(content: string | unknown[] | null): string {
-  if (!content) return "";
-  if (typeof content === "string") return content;
-  // Array of content parts (multi-modal)
-  return (content as Array<{ type?: string; text?: string }>)
-    .filter((p) => p.type === "text" && p.text)
-    .map((p) => p.text!)
-    .join("\n");
-}
 
 function ResponseDiffPanel({
   traceA,
@@ -317,6 +280,102 @@ function ResponseDiffPanel({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function TraceComparisonBars({
+  traceA,
+  traceB,
+  durA,
+  durB,
+}: {
+  traceA: Trace;
+  traceB: Trace;
+  durA: number;
+  durB: number;
+}) {
+  const [metric, setMetric] = useState<ComparisonMetric>("cost");
+
+  const data = useMemo(
+    () => [
+      {
+        id: "A",
+        name: traceA.name,
+        cost: traceA.totalCost,
+        latency: durA,
+        tokens: traceA.totalTokens,
+      },
+      {
+        id: "B",
+        name: traceB.name,
+        cost: traceB.totalCost,
+        latency: durB,
+        tokens: traceB.totalTokens,
+      },
+    ],
+    [traceA, traceB, durA, durB]
+  );
+
+  const formatValue = (value: number) => {
+    if (metric === "tokens") return value.toLocaleString();
+    if (metric === "latency") return formatDuration(value);
+    return formatCost(value);
+  };
+
+  const metricLabel =
+    metric === "tokens" ? "Token Distribution" : metric === "latency" ? "Latency Comparison" : "Cost Comparison";
+
+  return (
+    <div className="mb-4 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,16,28,0.92),rgba(4,8,18,0.96))] p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="hud-label">Ranking bars</div>
+          <div className="text-sm font-medium text-white">{metricLabel}</div>
+        </div>
+        <Select value={metric} onValueChange={(value: ComparisonMetric) => setMetric(value)}>
+          <SelectTrigger className="h-8 w-[170px] text-xs">
+            <SelectValue placeholder="Select metric" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="cost">Model cost ranking</SelectItem>
+            <SelectItem value="latency">Model latency ranking</SelectItem>
+            <SelectItem value="tokens">Token distribution</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-[190px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8 }}>
+            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} tickFormatter={(value) => formatValue(Number(value))} />
+            <YAxis type="category" dataKey="id" tickLine={false} axisLine={false} tick={{ fill: "#cbd5e1", fontSize: 12 }} width={24} />
+            <Tooltip
+              cursor={{ fill: "rgba(148,163,184,0.08)" }}
+              contentStyle={{
+                backgroundColor: "rgba(8, 15, 28, 0.96)",
+                border: "1px solid rgba(148, 163, 184, 0.14)",
+                borderRadius: "14px",
+                fontSize: 12,
+              }}
+              formatter={(value) => [formatValue(Number(value)), metricLabel]}
+              labelFormatter={(label) => (label === "A" ? traceA.name : traceB.name)}
+            />
+            <Bar
+              dataKey={metric}
+              radius={[0, 8, 8, 0]}
+              fill="url(#trace-compare-glow)"
+              background={{ fill: "rgba(15,23,42,0.55)", radius: 8 }}
+            />
+            <defs>
+              <linearGradient id="trace-compare-glow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#34d399" stopOpacity={0.96} />
+                <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.96} />
+              </linearGradient>
+            </defs>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -484,6 +543,8 @@ function ComparisonPanel({
       </div>
 
       {/* Comparison rows */}
+      <TraceComparisonBars traceA={traceA} traceB={traceB} durA={durA} durB={durB} />
+
       <div className="space-y-2">
         {rows.map((row) => (
           <div
@@ -686,7 +747,7 @@ export default function Traces() {
         aside={
           <div className="insight-panel">
             <div className="grid gap-3">
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+              <div className="surface-strong rounded-2xl p-4">
                 <div className="hud-label">Total traces</div>
                 <div className="mt-2 flex items-center justify-between">
                   <div className="text-lg font-medium text-white">
@@ -699,7 +760,7 @@ export default function Traces() {
                 </div>
               </div>
               {selectedIds.size > 0 && (
-                <div className="rounded-2xl border border-sky-400/15 bg-sky-400/5 p-4">
+                <div className="rounded-2xl border border-sky-400/15 bg-sky-400/8 p-4">
                   <div className="hud-label">Selected</div>
                   <div className="mt-2 flex items-center justify-between">
                     <div className="text-lg font-medium text-white">
@@ -722,11 +783,13 @@ export default function Traces() {
         <AnimatePresence>
           {selectedIds.size > 0 && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+              initial={{ opacity: 0, gridTemplateRows: "0fr" }}
+              animate={{ opacity: 1, gridTemplateRows: "1fr" }}
+              exit={{ opacity: 0, gridTemplateRows: "0fr" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              style={{ display: "grid" }}
             >
+              <div className="overflow-hidden">
               <div className="dashboard-shell flex items-center justify-between gap-4 rounded-[24px] px-5 py-3">
                 <div className="flex items-center gap-3">
                   <span className="status-chip">
@@ -758,6 +821,7 @@ export default function Traces() {
                   Compare traces
                 </button>
               </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -776,7 +840,7 @@ export default function Traces() {
         {/* Main trace table */}
         <section className="dashboard-shell rounded-[26px] px-4 py-4 sm:px-5 sm:py-5">
           {/* Search / filter bar */}
-          <div className="mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(7,14,26,0.95),rgba(4,8,18,0.98))] p-4">
+          <div className="surface-strong mb-4 rounded-[24px] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="hud-label">Search console</div>
@@ -808,7 +872,7 @@ export default function Traces() {
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1.8fr)_minmax(0,0.6fr)_minmax(0,0.6fr)]">
-              <label className="relative block">
+              <label className="field-surface relative block rounded-2xl">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
                   value={searchTerm}
@@ -816,38 +880,46 @@ export default function Traces() {
                     updateParams({ q: e.target.value || undefined })
                   }
                   placeholder="Search by trace name, ID, or keyword..."
-                  className="w-full rounded-2xl border border-white/8 bg-white/4 py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:bg-white/6 focus:outline-none"
+                  className="w-full rounded-2xl bg-transparent py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none"
                 />
               </label>
-              <select
-                value={validStatus}
-                onChange={(e) =>
-                  updateParams({ status: e.target.value || undefined })
+              <Select
+                value={validStatus || "__all__"}
+                onValueChange={(val) =>
+                  updateParams({ status: val === "__all__" ? undefined : val })
                 }
-                className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-emerald-400/30 focus:bg-white/6 focus:outline-none"
               >
-                <option value="">All states</option>
-                <option value="ok">Healthy only</option>
-                <option value="error">Errors only</option>
-              </select>
-              <select
+                <SelectTrigger className="w-full rounded-2xl py-3">
+                  <SelectValue placeholder="All states" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All states</SelectItem>
+                  <SelectItem value="ok">Healthy only</SelectItem>
+                  <SelectItem value="error">Errors only</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
                 value={String(traceQuery.periodHours ?? 24)}
-                onChange={(e) =>
+                onValueChange={(val) =>
                   updateParams({
                     periodHours:
-                      Number(e.target.value) === 24
+                      Number(val) === 24
                         ? undefined
-                        : Number(e.target.value),
+                        : Number(val),
                   })
                 }
-                className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-amber-400/30 focus:bg-white/6 focus:outline-none"
               >
-                {PERIOD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full rounded-2xl py-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERIOD_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -857,29 +929,36 @@ export default function Traces() {
               Loading traces...
             </div>
           ) : traces.length === 0 ? (
-            <div className="empty-state h-[400px]">
-              <Activity className="h-8 w-8 text-slate-500" />
-              <div className="text-base font-medium text-white">
-                {hasActiveFilters
-                  ? "No traces match these filters"
-                  : "No traces recorded yet"}
+            hasActiveFilters ? (
+              <div className="empty-state h-[400px]">
+                <Activity className="h-8 w-8 text-slate-500" />
+                <div className="text-base font-medium text-white">
+                  No traces match these filters
+                </div>
+                <div className="mt-1 text-sm text-slate-500">
+                  Try adjusting the search or time window
+                </div>
               </div>
-              <div className="mt-1 text-sm text-slate-500">
-                {hasActiveFilters
-                  ? "Try adjusting the search or time window"
-                  : "Start sending spans to populate the explorer"}
-              </div>
-            </div>
+            ) : (
+              <GettingStartedPanel />
+            )
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="relative overflow-hidden rounded-[22px] border border-cyan-400/18 bg-[linear-gradient(180deg,rgba(6,11,20,0.95),rgba(3,8,15,0.96))] shadow-[inset_0_1px_0_rgba(186,230,253,0.08),0_0_0_1px_rgba(14,165,233,0.08),0_20px_46px_rgba(0,0,0,0.45),0_0_38px_rgba(6,182,212,0.14)] animate-[cyber-glow-pulse_4.6s_ease-in-out_infinite]">
+                <div className="pointer-events-none absolute -left-28 top-0 h-56 w-56 rounded-full bg-cyan-400/14 blur-3xl" />
+                <div className="pointer-events-none absolute -right-20 bottom-0 h-44 w-44 rounded-full bg-emerald-400/12 blur-3xl" />
+                <div className="pointer-events-none absolute inset-0 z-[1] bg-[repeating-linear-gradient(to_bottom,rgba(56,189,248,0.07)_0px,rgba(56,189,248,0.07)_1px,transparent_1px,transparent_6px)] opacity-35 mix-blend-screen animate-[cyber-scanline_11s_linear_infinite]" />
+                <div className="pointer-events-none absolute -left-1/2 top-0 z-[2] h-full w-1/2 bg-[linear-gradient(100deg,transparent_10%,rgba(34,211,238,0.18)_40%,rgba(167,243,208,0.22)_55%,transparent_85%)] opacity-0 blur-sm animate-[cyber-sweep_4.4s_ease-in-out_infinite]" />
+
+                <div className="relative z-10 overflow-x-auto px-2 py-1 sm:px-3 sm:py-2">
                 <table className="w-full border-separate border-spacing-y-1.5 text-sm">
-                  <thead>
+                  <thead className="sticky top-0 z-10 bg-[rgba(8,14,26,0.96)] backdrop-blur-xl">
                     <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500">
                       <th className="px-3 py-2 text-center">
                         <button
                           type="button"
                           onClick={toggleSelectAll}
+                          aria-label={allOnPageSelected ? "Deselect all traces on page" : "Select all traces on page"}
                           className="inline-flex items-center justify-center transition-colors hover:text-slate-300"
                           title={
                             allOnPageSelected ? "Deselect all" : "Select all"
@@ -937,10 +1016,10 @@ export default function Traces() {
                         <tr
                           key={trace.traceId}
                           onClick={() => setPreviewTrace(trace)}
-                          className={`cursor-pointer rounded-2xl border transition-colors ${
+                          className={`cursor-pointer rounded-2xl transition-colors ${
                             isSelected
-                              ? "border-emerald-400/20 bg-emerald-400/5"
-                              : "border-white/6 bg-white/4 hover:bg-white/6"
+                              ? "border border-emerald-400/20 bg-emerald-400/8"
+                              : "table-row-surface"
                           }`}
                         >
                           <td
@@ -950,6 +1029,7 @@ export default function Traces() {
                             <button
                               type="button"
                               onClick={() => toggleSelect(trace.traceId)}
+                              aria-label={`Select trace ${trace.name}`}
                               className="inline-flex items-center justify-center transition-colors hover:text-emerald-300"
                             >
                               {isSelected ? (
@@ -992,6 +1072,7 @@ export default function Traces() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
 
               {/* Pagination */}
@@ -1002,24 +1083,28 @@ export default function Traces() {
                       ? `Showing ${offset + 1}-${Math.min(offset + traces.length, totalMatches)} of ${totalMatches}`
                       : "Awaiting traces"}
                   </div>
-                  <select
+                  <Select
                     value={String(effectivePageSize)}
-                    onChange={(e) =>
+                    onValueChange={(val) =>
                       updateParams({
                         pageSize:
-                          Number(e.target.value) === 50
+                          Number(val) === 50
                             ? undefined
-                            : Number(e.target.value),
+                            : Number(val),
                       })
                     }
-                    className="rounded-xl border border-white/8 bg-white/4 px-2 py-1.5 text-xs text-slate-300 focus:border-emerald-400/30 focus:outline-none"
                   >
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>
-                        {size} / page
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-auto rounded-xl px-2 py-1.5 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <SelectItem key={size} value={String(size)}>
+                          {size} / page
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1056,25 +1141,13 @@ export default function Traces() {
       </PageFrame>
 
       {/* Slide-out preview panel */}
-      <AnimatePresence>
-        {previewTrace && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setPreviewTrace(null)}
-              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            />
-            <PreviewPanel
-              key={previewTrace.traceId}
-              trace={previewTrace}
-              onClose={() => setPreviewTrace(null)}
-            />
-          </>
-        )}
-      </AnimatePresence>
+      {previewTrace && (
+        <PreviewPanel
+          key={previewTrace.traceId}
+          trace={previewTrace}
+          onClose={() => setPreviewTrace(null)}
+        />
+      )}
     </>
   );
 }

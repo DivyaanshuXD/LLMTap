@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchDbInfo, resetData, exportTraces, applyRetention, exportOtlpJson, forwardOtlp } from "../api/client.ts";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   Check,
@@ -12,14 +13,33 @@ import {
   Info,
   Plus,
   RotateCcw,
+  SearchCheck,
   Send,
   Timer,
   Trash2,
   X,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { GettingStartedPanel } from "../components/GettingStartedPanel.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select.tsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog.tsx";
 import { formatTimeAgo } from "../lib/format.ts";
 
 function formatBytes(bytes: number): string {
@@ -67,23 +87,53 @@ export default function Settings() {
   const [otlpResult, setOtlpResult] = useState<string | null>(null);
   const [otlpExporting, setOtlpExporting] = useState(false);
 
+  // Confirm dialog state
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [confirmRetentionOpen, setConfirmRetentionOpen] = useState(false);
+
   const { data: dbInfo } = useQuery({
     queryKey: ["db-info"],
     queryFn: fetchDbInfo,
   });
 
   async function handleReset() {
-    if (!confirm("Delete all trace data? This cannot be undone.")) return;
     setResetting(true);
     try {
       await resetData();
       setResetDone(true);
       queryClient.invalidateQueries();
+      toast.success("Trace data cleared", {
+        description: "The local collector database has been reset.",
+      });
       setTimeout(() => setResetDone(false), 3000);
     } catch (err) {
-      alert(`Reset failed: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Reset failed", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setResetting(false);
+    }
+  }
+
+  async function executeRetention(days: number) {
+    setRetentionApplying(true);
+    try {
+      const result = await applyRetention(days);
+      setRetentionDeleted(result.deletedSpans);
+      setRetentionSaved(true);
+      queryClient.invalidateQueries();
+      toast.success("Retention applied", {
+        description:
+          result.deletedSpans > 0
+            ? `Deleted ${result.deletedSpans} old spans.`
+            : "No spans needed cleanup for the selected window.",
+      });
+      setTimeout(() => {
+        setRetentionSaved(false);
+        setRetentionDeleted(null);
+      }, 4000);
+    } catch (err) {
+      toast.error("Retention failed", { description: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setRetentionApplying(false);
     }
   }
 
@@ -102,8 +152,11 @@ export default function Settings() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      toast.success(`Exported ${format.toUpperCase()}`, {
+        description: "Trace data was downloaded successfully.",
+      });
     } catch (err) {
-      alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Export failed", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setExporting(false);
     }
@@ -112,14 +165,18 @@ export default function Settings() {
   function copyToClipboard(text: string, label: string) {
     navigator.clipboard.writeText(text).catch(() => {});
     setCopied(label);
+    toast.success("Copied to clipboard", {
+      description: label === "path" ? "Database path copied." : `${label} copied.`,
+    });
     setTimeout(() => setCopied(null), 2000);
   }
 
   return (
+    <>
     <PageFrame
       eyebrow="Control Panel"
       title="Configure, export, and manage your local collector."
-      description="Database status, data export, and maintenance controls. Everything runs locally on your machine — your data never leaves."
+      description="This is the operational side of LLMTap: local storage, exports, retention, and recovery controls. Nothing here should feel cryptic."
       aside={
         <div className="insight-panel">
           <LivePulse />
@@ -137,6 +194,8 @@ export default function Settings() {
         </div>
       }
     >
+      <GettingStartedPanel compact />
+
       <div className="grid gap-5 xl:grid-cols-2">
         <motion.div
           className="dashboard-shell rounded-[26px] px-5 py-5"
@@ -242,7 +301,7 @@ export default function Settings() {
             </p>
             <button
               type="button"
-              onClick={handleReset}
+              onClick={() => setConfirmResetOpen(true)}
               disabled={resetting}
               className="inline-flex items-center gap-2 rounded-full border border-rose-400/20 bg-rose-400/8 px-4 py-2.5 text-sm font-medium text-rose-200 transition-colors hover:border-rose-400/30 hover:bg-rose-400/14 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -338,6 +397,9 @@ export default function Settings() {
                     onClick={() => {
                       if (newPricing.provider && newPricing.model && newPricing.inputCostPer1M && newPricing.outputCostPer1M) {
                         setPricingOverrides((prev) => [...prev, { ...newPricing }]);
+                        toast.success("Pricing override added", {
+                          description: `${newPricing.provider}/${newPricing.model} is ready to use.`,
+                        });
                         setNewPricing({ provider: "", model: "", inputCostPer1M: "", outputCostPer1M: "" });
                         setShowAddPricing(false);
                       }
@@ -397,40 +459,31 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
               Configure how long trace data is kept. Older traces will be automatically cleaned up.
             </p>
             <div className="flex items-center gap-3">
-              <select
+              <Select
                 value={retentionDays}
-                onChange={(e) => setRetentionDays(e.target.value)}
-                className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-purple-400/30 focus:outline-none"
+                onValueChange={(val) => setRetentionDays(val)}
               >
-                <option value="7">7 days</option>
-                <option value="14">14 days</option>
-                <option value="30">30 days</option>
-                <option value="90">90 days</option>
-                <option value="365">1 year</option>
-                <option value="0">Keep forever</option>
-              </select>
+                <SelectTrigger className="w-[160px] rounded-2xl py-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="14">14 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                  <SelectItem value="365">1 year</SelectItem>
+                  <SelectItem value="0">Keep forever</SelectItem>
+                </SelectContent>
+              </Select>
               <button
                 type="button"
                 onClick={async () => {
                   const days = parseInt(retentionDays, 10);
                   if (days > 0) {
-                    if (!confirm(`Delete all trace data older than ${retentionDays} days?`)) return;
+                    setConfirmRetentionOpen(true);
+                    return;
                   }
-                  setRetentionApplying(true);
-                  try {
-                    const result = await applyRetention(days);
-                    setRetentionDeleted(result.deletedSpans);
-                    setRetentionSaved(true);
-                    queryClient.invalidateQueries();
-                    setTimeout(() => {
-                      setRetentionSaved(false);
-                      setRetentionDeleted(null);
-                    }, 4000);
-                  } catch (err) {
-                    alert(`Retention failed: ${err instanceof Error ? err.message : String(err)}`);
-                  } finally {
-                    setRetentionApplying(false);
-                  }
+                  await executeRetention(days);
                 }}
                 disabled={retentionApplying}
                 className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
@@ -487,8 +540,11 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                    toast.success("OTLP export downloaded", {
+                      description: "The collector export was saved as OTLP JSON.",
+                    });
                   } catch (err) {
-                    alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+                    toast.error("Export failed", { description: err instanceof Error ? err.message : String(err) });
                   } finally {
                     setOtlpExporting(false);
                   }
@@ -527,8 +583,14 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                       try {
                         const result = await forwardOtlp(otlpEndpoint, { service: otlpService });
                         setOtlpResult(`Forwarded ${result.spanCount} spans`);
+                        toast.success("OTLP forward complete", {
+                          description: `Forwarded ${result.spanCount} spans to the target endpoint.`,
+                        });
                       } catch (err) {
                         setOtlpResult(`Error: ${err instanceof Error ? err.message : String(err)}`);
+                        toast.error("OTLP forward failed", {
+                          description: err instanceof Error ? err.message : String(err),
+                        });
                       } finally {
                         setOtlpForwarding(false);
                       }
@@ -560,39 +622,89 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             <div className="mb-5 flex items-center gap-2">
               <Info className="h-4 w-4 text-sky-300" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
-                Quick start
+                First-run help
               </h2>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  1. Install the SDK
-                </div>
-                <pre className="font-mono text-xs text-slate-300">npm install @llmtap/sdk</pre>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  2. Wrap your client
-                </div>
-                <pre className="font-mono text-xs leading-relaxed text-slate-300">
-{`import { wrap } from "@llmtap/sdk";
-import OpenAI from "openai";
-
-const openai = wrap(new OpenAI());`}
-                </pre>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  3. That's it
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <SearchCheck className="h-3.5 w-3.5 text-emerald-300" />
+                  Where the wrap code belongs
                 </div>
                 <p className="text-xs leading-relaxed text-slate-400">
-                  All API calls are now traced automatically. Open this dashboard to see real-time data.
+                  Edit the file in your app where you already create the provider client. That is usually a backend
+                  route, agent runner, worker, or script. You do not change code inside this dashboard.
                 </p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  How to verify the setup
+                </div>
+                <p className="text-xs leading-relaxed text-slate-400">
+                  After you make one real model call, a new trace should appear on the Overview or Traces page within a
+                  few seconds. If nothing appears, run{" "}
+                  <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap doctor</code>{" "}
+                  from the app you are instrumenting.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Useful local operations
+                </div>
+                <pre className="font-mono text-xs leading-relaxed text-slate-300">
+{`npx llmtap doctor
+npx llmtap backup
+npx llmtap import llmtap-export.json
+npx llmtap restore llmtap-backup.db`}
+                </pre>
               </div>
             </div>
           </motion.div>
         </div>
       </div>
     </PageFrame>
+
+      {/* Reset data confirmation */}
+      <AlertDialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete all trace data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all stored traces and spans. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleReset()}
+              className="border-rose-400/20 bg-rose-500 text-white hover:bg-rose-400"
+            >
+              Delete all data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Retention confirmation */}
+      <AlertDialog open={confirmRetentionOpen} onOpenChange={setConfirmRetentionOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply data retention?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete all trace data older than {retentionDays} days. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => executeRetention(parseInt(retentionDays, 10))}
+              className="border-rose-400/20 bg-rose-500 text-white hover:bg-rose-400"
+            >
+              Delete old data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -2,10 +2,49 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
+import type { SpanInput } from "@llmtap/shared";
 import { DB_DIR_NAME, DB_FILE_NAME } from "@llmtap/shared";
 
 let db: Database.Database | null = null;
 let retentionCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+function stringifyOrNull(value: unknown): string | null {
+  return value ? JSON.stringify(value) : null;
+}
+
+function toInsertRow(span: SpanInput) {
+  return {
+    spanId: span.spanId,
+    traceId: span.traceId,
+    parentSpanId: span.parentSpanId ?? null,
+    name: span.name,
+    operationName: span.operationName,
+    providerName: span.providerName,
+    startTime: span.startTime,
+    endTime: span.endTime ?? null,
+    duration: span.duration ?? null,
+    requestModel: span.requestModel,
+    responseModel: span.responseModel ?? null,
+    inputTokens: span.inputTokens ?? 0,
+    outputTokens: span.outputTokens ?? 0,
+    totalTokens: span.totalTokens ?? 0,
+    inputCost: span.inputCost ?? 0,
+    outputCost: span.outputCost ?? 0,
+    totalCost: span.totalCost ?? 0,
+    temperature: span.temperature ?? null,
+    maxTokens: span.maxTokens ?? null,
+    topP: span.topP ?? null,
+    inputMessages: stringifyOrNull(span.inputMessages),
+    outputMessages: stringifyOrNull(span.outputMessages),
+    toolCalls: stringifyOrNull(span.toolCalls),
+    status: span.status,
+    errorType: span.errorType ?? null,
+    errorMessage: span.errorMessage ?? null,
+    tags: stringifyOrNull(span.tags),
+    sessionId: span.sessionId ?? null,
+    userId: span.userId ?? null,
+  };
+}
 
 // ---------- Migration system ----------
 
@@ -118,16 +157,12 @@ function runMigrations(db: Database.Database): void {
 export function getDb(): Database.Database {
   if (db) return db;
 
-  const dbDir = process.env.LLMTAP_DB_DIR
-    ? path.resolve(process.env.LLMTAP_DB_DIR)
-    : path.join(os.homedir(), DB_DIR_NAME);
+  const dbDir = getDbDirPath();
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  const dbPath = process.env.LLMTAP_DB_PATH
-    ? path.resolve(process.env.LLMTAP_DB_PATH)
-    : path.join(dbDir, DB_FILE_NAME);
+  const dbPath = getDbPath();
   db = new Database(dbPath);
 
   // Enable WAL for better performance
@@ -138,6 +173,98 @@ export function getDb(): Database.Database {
 
   runMigrations(db);
   return db;
+}
+
+export function getDbDirPath(): string {
+  return process.env.LLMTAP_DB_DIR
+    ? path.resolve(process.env.LLMTAP_DB_DIR)
+    : path.join(os.homedir(), DB_DIR_NAME);
+}
+
+export function getDbPath(): string {
+  return process.env.LLMTAP_DB_PATH
+    ? path.resolve(process.env.LLMTAP_DB_PATH)
+    : path.join(getDbDirPath(), DB_FILE_NAME);
+}
+
+export function insertSpans(spans: SpanInput[]): number {
+  if (spans.length === 0) return 0;
+
+  const d = getDb();
+  const insert = d.prepare(`
+    INSERT OR REPLACE INTO spans (
+      spanId, traceId, parentSpanId, name, operationName, providerName,
+      startTime, endTime, duration, requestModel, responseModel,
+      inputTokens, outputTokens, totalTokens,
+      inputCost, outputCost, totalCost,
+      temperature, maxTokens, topP,
+      inputMessages, outputMessages, toolCalls,
+      status, errorType, errorMessage,
+      tags, sessionId, userId
+    ) VALUES (
+      @spanId, @traceId, @parentSpanId, @name, @operationName, @providerName,
+      @startTime, @endTime, @duration, @requestModel, @responseModel,
+      @inputTokens, @outputTokens, @totalTokens,
+      @inputCost, @outputCost, @totalCost,
+      @temperature, @maxTokens, @topP,
+      @inputMessages, @outputMessages, @toolCalls,
+      @status, @errorType, @errorMessage,
+      @tags, @sessionId, @userId
+    )
+  `);
+
+  const insertMany = d.transaction((items: SpanInput[]) => {
+    for (const span of items) {
+      insert.run(toInsertRow(span));
+    }
+  });
+
+  insertMany(spans);
+  return spans.length;
+}
+
+export function backupDb(destinationPath: string): string {
+  const outputPath = path.resolve(destinationPath);
+  const outputDir = path.dirname(outputPath);
+  fs.mkdirSync(outputDir, { recursive: true });
+  if (fs.existsSync(outputPath)) {
+    fs.rmSync(outputPath, { force: true });
+  }
+
+  const d = getDb();
+  try {
+    d.pragma("wal_checkpoint(TRUNCATE)");
+  } catch {
+    /* best effort */
+  }
+
+  const escapedPath = outputPath.replace(/'/g, "''");
+  d.exec(`VACUUM INTO '${escapedPath}'`);
+  return outputPath;
+}
+
+export function restoreDb(sourcePath: string): string {
+  const inputPath = path.resolve(sourcePath);
+  const dbPath = getDbPath();
+
+  if (!fs.existsSync(inputPath)) {
+    throw new Error(`Backup file not found: ${inputPath}`);
+  }
+  if (inputPath === dbPath) {
+    throw new Error("Backup source cannot be the active database file");
+  }
+
+  closeDb();
+
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  for (const candidate of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+    if (fs.existsSync(candidate)) {
+      fs.rmSync(candidate, { force: true });
+    }
+  }
+
+  fs.copyFileSync(inputPath, dbPath);
+  return dbPath;
 }
 
 /** Close the database connection */

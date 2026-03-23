@@ -1,22 +1,14 @@
 import type { FastifyInstance } from "fastify";
-import path from "node:path";
 import fs from "node:fs";
-import os from "node:os";
-import { getDb } from "../db.js";
-import { DB_DIR_NAME, DB_FILE_NAME, ROUTES } from "@llmtap/shared";
+import { getDb, getDbPath } from "../db.js";
+import { ROUTES } from "@llmtap/shared";
 
 export async function registerDbInfoRoute(
   app: FastifyInstance
 ): Promise<void> {
   app.get(ROUTES.GET_DB_INFO, async (_request, reply) => {
     const db = getDb();
-
-    const dbDir = process.env.LLMTAP_DB_DIR
-      ? path.resolve(process.env.LLMTAP_DB_DIR)
-      : path.join(os.homedir(), DB_DIR_NAME);
-    const dbPath = process.env.LLMTAP_DB_PATH
-      ? path.resolve(process.env.LLMTAP_DB_PATH)
-      : path.join(dbDir, DB_FILE_NAME);
+    const dbPath = getDbPath();
 
     let sizeBytes = 0;
     try {

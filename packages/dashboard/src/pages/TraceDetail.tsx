@@ -27,11 +27,22 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { fetchTraceSpans, replaySpan } from "../api/client.ts";
 import type { Span, Message, ContentPart, ReplayResult } from "../api/client.ts";
 import { LivePulse } from "../components/LivePulse.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { formatCost, formatDuration } from "../lib/format.ts";
+import { getTextContent } from "../lib/content.ts";
+import { ProviderBadge } from "../components/ProviderBadge.tsx";
+import { StatusDot } from "../components/StatusDot.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog.tsx";
 
 interface SpanNode {
   span: Span;
@@ -74,6 +85,9 @@ function useCopy() {
   function copy(text: string, label: string) {
     navigator.clipboard.writeText(text);
     setCopied(label);
+    toast.success("Copied to clipboard", {
+      description: `${label} copied successfully.`,
+    });
     setTimeout(() => setCopied(null), 2000);
   }
   return { copied, copy };
@@ -92,25 +106,6 @@ function CopyButton({ text, label, copied, onCopy }: { text: string; label: stri
   );
 }
 
-function ProviderBadge({ provider }: { provider: string }) {
-  const styles: Record<string, string> = {
-    openai: "bg-emerald-400/12 text-emerald-200 border-emerald-400/20",
-    anthropic: "bg-amber-300/12 text-amber-200 border-amber-300/20",
-    google: "bg-sky-400/12 text-sky-200 border-sky-400/20",
-    deepseek: "bg-cyan-400/12 text-cyan-200 border-cyan-400/20",
-    groq: "bg-fuchsia-400/12 text-fuchsia-200 border-fuchsia-400/20",
-  };
-
-  return (
-    <span
-      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
-        styles[provider] ?? "border-white/10 bg-white/8 text-slate-300"
-      }`}
-    >
-      {provider}
-    </span>
-  );
-}
 
 function MetaCard({
   icon: Icon,
@@ -128,6 +123,77 @@ function MetaCard({
         {label}
       </div>
       <div className="font-mono text-sm font-semibold text-slate-100">{value}</div>
+    </div>
+  );
+}
+
+function InlineMetric({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "danger";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "border-emerald-400/16 bg-emerald-400/8 text-emerald-100"
+      : tone === "danger"
+        ? "border-rose-400/16 bg-rose-400/8 text-rose-100"
+        : "border-white/8 bg-white/4 text-slate-100";
+
+  return (
+    <div className={`rounded-2xl border px-3 py-2 ${toneClass}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</div>
+      <div className="mt-1 font-mono text-xs font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  count,
+  collapsed,
+  onToggle,
+}: {
+  icon: typeof MessageSquare;
+  title: string;
+  count?: number;
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
+  const content = (
+    <>
+      {onToggle ? (
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+      ) : null}
+      <Icon className="h-3.5 w-3.5" />
+      <span>{title}</span>
+      {typeof count === "number" ? (
+        <span className="rounded-full border border-white/8 bg-white/4 px-2 py-0.5 font-mono text-[10px] text-slate-300">
+          {count}
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (onToggle) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="mb-3 flex w-full items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 transition-colors hover:text-slate-300"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+      {content}
     </div>
   );
 }
@@ -155,14 +221,6 @@ function RoleBadge({ role, type }: { role: string; type: "input" | "output" }) {
   );
 }
 
-function getTextContent(content: string | ContentPart[] | null): string {
-  if (!content) return "";
-  if (typeof content === "string") return content;
-  return content
-    .filter((p): p is ContentPart & { text: string } => p.type === "text" && !!p.text)
-    .map((p) => p.text)
-    .join("\n");
-}
 
 function hasImages(content: string | ContentPart[] | null): boolean {
   if (!content || typeof content === "string") return false;
@@ -273,161 +331,195 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
+      initial={{ opacity: 0, gridTemplateRows: "0fr" }}
+      animate={{ opacity: 1, gridTemplateRows: "1fr" }}
+      exit={{ opacity: 0, gridTemplateRows: "0fr" }}
       transition={{ duration: 0.2 }}
-      className="overflow-hidden"
+      style={{ display: "grid" }}
     >
-      <div className="mx-4 mb-4 space-y-5 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(8,15,28,0.96),rgba(4,8,18,0.98))] p-5 text-sm">
-        <div className="flex items-center justify-between gap-2">
-          <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
-            <MetaCard icon={Hash} label="Model" value={span.responseModel ?? span.requestModel ?? "-"} />
-            <MetaCard icon={Layers} label="Tokens" value={`${span.inputTokens} in / ${span.outputTokens} out`} />
-            <MetaCard icon={Coins} label="Cost" value={formatCost(span.totalCost)} />
-            <MetaCard icon={Clock} label="Duration" value={span.duration ? formatDuration(span.duration) : "-"} />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <CopyButton text={span.spanId} label="spanId" copied={copied} onCopy={onCopy} />
-          <span className="font-mono text-[10px] text-slate-500">span: {span.spanId.slice(0, 12)}...</span>
-          {span.sessionId && (
-            <>
-              <span className="text-slate-600">|</span>
-              <span className="font-mono text-[10px] text-slate-500">session: {span.sessionId}</span>
-            </>
-          )}
-          {span.temperature !== undefined && (
-            <>
-              <span className="text-slate-600">|</span>
-              <span className="font-mono text-[10px] text-slate-500">temp: {span.temperature}</span>
-            </>
-          )}
-          {span.topP !== undefined && (
-            <>
-              <span className="text-slate-600">|</span>
-              <span className="font-mono text-[10px] text-slate-500">top_p: {span.topP}</span>
-            </>
-          )}
-          {span.maxTokens !== undefined && (
-            <>
-              <span className="text-slate-600">|</span>
-              <span className="font-mono text-[10px] text-slate-500">max_tokens: {span.maxTokens}</span>
-            </>
-          )}
-        </div>
-
-        {span.status === "error" && (
-          <div className="rounded-2xl border border-rose-400/18 bg-rose-400/6 p-4">
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-rose-300">
-                <CircleX className="h-4 w-4" />
-                {span.errorType ?? "error"}
+      <div className="overflow-hidden">
+        <div className="mx-4 mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(8,15,28,0.96),rgba(4,8,18,0.98))] p-5 text-sm">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-5">
+              <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
+                <MetaCard icon={Hash} label="Model" value={span.responseModel ?? span.requestModel ?? "-"} />
+                <MetaCard icon={Layers} label="Tokens" value={`${span.inputTokens} in / ${span.outputTokens} out`} />
+                <MetaCard icon={Coins} label="Cost" value={formatCost(span.totalCost)} />
+                <MetaCard icon={Clock} label="Duration" value={span.duration ? formatDuration(span.duration) : "-"} />
               </div>
-              {span.errorMessage && (
-                <CopyButton text={span.errorMessage} label="error" copied={copied} onCopy={onCopy} />
-              )}
-            </div>
-            <div className="font-mono text-xs leading-relaxed text-rose-200/70">
-              {span.errorMessage}
-            </div>
-          </div>
-        )}
 
-        {span.inputMessages && span.inputMessages.length > 0 && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setInputCollapsed((v) => !v)}
-              className="mb-3 flex w-full items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 transition-colors hover:text-slate-300"
-            >
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${inputCollapsed ? "-rotate-90" : ""}`} />
-              <MessageSquare className="h-3.5 w-3.5" />
-              Input messages ({span.inputMessages.length})
-            </button>
-            {!inputCollapsed && (
-              <div className="space-y-2">
-                {span.inputMessages.map((message, index) => (
-                  <MessageBlock
-                    key={`in-${message.role}-${index}`}
-                    message={message}
-                    type="input"
-                    copied={copied}
-                    onCopy={onCopy}
-                  />
-                ))}
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <InlineMetric label="Input msgs" value={String(inputCount)} />
+                <InlineMetric label="Output msgs" value={String(outputCount)} />
+                <InlineMetric label="Tool calls" value={String(span.toolCalls?.length ?? 0)} />
+                <InlineMetric
+                  label="Status"
+                  value={span.status === "error" ? "Error" : "OK"}
+                  tone={span.status === "error" ? "danger" : "success"}
+                />
               </div>
-            )}
-          </div>
-        )}
 
-        {span.outputMessages && span.outputMessages.length > 0 && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setOutputCollapsed((v) => !v)}
-              className="mb-3 flex w-full items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 transition-colors hover:text-slate-300"
-            >
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${outputCollapsed ? "-rotate-90" : ""}`} />
-              <MessageSquare className="h-3.5 w-3.5" />
-              Output messages ({span.outputMessages.length})
-            </button>
-            {!outputCollapsed && (
-              <div className="space-y-2">
-                {span.outputMessages.map((message, index) => (
-                  <MessageBlock
-                    key={`out-${message.role}-${index}`}
-                    message={message}
-                    type="output"
-                    copied={copied}
-                    onCopy={onCopy}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {span.toolCalls && span.toolCalls.length > 0 && (
-          <div>
-            <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-              <Wrench className="h-3.5 w-3.5" />
-              Tool calls ({span.toolCalls.length})
-            </div>
-            <div className="space-y-2">
-              {span.toolCalls.map((toolCall) => (
-                <div key={toolCall.id} className="rounded-2xl border border-amber-300/10 bg-white/4 p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-full border border-amber-300/16 bg-amber-300/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-amber-200">
-                      {toolCall.name}
-                    </span>
-                    <CopyButton
-                      text={toolCall.arguments}
-                      label={`tool-${toolCall.id}`}
-                      copied={copied}
-                      onCopy={onCopy}
-                    />
+              {span.status === "error" && (
+                <div className="rounded-2xl border border-rose-400/18 bg-rose-400/6 p-4">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-rose-300">
+                      <CircleX className="h-4 w-4" />
+                      {span.errorType ?? "error"}
+                    </div>
+                    {span.errorMessage && (
+                      <CopyButton text={span.errorMessage} label="error" copied={copied} onCopy={onCopy} />
+                    )}
                   </div>
-                  <pre className="mt-2.5 overflow-x-auto font-mono text-xs leading-relaxed text-slate-200">
-                    {formatJSON(toolCall.arguments)}
-                  </pre>
-                  {toolCall.result && (
-                    <>
-                      <div className="my-2 border-t border-white/6" />
-                      <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">
-                        Result
-                      </div>
-                      <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-slate-300">
-                        {toolCall.result}
-                      </pre>
-                    </>
+                  <div className="font-mono text-xs leading-relaxed text-rose-200/70">
+                    {span.errorMessage}
+                  </div>
+                </div>
+              )}
+
+              {span.inputMessages && span.inputMessages.length > 0 && (
+                <div>
+                  <SectionHeader
+                    icon={MessageSquare}
+                    title="Input messages"
+                    count={span.inputMessages.length}
+                    collapsed={inputCollapsed}
+                    onToggle={() => setInputCollapsed((value) => !value)}
+                  />
+                  {!inputCollapsed && (
+                    <div className="space-y-2">
+                      {span.inputMessages.map((message, index) => (
+                        <MessageBlock
+                          key={`in-${message.role}-${index}`}
+                          message={message}
+                          type="input"
+                          copied={copied}
+                          onCopy={onCopy}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
-              ))}
+              )}
+
+              {span.outputMessages && span.outputMessages.length > 0 && (
+                <div>
+                  <SectionHeader
+                    icon={MessageSquare}
+                    title="Output messages"
+                    count={span.outputMessages.length}
+                    collapsed={outputCollapsed}
+                    onToggle={() => setOutputCollapsed((value) => !value)}
+                  />
+                  {!outputCollapsed && (
+                    <div className="space-y-2">
+                      {span.outputMessages.map((message, index) => (
+                        <MessageBlock
+                          key={`out-${message.role}-${index}`}
+                          message={message}
+                          type="output"
+                          copied={copied}
+                          onCopy={onCopy}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {span.toolCalls && span.toolCalls.length > 0 && (
+                <div>
+                  <SectionHeader icon={Wrench} title="Tool calls" count={span.toolCalls.length} />
+                  <div className="space-y-2">
+                    {span.toolCalls.map((toolCall) => (
+                      <div key={toolCall.id} className="rounded-2xl border border-amber-300/10 bg-white/4 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="rounded-full border border-amber-300/16 bg-amber-300/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-amber-200">
+                            {toolCall.name}
+                          </span>
+                          <CopyButton
+                            text={toolCall.arguments}
+                            label={`tool-${toolCall.id}`}
+                            copied={copied}
+                            onCopy={onCopy}
+                          />
+                        </div>
+                        <pre className="mt-2.5 overflow-x-auto font-mono text-xs leading-relaxed text-slate-200">
+                          {formatJSON(toolCall.arguments)}
+                        </pre>
+                        {toolCall.result && (
+                          <>
+                            <div className="my-2 border-t border-white/6" />
+                            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">
+                              Result
+                            </div>
+                            <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-slate-300">
+                              {toolCall.result}
+                            </pre>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  <Orbit className="h-3.5 w-3.5" />
+                  Span identity
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Span ID</div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="min-w-0 flex-1 truncate font-mono text-xs text-slate-200">{span.spanId}</code>
+                      <CopyButton text={span.spanId} label="spanId" copied={copied} onCopy={onCopy} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Operation</div>
+                    <div className="mt-1 text-sm text-slate-200">{span.operationName}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Provider</div>
+                    <div className="mt-1">
+                      <ProviderBadge provider={span.providerName} />
+                    </div>
+                  </div>
+                  {span.parentSpanId && (
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Parent span</div>
+                      <div className="mt-1 font-mono text-xs text-slate-300">{span.parentSpanId}</div>
+                    </div>
+                  )}
+                  {span.sessionId && (
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Session</div>
+                      <div className="mt-1 font-mono text-xs text-slate-300">{span.sessionId}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  <Code className="h-3.5 w-3.5" />
+                  Request config
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <InlineMetric label="Request model" value={span.requestModel} />
+                  <InlineMetric label="Response model" value={span.responseModel ?? span.requestModel ?? "-"} />
+                  <InlineMetric label="Temperature" value={span.temperature !== undefined ? String(span.temperature) : "-"} />
+                  <InlineMetric label="Top P" value={span.topP !== undefined ? String(span.topP) : "-"} />
+                  <InlineMetric label="Max tokens" value={span.maxTokens !== undefined ? String(span.maxTokens) : "-"} />
+                  <InlineMetric label="Started" value={new Date(span.startTime).toLocaleTimeString()} />
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </motion.div>
   );
@@ -636,6 +728,9 @@ export default function TraceDetail() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success("Trace exported", {
+      description: "The full trace payload was downloaded as JSON.",
+    });
   }
 
   async function handleReplay() {
@@ -646,8 +741,14 @@ export default function TraceDetail() {
     try {
       const result = await replaySpan(replaySpanId, replayApiKey.trim());
       setReplayResult(result);
+      toast.success("Replay complete", {
+        description: `Received a fresh response from ${result.provider}.`,
+      });
     } catch (err) {
       setReplayError(err instanceof Error ? err.message : String(err));
+      toast.error("Replay failed", {
+        description: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setReplayLoading(false);
     }
@@ -704,18 +805,7 @@ export default function TraceDetail() {
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
-                  <span className="relative flex h-3.5 w-3.5 items-center justify-center">
-                    <span
-                      className={`absolute inset-0 rounded-full ${
-                        node.span.status === "error" ? "bg-rose-400/25" : "bg-emerald-400/25"
-                      }`}
-                    />
-                    <span
-                      className={`relative h-2 w-2 rounded-full ${
-                        node.span.status === "error" ? "bg-rose-400" : "bg-emerald-300"
-                      }`}
-                    />
-                  </span>
+                  <StatusDot status={node.span.status} />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-white">{node.span.name}</div>
                     <div className="mt-1 flex flex-wrap items-center gap-2.5">
@@ -741,14 +831,15 @@ export default function TraceDetail() {
                 </div>
                 <div className="relative h-8 overflow-hidden rounded-full bg-slate-950/90">
                   <motion.div
-                    className={`absolute bottom-1 top-1 rounded-full ${
+                    className={`absolute bottom-1 top-1 origin-left rounded-full ${
                       node.span.status === "error"
                         ? "bg-[linear-gradient(90deg,#fb7185,#f97316)]"
                         : "bg-[linear-gradient(90deg,#34d399,#38bdf8)]"
                     }`}
-                    style={{ left: `${left}%`, minWidth: "6px" }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${width}%` }}
+                    style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                   />
                 </div>
               </div>
@@ -902,143 +993,120 @@ export default function TraceDetail() {
         )}
       </div>
 
-      <AnimatePresence>
-        {replayOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-              onClick={() => setReplayOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-              className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(12,18,32,0.98),rgba(4,8,18,0.99))] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.5)]"
-            >
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/8">
-                    <Play className="h-4.5 w-4.5 text-emerald-300" />
+      <Dialog open={replayOpen} onOpenChange={(v) => !v && setReplayOpen(false)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/8">
+                <Play className="h-4.5 w-4.5 text-emerald-300" />
+              </div>
+              <div>
+                <DialogTitle>Trace Replay</DialogTitle>
+                <DialogDescription>Re-send the same prompts and compare responses</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {!replayResult && !replayLoading && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-amber-400/20 bg-amber-500/8 p-3 text-xs text-amber-200/80">
+                Your API key is sent directly to the provider and is never stored by LLMTap.
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Provider API Key</label>
+                <input
+                  type="password"
+                  value={replayApiKey}
+                  onChange={(e) => setReplayApiKey(e.target.value)}
+                  placeholder="sk-... or anthropic key"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-emerald-400/30 focus:outline-none"
+                />
+              </div>
+              {replayError && (
+                <div className="rounded-xl border border-rose-400/20 bg-rose-500/8 p-3 text-sm text-rose-200">
+                  {replayError}
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={!replayApiKey.trim()}
+                onClick={handleReplay}
+                className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Send Replay Request
+              </button>
+            </div>
+          )}
+
+          {replayLoading && (
+            <div className="flex flex-col items-center gap-3 py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-300" />
+              <p className="text-sm text-slate-400">Replaying against {spans[0]?.providerName} API...</p>
+            </div>
+          )}
+
+          {replayResult && (() => {
+            const originalSpan = spans.find((s) => s.spanId === replaySpanId) ?? spans[0];
+            const originalOutput = originalSpan?.outputMessages
+              ?.map((m) => getTextContent(m.content))
+              .join("\n") ?? "";
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tokens</div>
+                    <div className="mt-1 font-mono text-sm text-white">
+                      {originalSpan.totalTokens} <span className="text-slate-500">vs</span> {replayResult.totalTokens}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Trace Replay</h3>
-                    <p className="text-xs text-slate-500">Re-send the same prompts and compare responses</p>
+                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Duration</div>
+                    <div className="mt-1 font-mono text-sm text-white">
+                      {formatDuration(originalSpan.duration ?? 0)} <span className="text-slate-500">vs</span> {formatDuration(replayResult.duration)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model</div>
+                    <div className="mt-1 truncate font-mono text-xs text-white">{replayResult.responseModel}</div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setReplayOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-slate-400 transition-colors hover:text-white"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
 
-              {!replayResult && !replayLoading && (
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-amber-400/20 bg-amber-500/8 p-3 text-xs text-amber-200/80">
-                    Your API key is sent directly to the provider and is never stored by LLMTap.
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Original Response</div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-white/8 bg-white/4 p-3 text-sm leading-6 text-slate-300">
+                      {originalOutput || <span className="text-slate-600">No content captured</span>}
+                    </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">Provider API Key</label>
-                    <input
-                      type="password"
-                      value={replayApiKey}
-                      onChange={(e) => setReplayApiKey(e.target.value)}
-                      placeholder="sk-... or anthropic key"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-emerald-400/30 focus:outline-none"
-                    />
-                  </div>
-                  {replayError && (
-                    <div className="rounded-xl border border-rose-400/20 bg-rose-500/8 p-3 text-sm text-rose-200">
-                      {replayError}
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400/80">Replay Response</div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-emerald-400/12 bg-emerald-400/4 p-3 text-sm leading-6 text-slate-300">
+                      {replayResult.content || <span className="text-slate-600">Empty response</span>}
                     </div>
-                  )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    disabled={!replayApiKey.trim()}
-                    onClick={handleReplay}
-                    className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => { setReplayResult(null); setReplayError(null); }}
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/10"
                   >
-                    Send Replay Request
+                    Replay Again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReplayOpen(false)}
+                    className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400"
+                  >
+                    Done
                   </button>
                 </div>
-              )}
-
-              {replayLoading && (
-                <div className="flex flex-col items-center gap-3 py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-300" />
-                  <p className="text-sm text-slate-400">Replaying against {spans[0]?.providerName} API...</p>
-                </div>
-              )}
-
-              {replayResult && (() => {
-                const originalSpan = spans.find((s) => s.spanId === replaySpanId) ?? spans[0];
-                const originalOutput = originalSpan?.outputMessages
-                  ?.map((m) => getTextContent(m.content))
-                  .join("\n") ?? "";
-                return (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tokens</div>
-                        <div className="mt-1 font-mono text-sm text-white">
-                          {originalSpan.totalTokens} <span className="text-slate-500">vs</span> {replayResult.totalTokens}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Duration</div>
-                        <div className="mt-1 font-mono text-sm text-white">
-                          {formatDuration(originalSpan.duration ?? 0)} <span className="text-slate-500">vs</span> {formatDuration(replayResult.duration)}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model</div>
-                        <div className="mt-1 truncate font-mono text-xs text-white">{replayResult.responseModel}</div>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div>
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Original Response</div>
-                        <div className="max-h-[300px] overflow-y-auto rounded-xl border border-white/8 bg-white/4 p-3 text-sm leading-6 text-slate-300">
-                          {originalOutput || <span className="text-slate-600">No content captured</span>}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400/80">Replay Response</div>
-                        <div className="max-h-[300px] overflow-y-auto rounded-xl border border-emerald-400/12 bg-emerald-400/4 p-3 text-sm leading-6 text-slate-300">
-                          {replayResult.content || <span className="text-slate-600">Empty response</span>}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { setReplayResult(null); setReplayError(null); }}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/10"
-                      >
-                        Replay Again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReplayOpen(false)}
-                        className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400"
-                      >
-                        Done
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </PageFrame>
   );
 }

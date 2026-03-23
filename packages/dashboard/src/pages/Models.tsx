@@ -1,15 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchStats } from "../api/client.ts";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   Clock,
   Coins,
   Cpu,
@@ -18,33 +9,63 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { DataTable } from "../components/DataTable.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import { NumberTicker } from "../components/magicui/number-ticker.tsx";
 import {
   formatCompactNumber,
   formatCost,
   formatDuration,
 } from "../lib/format.ts";
+import { providerColors } from "../lib/provider-colors.ts";
 
-const tooltipStyle = {
-  backgroundColor: "rgba(8, 15, 28, 0.96)",
-  border: "1px solid rgba(148, 163, 184, 0.14)",
-  borderRadius: "18px",
-  fontSize: 12,
-  boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-  backdropFilter: "blur(12px)",
-};
+function HorizontalMetricChart({
+  rows,
+  valueFormatter,
+  barClassName,
+}: {
+  rows: { name: string; value: number; tone?: string }[];
+  valueFormatter: (value: number) => string;
+  barClassName: string;
+}) {
+  const max = Math.max(...rows.map((row) => row.value), 1);
 
-const providerColors: Record<string, string> = {
-  openai: "bg-emerald-400",
-  anthropic: "bg-amber-300",
-  google: "bg-sky-400",
-  deepseek: "bg-cyan-400",
-  groq: "bg-fuchsia-400",
-  xai: "bg-rose-400",
-};
+  return (
+    <div className="space-y-3">
+      {rows.map((row) => (
+        <div
+          key={row.name}
+          className="rounded-2xl border border-white/6 bg-[linear-gradient(180deg,rgba(10,16,28,0.9),rgba(5,10,20,0.94))] p-4"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <span className="truncate text-sm font-medium text-slate-200">
+              {row.name}
+            </span>
+            <span className="font-mono text-xs text-slate-400">
+              {valueFormatter(row.value)}
+            </span>
+          </div>
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-950/80">
+            <motion.div
+              className={`h-full rounded-full ${barClassName}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.max((row.value / max) * 100, 6)}%` }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Models() {
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "totalCost", desc: true },
+  ]);
   const { data: stats, isLoading } = useQuery({
     queryKey: ["stats", 168],
     queryFn: () => fetchStats(168),
@@ -52,15 +73,111 @@ export default function Models() {
 
   const byModel = stats?.byModel ?? [];
 
-  const latencyData = byModel.map((m) => ({
-    name: m.model.length > 20 ? `${m.model.slice(0, 18)}...` : m.model,
-    p50: m.avgDuration,
-  }));
+  const latencyData = byModel
+    .map((m) => ({
+      name: m.model.length > 20 ? `${m.model.slice(0, 18)}...` : m.model,
+      value: m.avgDuration,
+    }))
+    .filter((m) => m.value > 0)
+    .slice(0, 8);
 
-  const tokenData = byModel.map((m) => ({
-    name: m.model.length > 20 ? `${m.model.slice(0, 18)}...` : m.model,
-    tokens: m.totalTokens,
-  }));
+  const tokenData = byModel
+    .map((m) => ({
+      name: m.model.length > 20 ? `${m.model.slice(0, 18)}...` : m.model,
+      value: m.totalTokens,
+    }))
+    .filter((m) => m.value > 0)
+    .slice(0, 8);
+  const modelColumns = useMemo<ColumnDef<(typeof byModel)[number]>[]>(
+    () => [
+      {
+        accessorKey: "model",
+        header: "Model",
+        cell: ({ row }) => (
+          <div className="min-w-0">
+            <div className="truncate font-mono text-xs font-semibold text-slate-100">
+              {row.original.model}
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500">
+              {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "No latency yet"} average latency
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "provider",
+        header: "Provider",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor: providerColors[row.original.provider] ?? "#a855f6",
+                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "#a855f6"}`,
+              }}
+            />
+            <span className="rounded-full border border-white/8 bg-white/4 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              {row.original.provider}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "spanCount",
+        header: "Calls",
+        cell: ({ row }) => (
+          <span className="inline-flex items-center justify-center rounded-full border border-white/8 bg-white/4 px-2.5 py-0.5 font-mono text-[11px] text-slate-300">
+            {row.original.spanCount}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalTokens",
+        header: "Tokens",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-300">
+            {formatCompactNumber(row.original.totalTokens)}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalCost",
+        header: "Cost",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-semibold text-white">
+            {formatCost(row.original.totalCost)}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "avgDuration",
+        header: "Avg Latency",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-400">
+            {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "-"}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        id: "costPerCall",
+        header: "Cost/Call",
+        accessorFn: (row) => (row.spanCount > 0 ? row.totalCost / row.spanCount : 0),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-500">
+            {row.original.spanCount > 0
+              ? formatCost(row.original.totalCost / row.original.spanCount)
+              : "-"}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+    ],
+    []
+  );
 
   if (isLoading) {
     return (
@@ -83,7 +200,7 @@ export default function Models() {
             <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
               <div className="hud-label">Models active</div>
               <div className="mt-2 text-lg font-medium text-white">
-                {byModel.length}
+                <NumberTicker value={byModel.length} />
               </div>
               <div className="mt-1 text-sm text-slate-400">
                 Across {new Set(byModel.map((m) => m.provider)).size} providers
@@ -122,68 +239,7 @@ export default function Models() {
                 <span>{byModel.length} models</span>
               </span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-y-2 text-sm">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                    <th className="px-4 py-2">Model</th>
-                    <th className="px-4 py-2">Provider</th>
-                    <th className="px-4 py-2 text-right">Calls</th>
-                    <th className="px-4 py-2 text-right">Tokens</th>
-                    <th className="px-4 py-2 text-right">Cost</th>
-                    <th className="px-4 py-2 text-right">Avg Latency</th>
-                    <th className="px-4 py-2 text-right">Cost/Call</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byModel.map((model, index) => (
-                    <motion.tr
-                      key={`${model.provider}-${model.model}`}
-                      className="rounded-2xl border border-white/6 bg-white/4"
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.03 * index, duration: 0.3 }}
-                    >
-                      <td className="rounded-l-2xl px-4 py-4">
-                        <div className="font-mono text-xs font-semibold text-slate-100">
-                          {model.model}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2.5 w-2.5 rounded-full ${providerColors[model.provider] ?? "bg-purple-400"}`}
-                            style={{ boxShadow: "0 0 10px currentColor" }}
-                          />
-                          <span className="text-xs font-medium capitalize text-slate-200">
-                            {model.provider}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <span className="inline-flex items-center justify-center rounded-md border border-white/8 bg-slate-950/70 px-2 py-0.5 font-mono text-xs text-slate-400">
-                          {model.spanCount}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">
-                        {formatCompactNumber(model.totalTokens)}
-                      </td>
-                      <td className="px-4 py-4 text-right font-mono text-xs font-semibold text-white">
-                        {formatCost(model.totalCost)}
-                      </td>
-                      <td className="px-4 py-4 text-right font-mono text-xs text-slate-400">
-                        {model.avgDuration ? formatDuration(model.avgDuration) : "-"}
-                      </td>
-                      <td className="rounded-r-2xl px-4 py-4 text-right font-mono text-xs text-slate-500">
-                        {model.spanCount > 0
-                          ? formatCost(model.totalCost / model.spanCount)
-                          : "-"}
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable columns={modelColumns} data={byModel} sorting={sorting} onSortingChange={setSorting} />
           </motion.div>
 
           <div className="grid gap-5 xl:grid-cols-2">
@@ -202,34 +258,17 @@ export default function Models() {
                 </div>
                 <Clock className="h-4 w-4 text-sky-300" />
               </div>
-              <ResponsiveContainer
-                width="100%"
-                height={Math.max(280, latencyData.length * 52)}
-              >
-                <BarChart data={latencyData} layout="vertical">
-                  <CartesianGrid stroke="rgba(148,163,184,0.08)" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => formatDuration(v)}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 11, fill: "#cbd5e1" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={150}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v: number) => [formatDuration(v), "Avg latency"]}
-                  />
-                  <Bar dataKey="p50" fill="#38bdf8" radius={[0, 10, 10, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {latencyData.length > 0 ? (
+                <HorizontalMetricChart
+                  rows={latencyData}
+                  valueFormatter={formatDuration}
+                  barClassName="bg-[linear-gradient(90deg,rgba(56,189,248,0.95),rgba(34,211,238,0.78))]"
+                />
+              ) : (
+                <div className="empty-state h-[280px] text-slate-500">
+                  No latency data available yet.
+                </div>
+              )}
             </motion.div>
 
             <motion.div
@@ -247,34 +286,17 @@ export default function Models() {
                 </div>
                 <Cpu className="h-4 w-4 text-emerald-300" />
               </div>
-              <ResponsiveContainer
-                width="100%"
-                height={Math.max(280, tokenData.length * 52)}
-              >
-                <BarChart data={tokenData} layout="vertical">
-                  <CartesianGrid stroke="rgba(148,163,184,0.08)" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => formatCompactNumber(v)}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 11, fill: "#cbd5e1" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={150}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v: number) => [v.toLocaleString(), "Tokens"]}
-                  />
-                  <Bar dataKey="tokens" fill="#34d399" radius={[0, 10, 10, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {tokenData.length > 0 ? (
+                <HorizontalMetricChart
+                  rows={tokenData}
+                  valueFormatter={formatCompactNumber}
+                  barClassName="bg-[linear-gradient(90deg,rgba(52,211,153,0.95),rgba(14,165,233,0.78))]"
+                />
+              ) : (
+                <div className="empty-state h-[280px] text-slate-500">
+                  No token distribution data available yet.
+                </div>
+              )}
             </motion.div>
           </div>
         </>

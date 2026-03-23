@@ -1,18 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchStats } from "../api/client.ts";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   BarChart3,
   Coins,
   Layers,
@@ -23,23 +11,21 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { DonutBreakdown } from "../components/charts/DonutBreakdown.tsx";
+import { RankingBars } from "../components/charts/RankingBars.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
+import { DataTable } from "../components/DataTable.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import { StatisticsWithStatusGrid } from "../components/shadcn-studio/blocks/statistics-with-status-grid.tsx";
+import type { StatisticsCardProps } from "../components/shadcn-studio/blocks/statistics-with-status.tsx";
 import {
   formatCompactNumber,
   formatCost,
   formatDuration,
 } from "../lib/format.ts";
-
-const colors = [
-  "#34d399",
-  "#38bdf8",
-  "#818cf8",
-  "#f59e0b",
-  "#f97316",
-  "#f472b6",
-];
+import { providerColors } from "../lib/provider-colors.ts";
 
 const stagger = {
   container: { transition: { staggerChildren: 0.08 } },
@@ -54,43 +40,10 @@ const stagger = {
   },
 };
 
-const tooltipStyle = {
-  backgroundColor: "rgba(8, 15, 28, 0.96)",
-  border: "1px solid rgba(148, 163, 184, 0.14)",
-  borderRadius: "18px",
-  fontSize: 12,
-  boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-  backdropFilter: "blur(12px)",
-};
-
-function CostCard({
-  label,
-  value,
-  sub,
-  icon,
-  gradient,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  icon: ReactNode;
-  gradient: string;
-}) {
-  return (
-    <motion.div variants={stagger.item} className="metric-card">
-      <div className={`metric-orb ${gradient}`}>{icon}</div>
-      <div>
-        <div className="hud-label">{label}</div>
-        <div className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white">
-          {value}
-        </div>
-        {sub && <div className="mt-2 text-sm text-slate-400">{sub}</div>}
-      </div>
-    </motion.div>
-  );
-}
-
 export default function Costs() {
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "totalCost", desc: true },
+  ]);
   const { data: stats, isLoading } = useQuery({
     queryKey: ["stats"],
     queryFn: () => fetchStats(24),
@@ -99,17 +52,121 @@ export default function Costs() {
   const byModel = stats?.byModel ?? [];
   const byProvider = stats?.byProvider ?? [];
 
-  const modelChartData = byModel.map((model) => ({
-    name: model.model.length > 22 ? `${model.model.slice(0, 20)}...` : model.model,
-    cost: Number(model.totalCost.toFixed(6)),
-    tokens: model.totalTokens,
-    calls: model.spanCount,
+  const modelRanking = byModel.slice(0, 8).map((model) => ({
+    label: model.model,
+    provider: model.provider,
+    totalCost: model.totalCost,
+    totalTokens: model.totalTokens,
+    avgDuration: model.avgDuration ?? 0,
+    spanCount: model.spanCount,
   }));
 
-  const providerPieData = byProvider.map((provider) => ({
-    name: provider.provider,
-    value: Number(provider.totalCost.toFixed(6)),
+  const providerDistribution = byProvider.map((provider) => ({
+    label: provider.provider,
+    value: provider.totalCost,
+    color: providerColors[provider.provider] ?? "#38bdf8",
+    detail: `${provider.spanCount} calls · ${formatCompactNumber(provider.totalTokens)} tokens`,
   }));
+  const costStatCards: StatisticsCardProps[] = [
+    {
+      title: "Total Cost",
+      value: formatCost(stats?.totalCost ?? 0),
+      status: (stats?.totalCost ?? 0) > 0 ? "observe" : "unknown",
+      range: "Accumulated over the last 24 hours",
+      icon: <Coins className="h-4 w-4" />,
+    },
+    {
+      title: "Token Volume",
+      value: formatCompactNumber(stats?.totalTokens ?? 0),
+      status: (stats?.totalTokens ?? 0) > 0 ? "within" : "unknown",
+      range: `${stats?.totalSpans ?? 0} model calls observed`,
+      icon: <Zap className="h-4 w-4" />,
+    },
+    {
+      title: "Models in Rotation",
+      value: String(byModel.length),
+      status: byModel.length > 0 ? "within" : "unknown",
+      range: `${byProvider.length} providers contributing to spend`,
+      icon: <WalletCards className="h-4 w-4" />,
+    },
+  ];
+  const modelColumns = useMemo<ColumnDef<(typeof byModel)[number]>[]>(
+    () => [
+      {
+        accessorKey: "model",
+        header: "Model",
+        cell: ({ row }) => (
+          <div className="min-w-0">
+            <div className="truncate font-mono text-xs font-semibold text-slate-100">
+              {row.original.model}
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500">
+              {row.original.spanCount} calls in the current window
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "provider",
+        header: "Provider",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor: providerColors[row.original.provider] ?? "#a855f6",
+                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "#a855f6"}`,
+              }}
+            />
+            <span className="rounded-full border border-white/8 bg-white/4 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              {row.original.provider}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "spanCount",
+        header: "Calls",
+        cell: ({ row }) => (
+          <span className="inline-flex items-center justify-center rounded-full border border-white/8 bg-white/4 px-2.5 py-0.5 font-mono text-[11px] text-slate-300">
+            {row.original.spanCount}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalTokens",
+        header: "Tokens",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-300">
+            {row.original.totalTokens.toLocaleString()}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "totalCost",
+        header: "Cost",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-semibold text-white">
+            {formatCost(row.original.totalCost)}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+      {
+        accessorKey: "avgDuration",
+        header: "Avg Duration",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-500">
+            {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "-"}
+          </span>
+        ),
+        meta: { className: "text-right", cellClassName: "text-right" },
+      },
+    ],
+    [byModel]
+  );
 
   if (isLoading) {
     return (
@@ -134,7 +191,7 @@ export default function Costs() {
     <PageFrame
       eyebrow="Economic Layer"
       title="Understand where every token is converting into spend."
-      description="The economics view is now built like a cost cockpit. It surfaces burn concentration, provider mix, and the models that are consuming budget fastest."
+      description="This surface should answer two questions immediately: which models are burning budget, and which providers are quietly dominating the bill."
       aside={
         <div className="insight-panel">
           <LivePulse />
@@ -164,31 +221,13 @@ export default function Costs() {
       }
     >
       <motion.div
-        className="grid grid-cols-1 gap-4 md:grid-cols-3"
-        variants={stagger.container}
+        variants={stagger.item}
         initial="hidden"
         animate="show"
       >
-        <CostCard
-          icon={<Coins className="h-5 w-5" />}
-          label="Total Cost"
-          value={formatCost(stats?.totalCost ?? 0)}
-          sub="Accumulated over the last 24 hours"
-          gradient="bg-[linear-gradient(135deg,rgba(250,204,21,0.18),rgba(249,115,22,0.18))] text-amber-200"
-        />
-        <CostCard
-          icon={<Zap className="h-5 w-5" />}
-          label="Token Volume"
-          value={formatCompactNumber(stats?.totalTokens ?? 0)}
-          sub={`${stats?.totalSpans ?? 0} model calls observed`}
-          gradient="bg-[linear-gradient(135deg,rgba(56,189,248,0.18),rgba(168,85,247,0.18))] text-sky-200"
-        />
-        <CostCard
-          icon={<WalletCards className="h-5 w-5" />}
-          label="Models in Rotation"
-          value={String(byModel.length)}
-          sub={`${byProvider.length} providers contributing to spend`}
-          gradient="bg-[linear-gradient(135deg,rgba(52,211,153,0.18),rgba(14,165,233,0.18))] text-emerald-200"
+        <StatisticsWithStatusGrid
+          cards={costStatCards}
+          className="max-w-none px-0 sm:px-0 lg:px-0 md:grid-cols-3 xl:grid-cols-3"
         />
       </motion.div>
 
@@ -212,34 +251,8 @@ export default function Costs() {
             </span>
           </div>
 
-          {modelChartData.length > 0 ? (
-            <div className="relative min-h-[320px]">
-              <ResponsiveContainer width="100%" height={Math.max(320, modelChartData.length * 58)}>
-                <BarChart data={modelChartData} layout="vertical">
-                  <CartesianGrid stroke="rgba(148,163,184,0.08)" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(value: number) => formatCost(value)}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 11, fill: "#cbd5e1" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={160}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(value: number) => [formatCost(value), "Cost"]}
-                  />
-                  <Bar dataKey="cost" fill="#34d399" radius={[0, 10, 10, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          {modelRanking.length > 0 ? (
+            <RankingBars rows={modelRanking} />
           ) : (
             <div className="empty-state h-[320px]">
               <BarChart3 className="h-8 w-8 text-slate-500" />
@@ -267,55 +280,12 @@ export default function Costs() {
             <Orbit className="h-4 w-4 text-sky-300" />
           </div>
 
-          {providerPieData.length > 0 ? (
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-              <ResponsiveContainer width="100%" height={260} className="lg:max-w-[260px]">
-                <PieChart>
-                  <Pie
-                    data={providerPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={62}
-                    outerRadius={96}
-                    paddingAngle={3}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
-                    {providerPieData.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(value: number) => [formatCost(value), "Cost"]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-3">
-                {providerPieData.map((provider, index) => (
-                  <div
-                    key={provider.name}
-                    className="rounded-2xl border border-white/6 bg-white/4 p-3.5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="h-3 w-3 shrink-0 rounded-sm"
-                        style={{
-                          backgroundColor: colors[index % colors.length],
-                          boxShadow: `0 0 10px ${colors[index % colors.length]}50`,
-                        }}
-                      />
-                      <span className="flex-1 text-sm font-medium capitalize text-white">
-                        {provider.name}
-                      </span>
-                      <span className="font-mono text-xs text-slate-400">
-                        {formatCost(provider.value)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {providerDistribution.length > 0 ? (
+            <DonutBreakdown
+              segments={providerDistribution}
+              totalLabel="24h spend"
+              totalValue={formatCost(stats?.totalCost ?? 0)}
+            />
           ) : (
             <div className="empty-state h-[260px]">
               <Layers className="h-8 w-8 text-slate-500" />
@@ -347,68 +317,7 @@ export default function Costs() {
               <span>{byModel.length} models</span>
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-2 text-sm">
-              <thead>
-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                  <th className="px-4 py-2">Model</th>
-                  <th className="px-4 py-2">Provider</th>
-                  <th className="px-4 py-2 text-right">Calls</th>
-                  <th className="px-4 py-2 text-right">Tokens</th>
-                  <th className="px-4 py-2 text-right">Cost</th>
-                  <th className="px-4 py-2 text-right">Avg Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byModel.map((model, index) => {
-                  const providerColors: Record<string, string> = {
-                    openai: "bg-emerald-400",
-                    anthropic: "bg-amber-300",
-                    google: "bg-sky-400",
-                  };
-
-                  return (
-                    <motion.tr
-                      key={`${model.provider}-${model.model}`}
-                      className="rounded-2xl border border-white/6 bg-white/4"
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.03 * index, duration: 0.3 }}
-                    >
-                      <td className="rounded-l-2xl px-4 py-4 font-mono text-xs font-semibold text-slate-100">
-                        {model.model}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2.5 w-2.5 rounded-full ${providerColors[model.provider] ?? "bg-purple-400"}`}
-                            style={{ boxShadow: "0 0 10px currentColor" }}
-                          />
-                          <span className="text-xs font-medium capitalize text-slate-200">
-                            {model.provider}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <span className="inline-flex items-center justify-center rounded-md border border-white/8 bg-slate-950/70 px-2 py-0.5 font-mono text-xs text-slate-400">
-                          {model.spanCount}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">
-                        {model.totalTokens.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-4 text-right font-mono text-xs font-semibold text-white">
-                        {formatCost(model.totalCost)}
-                      </td>
-                      <td className="rounded-r-2xl px-4 py-4 text-right font-mono text-xs text-slate-500">
-                        {model.avgDuration ? formatDuration(model.avgDuration) : "-"}
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable columns={modelColumns} data={byModel} sorting={sorting} onSortingChange={setSorting} />
         </motion.div>
       ) : (
         <motion.div

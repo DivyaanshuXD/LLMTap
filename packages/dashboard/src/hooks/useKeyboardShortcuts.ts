@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 interface KeyboardShortcutsOptions {
   onToggleHelp: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 /**
@@ -18,7 +19,7 @@ interface KeyboardShortcutsOptions {
  * - `?`: Show shortcuts help
  * - `Esc`: Close modals/panels
  */
-export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsOptions): void {
+export function useKeyboardShortcuts({ onToggleHelp, onOpenCommandPalette }: KeyboardShortcutsOptions): void {
   const navigate = useNavigate();
   const pendingGRef = useRef(false);
   const pendingGTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,16 +36,10 @@ export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsOptions)
       // Don't intercept when typing in inputs (except Escape)
       if (isInput && e.key !== "Escape") return;
 
-      // Ctrl+K or / -> focus search
+      // Ctrl+K or / -> open command palette
       if (e.key === "/" || (e.key === "k" && (e.ctrlKey || e.metaKey))) {
         e.preventDefault();
-        const searchInput = document.querySelector<HTMLInputElement>(
-          'input[type="text"][placeholder*="earch"], input[type="search"]'
-        );
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
+        onOpenCommandPalette?.();
         return;
       }
 
@@ -109,7 +104,7 @@ export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsOptions)
         return;
       }
     },
-    [navigate, onToggleHelp]
+    [navigate, onToggleHelp, onOpenCommandPalette]
   );
 
   useEffect(() => {

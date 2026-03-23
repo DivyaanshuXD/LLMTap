@@ -1,18 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchStats, fetchTraces, fetchInsights } from "../api/client.ts";
-import type { Trace, Insight } from "../api/client.ts";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import {
   Activity,
   AlertTriangle,
@@ -33,10 +22,25 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { GettingStartedPanel } from "../components/GettingStartedPanel.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
+import { StatusDot } from "../components/StatusDot.tsx";
+import { GlowingLineChart } from "../components/charts/line-chart.tsx";
 import {
-  formatClockTime,
+  StatisticsWithStatusGrid,
+} from "../components/shadcn-studio/blocks/statistics-with-status-grid.tsx";
+import type { StatisticsCardProps } from "../components/shadcn-studio/blocks/statistics-with-status.tsx";
+import { Button } from "../components/ui/button.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select.tsx";
+import { PERIOD_OPTIONS } from "../lib/constants.ts";
+import {
   formatCompactNumber,
   formatCost,
   formatDuration,
@@ -44,67 +48,6 @@ import {
 } from "../lib/format.ts";
 
 const PAGE_SIZE_OPTIONS = [12, 25, 50, 100] as const;
-const PERIOD_OPTIONS = [
-  { value: 1, label: "1h" },
-  { value: 6, label: "6h" },
-  { value: 24, label: "24h" },
-  { value: 168, label: "7d" },
-  { value: 720, label: "30d" },
-] as const;
-
-const tooltipStyle = {
-  backgroundColor: "rgba(8, 15, 28, 0.96)",
-  border: "1px solid rgba(148, 163, 184, 0.14)",
-  borderRadius: "18px",
-  fontSize: 12,
-  boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-  backdropFilter: "blur(12px)",
-};
-
-function MetricCard({
-  label,
-  value,
-  detail,
-  accent,
-  icon,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  accent: string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="metric-card">
-      <div className={`metric-orb ${accent}`}>{icon}</div>
-      <div>
-        <div className="hud-label">{label}</div>
-        <div className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white">
-          {value}
-        </div>
-        <div className="mt-1 text-sm text-slate-400">{detail}</div>
-      </div>
-    </div>
-  );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const isError = status === "error";
-  return (
-    <span className="relative flex h-3.5 w-3.5 items-center justify-center">
-      <span
-        className={`absolute inset-0 rounded-full ${
-          isError ? "bg-rose-400/25" : "bg-emerald-400/25"
-        }`}
-      />
-      <span
-        className={`relative h-2 w-2 rounded-full ${
-          isError ? "bg-rose-400" : "bg-emerald-300"
-        }`}
-      />
-    </span>
-  );
-}
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -180,10 +123,41 @@ export default function Dashboard() {
   const providerOptions = [...new Set(stats?.byProvider.map((item) => item.provider) ?? [])];
   const chartData =
     stats?.costOverTime.map((point) => ({
-      time: formatClockTime(point.timestamp),
+      timestamp: point.timestamp,
       cost: point.cost,
     })) ?? [];
   const avgCost = stats && stats.totalSpans > 0 ? stats.totalCost / stats.totalSpans : 0;
+  const errorRatePercent = Math.round((stats?.errorRate ?? 0) * 100);
+  const dashboardStatsCards: StatisticsCardProps[] = [
+    {
+      title: "Trace Volume",
+      value: formatCompactNumber(stats?.totalTraces ?? 0),
+      status: (stats?.totalTraces ?? 0) > 0 ? "within" : "unknown",
+      range: `${stats?.totalSpans ?? 0} spans in window`,
+      icon: <Radar className="h-4 w-4" />,
+    },
+    {
+      title: "Token Throughput",
+      value: formatCompactNumber(stats?.totalTokens ?? 0),
+      status: (stats?.totalTokens ?? 0) > 0 ? "within" : "unknown",
+      range: "Token load across active filter window",
+      icon: <Cpu className="h-4 w-4" />,
+    },
+    {
+      title: "Spend Velocity",
+      value: formatCost(stats?.totalCost ?? 0),
+      status: avgCost > 0 ? "observe" : "unknown",
+      range: `${formatCost(avgCost)} avg per call`,
+      icon: <TrendingUp className="h-4 w-4" />,
+    },
+    {
+      title: "Risk Surface",
+      value: `${errorRatePercent}%`,
+      status: errorRatePercent >= 8 ? "exceed" : errorRatePercent >= 3 ? "observe" : "within",
+      range: `${stats?.errorCount ?? 0} failing calls`,
+      icon: <ShieldAlert className="h-4 w-4" />,
+    },
+  ];
   const hasActiveFilters =
     searchTerm.length > 0 || provider.length > 0 || validStatus.length > 0 || traceQuery.periodHours !== 24;
 
@@ -209,12 +183,12 @@ export default function Dashboard() {
     <PageFrame
       eyebrow="Flight Deck"
       title="Read the behavior of every model call like a live system."
-      description="The dashboard should act like an operator console. This version adds a real trace search surface, URL-synced filters, and paginated queue control."
+      description="LLMTap should feel like a live operator console, not a half-finished devtool. This view keeps spend movement, provider pressure, queue state, and the latest traces readable in one sweep."
       aside={
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="surface-strong rounded-2xl p-4">
               <div className="hud-label">Dominant provider</div>
               <div className="mt-2 flex items-center justify-between">
                 <div className="text-lg font-medium capitalize text-white">
@@ -228,7 +202,7 @@ export default function Dashboard() {
                   : "No provider activity yet"}
               </div>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="surface-strong rounded-2xl p-4">
               <div className="hud-label">Latest trace</div>
               <div className="mt-2 text-base font-medium text-white">
                 {latestTrace?.name ?? "No recent traces"}
@@ -243,36 +217,10 @@ export default function Dashboard() {
         </div>
       }
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Trace Volume"
-          value={formatCompactNumber(stats?.totalTraces ?? 0)}
-          detail={`${stats?.totalSpans ?? 0} spans in window`}
-          icon={<Radar className="h-5 w-5" />}
-          accent="bg-[linear-gradient(135deg,rgba(52,211,153,0.18),rgba(14,165,233,0.18))] text-emerald-200"
-        />
-        <MetricCard
-          label="Token Throughput"
-          value={formatCompactNumber(stats?.totalTokens ?? 0)}
-          detail="Token load across the active filter window"
-          icon={<Cpu className="h-5 w-5" />}
-          accent="bg-[linear-gradient(135deg,rgba(56,189,248,0.18),rgba(168,85,247,0.18))] text-sky-200"
-        />
-        <MetricCard
-          label="Spend Velocity"
-          value={formatCost(stats?.totalCost ?? 0)}
-          detail={`${formatCost(avgCost)} average cost per call`}
-          icon={<TrendingUp className="h-5 w-5" />}
-          accent="bg-[linear-gradient(135deg,rgba(251,191,36,0.18),rgba(249,115,22,0.18))] text-amber-200"
-        />
-        <MetricCard
-          label="Risk Surface"
-          value={`${Math.round((stats?.errorRate ?? 0) * 100)}%`}
-          detail={`${stats?.errorCount ?? 0} failing calls`}
-          icon={<ShieldAlert className="h-5 w-5" />}
-          accent="bg-[linear-gradient(135deg,rgba(244,63,94,0.18),rgba(168,85,247,0.18))] text-rose-200"
-        />
-      </div>
+      <StatisticsWithStatusGrid
+        cards={dashboardStatsCards}
+        className="max-w-none px-0 sm:px-0 lg:px-0"
+      />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.95fr)]">
         <section className="dashboard-shell rounded-[26px] px-5 py-5 sm:px-6">
@@ -289,25 +237,62 @@ export default function Dashboard() {
             </div>
           </div>
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="dashboardCostFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#34d399" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={54} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatCost(value), "Cost"]} />
-                <Area type="monotone" dataKey="cost" stroke="#34d399" fill="url(#dashboardCostFill)" strokeWidth={2.6} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(6,12,22,0.98),rgba(4,8,17,0.98))] p-4">
+              <GlowingLineChart
+                data={chartData}
+                xDataKey="timestamp"
+                primaryDataKey="cost"
+              />
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="surface-muted rounded-2xl p-4">
+                  <div className="hud-label">Latest</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatCost(chartData.at(-1)?.cost ?? 0)}
+                  </div>
+                </div>
+                <div className="surface-muted rounded-2xl p-4">
+                  <div className="hud-label">Peak</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatCost(
+                      Math.max(...chartData.map((point) => point.cost), 0)
+                    )}
+                  </div>
+                </div>
+                <div className="surface-muted rounded-2xl p-4">
+                  <div className="hud-label">Change</div>
+                  <div
+                    className={`mt-2 text-lg font-semibold ${
+                      (chartData.at(-1)?.cost ?? 0) -
+                        (chartData.at(-2)?.cost ?? chartData.at(-1)?.cost ?? 0) >=
+                      0
+                        ? "text-emerald-200"
+                        : "text-rose-200"
+                    }`}
+                  >
+                    {(chartData.at(-1)?.cost ?? 0) -
+                      (chartData.at(-2)?.cost ?? chartData.at(-1)?.cost ?? 0) >=
+                    0
+                      ? "+"
+                      : "-"}
+                    {formatCost(
+                      Math.abs(
+                        (chartData.at(-1)?.cost ?? 0) -
+                          (chartData.at(-2)?.cost ??
+                            chartData.at(-1)?.cost ??
+                            0)
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="empty-state h-[320px]">
               <TrendingUp className="h-8 w-8 text-slate-500" />
               <div className="text-base font-medium text-white">No cost movement yet</div>
+              <div className="max-w-sm text-center text-sm text-slate-500">
+                This turns into a live spend curve as soon as the collector receives traced calls.
+              </div>
             </div>
           )}
         </section>
@@ -326,7 +311,7 @@ export default function Dashboard() {
                   ? (providerEntry.totalCost / (stats?.totalCost ?? 1)) * 100
                   : 0;
               return (
-                <div key={providerEntry.provider} className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div key={providerEntry.provider} className="surface-muted rounded-2xl p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium capitalize text-white">{providerEntry.provider}</div>
@@ -341,9 +326,10 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900/80">
                     <motion.div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,#34d399,#38bdf8)]"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.max(ratio, 4)}%` }}
+                      className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#34d399,#38bdf8)]"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: Math.max(ratio, 4) / 100 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
                     />
                   </div>
                 </div>
@@ -355,7 +341,7 @@ export default function Dashboard() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
         <section className="dashboard-shell rounded-[26px] px-4 py-4 sm:px-5 sm:py-5">
-          <div className="mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(7,14,26,0.95),rgba(4,8,18,0.98))] p-4">
+          <div className="surface-strong mb-4 rounded-[24px] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="hud-label">Search console</div>
@@ -380,108 +366,70 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_repeat(3,minmax(0,0.7fr))]">
-              <label className="relative block">
+              <label className="field-surface relative block rounded-2xl">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
                   value={searchTerm}
                   onChange={(event) => updateParams({ q: event.target.value || undefined })}
                   placeholder="Search traces, models, providers, errors"
-                  className="w-full rounded-2xl border border-white/8 bg-white/4 py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:bg-white/6 focus:outline-none"
+                  className="w-full rounded-2xl bg-transparent py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none"
                 />
               </label>
-              <select
-                value={provider}
-                onChange={(event) => updateParams({ provider: event.target.value || undefined })}
-                className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-sky-400/30 focus:bg-white/6 focus:outline-none"
+              <Select
+                value={provider || "__all__"}
+                onValueChange={(val) => updateParams({ provider: val === "__all__" ? undefined : val })}
               >
-                <option value="">All providers</option>
-                {providerOptions.map((providerOption) => (
-                  <option key={providerOption} value={providerOption}>
-                    {providerOption}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={validStatus}
-                onChange={(event) => updateParams({ status: event.target.value || undefined })}
-                className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-emerald-400/30 focus:bg-white/6 focus:outline-none"
+                <SelectTrigger className="w-full rounded-2xl py-3">
+                  <SelectValue placeholder="All providers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All providers</SelectItem>
+                  {providerOptions.map((providerOption) => (
+                    <SelectItem key={providerOption} value={providerOption}>
+                      {providerOption}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={validStatus || "__all__"}
+                onValueChange={(val) => updateParams({ status: val === "__all__" ? undefined : val })}
               >
-                <option value="">All states</option>
-                <option value="ok">Healthy only</option>
-                <option value="error">Errors only</option>
-              </select>
-              <select
+                <SelectTrigger className="w-full rounded-2xl py-3">
+                  <SelectValue placeholder="All states" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All states</SelectItem>
+                  <SelectItem value="ok">Healthy only</SelectItem>
+                  <SelectItem value="error">Errors only</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
                 value={String(traceQuery.periodHours ?? 24)}
-                onChange={(event) =>
+                onValueChange={(val) =>
                   updateParams({
-                    periodHours:
-                      Number(event.target.value) === 24 ? undefined : Number(event.target.value),
+                    periodHours: Number(val) === 24 ? undefined : Number(val),
                   })
                 }
-                className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white focus:border-amber-400/30 focus:bg-white/6 focus:outline-none"
               >
-                {PERIOD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full rounded-2xl py-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERIOD_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {tracesLoading ? (
             <div className="empty-state h-[280px] text-slate-500">Loading trace queue...</div>
           ) : traces.length === 0 && !hasActiveFilters ? (
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-6 sm:p-8">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <Activity className="h-10 w-10 text-amber-400/60" />
-                <div>
-                  <div className="text-lg font-semibold text-white">No traces recorded yet</div>
-                  <p className="mt-1 text-sm text-slate-400">Get started in 3 steps — takes under a minute.</p>
-                </div>
-              </div>
-
-              <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-4">
-                <div className="rounded-xl border border-white/6 bg-white/3 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/20 text-[10px] font-bold text-amber-400">1</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Install the SDK</span>
-                  </div>
-                  <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 text-sm leading-relaxed text-green-400 select-all">npm install @llmtap/sdk</pre>
-                </div>
-
-                <div className="rounded-xl border border-white/6 bg-white/3 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/20 text-[10px] font-bold text-amber-400">2</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Wrap your client &amp; use normally</span>
-                  </div>
-                  <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 text-sm leading-relaxed text-green-400 select-all whitespace-pre">{`import { wrap } from "@llmtap/sdk";
-import OpenAI from "openai";
-
-const client = wrap(new OpenAI());
-
-const res = await client.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [{ role: "user", content: "Hello!" }],
-});`}</pre>
-                </div>
-
-                <div className="rounded-xl border border-white/6 bg-white/3 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/20 text-[10px] font-bold text-amber-400">3</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Start the collector</span>
-                  </div>
-                  <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 text-sm leading-relaxed text-green-400 select-all">npx llmtap</pre>
-                  <p className="mt-2 text-xs text-slate-500">Run your app and traces will appear here automatically.</p>
-                </div>
-              </div>
-
-              <div className="mx-auto mt-4 max-w-3xl rounded-lg border border-white/4 bg-white/2 px-4 py-2.5">
-                <p className="text-center text-xs text-slate-500">
-                  Works with <span className="text-slate-400">OpenAI</span>, <span className="text-slate-400">Anthropic</span>, <span className="text-slate-400">Google Gemini</span>, <span className="text-slate-400">DeepSeek</span>, <span className="text-slate-400">Groq</span>, <span className="text-slate-400">Together</span>, <span className="text-slate-400">Fireworks</span>, <span className="text-slate-400">OpenRouter</span>, and any OpenAI-compatible provider.
-                </p>
-              </div>
-            </div>
+            <GettingStartedPanel />
           ) : traces.length === 0 ? (
             <div className="empty-state h-[280px]">
               <Activity className="h-8 w-8 text-slate-500" />
@@ -515,7 +463,7 @@ const res = await client.chat.completions.create({
                   </thead>
                   <tbody>
                     {traces.map((trace) => (
-                      <tr key={trace.traceId} className="rounded-2xl border border-white/6 bg-white/4">
+                      <tr key={trace.traceId} className="table-row-surface rounded-2xl">
                         <td className="rounded-l-2xl px-4 py-4">
                           <StatusDot status={trace.status} />
                         </td>
@@ -549,35 +497,39 @@ const res = await client.chat.completions.create({
                   <div className="text-xs text-slate-500">
                     {totalMatches > 0 ? `Showing ${offset + 1}-${Math.min(offset + traces.length, totalMatches)} of ${totalMatches}` : "Awaiting traces"}
                   </div>
-                  <select
+                  <Select
                     value={String(effectivePageSize)}
-                    onChange={(event) => updateParams({ pageSize: Number(event.target.value) === 12 ? undefined : Number(event.target.value) })}
-                    className="rounded-xl border border-white/8 bg-white/4 px-2 py-1.5 text-xs text-slate-300 focus:border-emerald-400/30 focus:outline-none"
+                    onValueChange={(val) => updateParams({ pageSize: Number(val) === 12 ? undefined : Number(val) })}
                   >
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>{size} / page</option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-auto rounded-xl px-2 py-1.5 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <SelectItem key={size} value={String(size)}>{size} / page</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => updateParams({ page: page > 2 ? page - 1 : undefined }, false)}
                     disabled={page <= 1}
-                    className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     <span>Previous</span>
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => updateParams({ page: page + 1 }, false)}
                     disabled={page >= totalPages}
-                    className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span>Next</span>
                     <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>
@@ -625,7 +577,7 @@ const res = await client.chat.completions.create({
               ))
             ) : (
               <>
-                <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
                     <Sparkles className="h-4 w-4 text-sky-300" />
                     Health read
@@ -636,7 +588,7 @@ const res = await client.chat.completions.create({
                       : "Error pressure is currently low. Use this window to compare provider cost drift and latency patterns."}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
                     <TrendingUp className="h-4 w-4 text-emerald-300" />
                     Spend insight
@@ -647,7 +599,7 @@ const res = await client.chat.completions.create({
                       : "Provider concentration will appear here once traces land."}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
                     <AlertTriangle className="h-4 w-4 text-amber-300" />
                     Queue focus

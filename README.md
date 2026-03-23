@@ -19,9 +19,11 @@
 
 ---
 
-Most LLM observability tools require cloud accounts, proxy configurations, or framework-specific callbacks. LLMTap takes a different approach: it runs entirely on your machine, instruments any LLM client with a single function call, and gives you a real-time dashboard at `localhost`.
+Most LLM observability tools start by asking you to change infrastructure. LLMTap starts by showing you what your app is already doing.
 
-No sign-ups. No API keys to manage the tool itself. Your prompts and responses never leave your machine.
+Run one local command, wrap your LLM client once, and every call starts showing up in a live dashboard with traces, token counts, latency, and spend. No sign-ups. No proxy. No platform account required.
+
+If your app can already talk to OpenAI, Anthropic, Gemini, or an OpenAI-compatible provider, LLMTap is meant to be the fastest way to see what is actually happening.
 
 <!-- hero-screenshot -->
 
@@ -29,15 +31,17 @@ No sign-ups. No API keys to manage the tool itself. Your prompts and responses n
 
 ## Quick Start
 
-**1. Start LLMTap**
+You should be able to go from zero to the first visible trace in under a minute.
+
+**1. Start LLMTap locally**
 
 ```bash
 npx llmtap
 ```
 
-The collector starts on `http://localhost:4781` and opens the dashboard.
+This starts the local collector on `http://localhost:4781` and opens the dashboard.
 
-**2. Instrument your code**
+**2. Wrap the client your app already uses**
 
 ```typescript
 import OpenAI from "openai";
@@ -46,17 +50,24 @@ import { wrap } from "@llmtap/sdk";
 const client = wrap(new OpenAI());
 ```
 
-**3. Use your client as normal**
+**3. Make one normal model call**
 
 ```typescript
-const res = await client.chat.completions.create({
+await client.chat.completions.create({
   model: "gpt-4o",
   messages: [{ role: "user", content: "Hello, world" }],
 });
-// Traced automatically -- tokens, cost, latency, full request/response
 ```
 
-Open `http://localhost:4781`. Traces appear in real time.
+**4. Confirm the result**
+
+Open `http://localhost:4781` and you should see:
+
+- a new trace in the queue
+- token and cost metrics update
+- the full request/response visible in trace detail
+
+That is the entire basic loop.
 
 ---
 
@@ -246,6 +257,62 @@ npx llmtap --demo              # Start with sample data
 npx llmtap --port 8080         # Custom port
 npx llmtap --retention 7d      # Auto-delete old data
 npx llmtap --host 0.0.0.0      # Expose to network
+npx llmtap status              # Check stored spans and DB location
+npx llmtap doctor              # Diagnose setup and empty-state issues
+npx llmtap backup              # Create a portable SQLite backup
+npx llmtap export -f json      # Export traces as JSON
+npx llmtap import traces.json  # Re-import exported traces
+npx llmtap restore backup.db   # Restore from a backup (collector must be stopped)
+```
+
+## Troubleshooting
+
+### The dashboard is open but nothing shows up
+
+Run:
+
+```bash
+npx llmtap doctor
+```
+
+Most empty states come down to one of these:
+
+- the collector is not running
+- `@llmtap/sdk` is not installed in the app you are running
+- the client was not wrapped with `wrap()`
+- your app has not made a model call yet
+
+The fastest sanity check is:
+
+```typescript
+import OpenAI from "openai";
+import { wrap } from "@llmtap/sdk";
+
+const client = wrap(new OpenAI());
+await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "ping" }],
+});
+```
+
+### Back up or move your local data
+
+LLMTap stores everything in a local SQLite database. You can make a portable backup at any time:
+
+```bash
+npx llmtap backup
+```
+
+If you exported traces as JSON and want them back in LLMTap later:
+
+```bash
+npx llmtap import llmtap-export.json
+```
+
+If you want to fully restore from a database backup, stop the running collector first:
+
+```bash
+npx llmtap restore llmtap-backup.db
 ```
 
 ---
@@ -266,7 +333,7 @@ LLMTap is a developer tool -- fast to start, private by default, zero friction. 
 ## Development
 
 ```bash
-git clone https://github.com/llmtap/llmtap.git
+git clone https://github.com/DivyaanshuXD/LLMTap.git
 cd llmtap
 pnpm install
 pnpm build        # Build all packages
