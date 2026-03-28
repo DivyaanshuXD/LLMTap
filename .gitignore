@@ -44,6 +44,9 @@ tmpclaude-*
 
 # SQLite (local dev data)
 .llmtap/
+packages/dashboard/.tmp/
+*.db-shm
+*.db-wal
 
 # Skills lock
 skills-lock.json
