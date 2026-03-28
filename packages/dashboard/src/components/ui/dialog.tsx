@@ -32,13 +32,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(12,18,32,0.98),rgba(4,8,18,0.99))] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(31,40,51,0.98),rgba(11,12,16,0.99))] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/8 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/8 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#66FCF1]/45">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

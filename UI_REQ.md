@@ -1,185 +1,213 @@
 # LLMTap UI Requirements
 
-This file is the sourcing list for premium external UI components that can replace the current lighter-weight internal surfaces.
+This file is the working contract for external UI sourcing and staged integration.
 
-The goal is not "more components". The goal is:
+## Non-Negotiable Rules
 
-- cleaner density
-- stronger hierarchy
-- better scanability
-- premium motion without stutter
-- components that still fit a dark operator-console product
+- Every raw `npx` command or copied external code snippet must be added inside `packages/dashboard/_ui_staging` first.
+- Nothing from external UI sources should touch `packages/dashboard/src` until the staged version is reviewed and mapped properly.
+- Animate UI is the first-choice source.
+- If Animate UI does not have the required component, fallback sources are allowed only if they are public, no-login, copyable, and practical to integrate.
+- The project palette is fixed to:
+  - `#0B0C10`
+  - `#1F2833`
+  - `#C5C6C7`
+  - `#66FCF1`
+  - `#45A29E`
 
-## Ground Rules
+## Active Source Commands
 
-- Prefer React + Tailwind compatible components.
-- Prefer components that are already production-usable, not just visual demos.
-- Prefer components with clear composition and editable source.
-- Avoid components that depend on huge charting stacks unless they are genuinely worth the weight.
-- Avoid novelty animations that hurt readability or FPS.
+- Sidebar:
+  - `npx shadcn@latest add @animate-ui/components-radix-sidebar`
+- Accordion:
+  - `npx shadcn@latest add @animate-ui/components-base-accordion`
+- Background hero:
+  - `npm install motion`
+  - staged source: `packages/dashboard/_ui_staging/GravityStarsBackground.tsx`
 
-## Highest Priority Requests
+## Current Staging Status
 
-### 1. Data Table / Operator Table
+- `GravityStarsBackground`
+  - staged and mapped into live hero usage
+- `Accordion`
+  - exact Animate UI component installed and mapped into Overview and Settings
+- `Sidebar`
+  - exact Animate UI source has been inspected, but it pulls additional Animate UI dependencies and helper files before it can safely replace the live shell
+  - do not promote it until the dependency chain is staged cleanly
 
-Need a premium table for:
+## Animate UI Inventory Available
 
-- Traces page
-- Sessions page
-- Costs model breakdown
-- Future models/provider registries
+### Animate UI
 
-Wanted qualities:
+- Avatar Group
+- Code
+- Code Tabs
+- Cursor
+- GitHub Stars Wheel
+- Tabs
+- Tooltip
 
-- compact but readable rows
-- sticky header
-- sortable columns
-- row selection
-- elegant hover/active states
-- good empty state support
-- dark theme first
-- looks like a serious ops console, not generic admin template
+### Radix UI
 
-Keywords to search:
+- Accordion
+- Alert Dialog
+- Checkbox
+- Dialog
+- Dropdown Menu
+- Files
+- Hover Card
+- Popover
+- Preview Link Card
+- Progress
+- Radio Group
+- Sheet
+- Sidebar
+- Switch
+- Tabs
+- Toggle
+- Toggle Group
+- Tooltip
 
-- `data table`
-- `command center table`
-- `analytics table`
-- `ops dashboard table`
+### Base UI
 
-### 2. Line / Area Chart For Spend Trend
+- Accordion
+- Alert Dialog
+- Checkbox
+- Dialog
+- Files
+- Menu
+- Popover
+- Preview Card
+- Preview Link Card
+- Progress
+- Radio
+- Switch
+- Tabs
+- Toggle
+- Toggle Group
+- Tooltip
 
-Need for:
+### Headless UI
 
-- Dashboard "Economic pulse / Cost gradient"
-- possible future token trend / latency trend
+- Accordion
+- Checkbox
+- Dialog
+- Popover
+- Switch
+- Tabs
 
-Wanted qualities:
+### Buttons
 
-- smooth but subtle animation
-- premium gradients
-- clean axes and tooltip styling
-- readable on dark surfaces
-- does not feel like default chart library output
-- low-overhead if possible
+- Button
+- Copy Button
+- Flip Button
+- GitHub Stars Button
+- Icon Button
+- Liquid Button
+- Ripple Button
+- Theme Toggler Button
 
-Keywords to search:
+### Backgrounds
 
-- `line chart`
-- `area chart`
-- `analytics trend chart`
-- `revenue trend chart`
+- Bubble Background
+- Fireworks Background
+- Gradient Background
+- Gravity Stars Background
+- Hexagon Background
+- Hole Background
+- Stars Background
 
-### 3. Donut / Radial Breakdown
+### Community
 
-Need for:
+- Introduction
+- Flip Card
+- Management Bar
+- Motion Carousel
+- Notification List
+- Pin List
+- Playful Todolist
+- Radial Intro
+- Radial Menu
+- Radial Nav
+- Share Button
+- User Presence Avatar
 
-- provider share on Costs page
-- possibly model share or status share later
+## Current Integration Priorities
 
-Wanted qualities:
-
-- very clean labeling
-- good legend treatment
-- balanced spacing
-- readable with small segment counts
-- strong dark-theme look
-
-Keywords to search:
-
-- `donut chart`
-- `radial breakdown`
-- `allocation chart`
-
-### 4. Ranking Bars / Horizontal Comparison Bars
-
-Need for:
-
-- model cost ranking
-- model latency ranking
-- token distribution ranking
-
-Wanted qualities:
-
-- strong typography
-- good label/value alignment
-- compact stacked ranking style
-- premium progress-bar rendering
-
-Keywords to search:
-
-- `ranking bars`
-- `horizontal bar analytics`
-- `leaderboard component`
-
-### 5. Command Palette / Search Overlay
-
-Need for:
-
-- app-wide navigation palette
-- later quick actions like export, doctor, reset, open trace
-
-Wanted qualities:
-
-- crisp dark overlay
-- premium focus/input treatment
-- polished result rows
-- keyboard hint support
-- no washed-out borders
-
-Keywords to search:
-
-- `command palette`
-- `spotlight search`
-- `raycast style search`
-
-### 6. Sidebar / Rail Navigation
+### 1. Sidebar / Rail Navigation
 
 Need for:
 
 - desktop nav rail
 - collapsed sidebar behavior
+- clean dock geometry
 
 Wanted qualities:
 
-- proper collapsed dock state
 - precise icon alignment
-- premium selection indicator
-- compact but stable geometry
-- no broken wide empty rail
+- no text overlap in collapsed mode
+- one collapse control only
+- premium selection state
 
-Keywords to search:
+Suggested Animate UI candidates:
 
-- `sidebar`
-- `dock sidebar`
-- `collapsed nav rail`
-- `app shell navigation`
+- Sidebar
+- Radial Nav
+- Icon Button
 
-### 7. Stat Cards / KPI Cards
+### 2. Command Palette / Search Overlay
 
 Need for:
 
-- Dashboard metrics
-- Costs summary
-- Sessions summary
-- Settings system status
+- app-wide quick navigation
+- future quick actions
 
 Wanted qualities:
 
-- premium but restrained
-- strong typography
+- premium dark shell
+- crisp input treatment
+- polished result rows
+- stable keyboard hints
+
+Suggested Animate UI candidates:
+
+- Dialog
+- Tabs
+- Tooltip
+- Icon Button
+
+### 3. Data Table / Operator Table
+
+Need for:
+
+- Traces page
+- Sessions page
+- Costs breakdown
+- Models breakdown
+
+Wanted qualities:
+
+- compact rows
+- sticky header
+- row selection
+- elegant hover state
+- dense but readable
+
+### 4. Line / Area Chart
+
+Need for:
+
+- Dashboard spend trend
+- future latency and token trends
+
+Wanted qualities:
+
 - subtle motion
-- better than generic glassmorphism
-- works in dense dashboards
+- dark-theme readability
+- premium gradient treatment
+- low overhead
 
-Keywords to search:
-
-- `stats card`
-- `kpi card`
-- `metric card`
-- `analytics summary card`
-
-### 8. Empty State / First-Run State
+### 5. Empty State / First-Run State
 
 Need for:
 
@@ -188,125 +216,68 @@ Need for:
 - Costs empty state
 - Traces no-results state
 
-Wanted qualities:
+Suggested Animate UI candidates:
 
-- highly professional onboarding feel
-- not childish
-- shows exactly what to do next
-- compact code/example blocks
-- polished visual hierarchy
+- Code
+- Code Tabs
+- Tooltip
+- Tabs
 
-Keywords to search:
-
-- `empty state`
-- `onboarding panel`
-- `getting started block`
-
-## Secondary Priority Requests
-
-### 9. Timeline / Trace Tree Visual Enhancer
+### 6. KPI / Stat Cards
 
 Need for:
 
-- Trace detail hierarchy
+- Dashboard
+- Costs
+- Models
+- Sessions
+- Settings
 
-Wanted qualities:
+Suggested Animate UI candidates:
 
-- cleaner indentation/tree readability
-- better time bars
-- compact but premium nested execution view
+- Tooltip
+- Flip Card
+- Preview Card
 
-Keywords to search:
-
-- `timeline`
-- `tree view`
-- `trace viewer`
-- `execution timeline`
-
-### 10. Settings Section Cards
+### 7. Dense Trace Detail / Timeline
 
 Need for:
 
-- export/backup/import/reset/retention/OTLP blocks
+- trace hierarchy
+- nested execution blocks
+- payload sections
 
 Wanted qualities:
 
-- cleaner grouping
-- less clutter
-- more confidence-inspiring controls
-- neat action layouts
-
-Keywords to search:
-
-- `settings panel`
-- `configuration card`
-- `tool settings section`
-
-### 11. Session Registry Surface
-
-Need for:
-
-- sessions page identity and grouping view
-
-Wanted qualities:
-
-- session cards or tighter rows
-- clearer first/last active indicators
-- stronger relationship between session, traces, and cost
-
-Keywords to search:
-
-- `activity list`
-- `conversation list`
-- `session table`
-
-### 12. Insight / Alert Cards
-
-Need for:
-
-- dashboard insights
-- future diagnostics and anomaly surfaces
-
-Wanted qualities:
-
-- severity styling
-- clean icon hierarchy
-- concise metric badges
+- compact grouping
+- clear tree depth
+- better timing bars
 - serious observability tone
 
-Keywords to search:
+## Fallback Categories To Source Elsewhere
 
-- `alert card`
-- `insight card`
-- `monitoring card`
+These are expected to come from outside Animate UI if needed:
 
-## Best Places To Upgrade First
+- line chart
+- area chart
+- donut chart
+- ranking bars
+- trace timeline
+- execution tree
 
-If you only source a few components first, prioritize these in order:
+## Current Product Notes
 
-1. data table
-2. line/area chart
-3. sidebar / dock navigation
-4. command palette
-5. empty state / onboarding block
-6. ranking bars
-7. stat cards
-
-## Notes About Current Behavior
-
-- Costs/Economics should populate automatically when spans exist.
+- Economics should populate automatically when spans exist.
 - Sessions only populate when traces carry `sessionId`.
-- If you want sessions to be visible in real projects, the SDK usage must include a `sessionId` via `init(...)` or `startTrace(..., { sessionId })`.
+- For sessions in real projects, the SDK usage must include `sessionId` through `init(...)` or `startTrace(..., { sessionId })`.
 
-## What To Send Back
+## What To Send
 
-For any component you find, send:
+For each sourced component, send:
 
 - component name
 - source link
 - install command
 - code files
 - dependency list
-- whether it is safe for production or just a demo
-
-If you want, send one batch per category instead of everything at once.
+- whether it is production-safe or demo-only

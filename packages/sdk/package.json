@@ -1,6 +1,6 @@
 {
   "name": "@llmtap/sdk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "LLMTap SDK - Instrument your LLM calls with one line of code",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -21,7 +21,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@llmtap/shared": "^0.1.3",
+    "@llmtap/shared": "^0.1.4",
     "nanoid": "^5.0.0"
   },
   "devDependencies": {

@@ -61,7 +61,7 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
           <div className="hud-label">Change</div>
           <div
             className={`mt-2 text-lg font-semibold ${
-              delta >= 0 ? "text-emerald-200" : "text-rose-200"
+              delta >= 0 ? "text-[#66FCF1]" : "text-[#C5C6C7]"
             }`}
           >
             {delta >= 0 ? "+" : "-"}
@@ -79,12 +79,12 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
         >
           <defs>
             <linearGradient id="llmtap-area-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="rgba(52,211,153,0.38)" />
-              <stop offset="100%" stopColor="rgba(14,165,233,0.02)" />
+              <stop offset="0%" stopColor="rgba(69,162,158,0.38)" />
+              <stop offset="100%" stopColor="rgba(102,252,241,0.02)" />
             </linearGradient>
             <linearGradient id="llmtap-area-line" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="100%" stopColor="#38bdf8" />
+              <stop offset="0%" stopColor="#45A29E" />
+              <stop offset="100%" stopColor="#66FCF1" />
             </linearGradient>
           </defs>
 
@@ -133,8 +133,8 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
                   cx={point.x}
                   cy={point.y}
                   r={isLatest ? 6 : 4}
-                  fill={isLatest ? "#f8fafc" : "#34d399"}
-                  stroke={isLatest ? "#34d399" : "rgba(4,8,17,0.95)"}
+                  fill={isLatest ? "#C5C6C7" : "#45A29E"}
+                  stroke={isLatest ? "#66FCF1" : "rgba(11,12,16,0.95)"}
                   strokeWidth={isLatest ? 3 : 2}
                 />
                 <text

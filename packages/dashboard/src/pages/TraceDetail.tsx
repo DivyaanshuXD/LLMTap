@@ -101,7 +101,7 @@ function CopyButton({ text, label, copied, onCopy }: { text: string; label: stri
       className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-500 transition-colors hover:text-white"
       title="Copy to clipboard"
     >
-      {copied === label ? <Check className="h-3 w-3 text-emerald-300" /> : <Copy className="h-3 w-3" />}
+      {copied === label ? <Check className="h-3 w-3 text-[#66FCF1]" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -117,7 +117,7 @@ function MetaCard({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+    <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.78),rgba(8,11,24,0.9))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
         <Icon className="h-3 w-3" />
         {label}
@@ -138,9 +138,9 @@ function InlineMetric({
 }) {
   const toneClass =
     tone === "success"
-      ? "border-emerald-400/16 bg-emerald-400/8 text-emerald-100"
+      ? "border-[#66FCF1]/16 bg-[#66FCF1]/8 text-[#C5C6C7]"
       : tone === "danger"
-        ? "border-rose-400/16 bg-rose-400/8 text-rose-100"
+        ? "border-[#C5C6C7]/16 bg-[#C5C6C7]/8 text-[#C5C6C7]"
         : "border-white/8 bg-white/4 text-slate-100";
 
   return (
@@ -200,17 +200,17 @@ function SectionHeader({
 
 function RoleBadge({ role, type }: { role: string; type: "input" | "output" }) {
   const roleStyles: Record<string, string> = {
-    system: "bg-purple-400/10 text-purple-200 border-purple-400/16",
-    user: "bg-sky-400/10 text-sky-200 border-sky-400/16",
-    assistant: "bg-emerald-400/10 text-emerald-200 border-emerald-400/16",
-    tool: "bg-amber-300/10 text-amber-200 border-amber-300/16",
-    function: "bg-amber-300/10 text-amber-200 border-amber-300/16",
+    system: "bg-[#1F2833]/90 text-[#C5C6C7] border-[#45A29E]/16",
+    user: "bg-[#66FCF1]/10 text-[#C5C6C7] border-[#66FCF1]/16",
+    assistant: "bg-[#45A29E]/10 text-[#66FCF1] border-[#45A29E]/16",
+    tool: "bg-[#C5C6C7]/10 text-[#C5C6C7] border-[#C5C6C7]/16",
+    function: "bg-[#C5C6C7]/10 text-[#C5C6C7] border-[#C5C6C7]/16",
   };
 
   const fallback =
     type === "input"
-      ? "bg-sky-400/10 text-sky-200 border-sky-400/16"
-      : "bg-emerald-400/10 text-emerald-200 border-emerald-400/16";
+      ? "bg-[#66FCF1]/10 text-[#C5C6C7] border-[#66FCF1]/16"
+      : "bg-[#45A29E]/10 text-[#66FCF1] border-[#45A29E]/16";
 
   return (
     <span
@@ -264,11 +264,11 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
   const text = getTextContent(rawContent);
   const images = rawContent && typeof rawContent !== "string" ? getImageUrls(rawContent) : [];
   const borderClass =
-    type === "input" ? "border-white/8" : "border-emerald-400/10";
+    type === "input" ? "border-white/8" : "border-[#66FCF1]/12";
   const copyId = `msg-${type}-${message.role}-${text.slice(0, 20)}`;
 
   return (
-    <div className={`rounded-2xl border ${borderClass} bg-white/4 p-4`}>
+    <div className={`rounded-2xl border ${borderClass} bg-[linear-gradient(180deg,rgba(18,24,41,0.68),rgba(8,11,24,0.9))] p-4`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <RoleBadge role={message.role} type={type} />
@@ -276,7 +276,7 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
             <span className="font-mono text-[10px] text-slate-500">{message.name}</span>
           )}
           {images.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/16 bg-purple-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-purple-200">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#45A29E]/16 bg-[#1F2833]/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#C5C6C7]">
               <ImageIcon className="h-2.5 w-2.5" />
               {images.length} image{images.length > 1 ? "s" : ""}
             </span>
@@ -338,7 +338,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
       style={{ display: "grid" }}
     >
       <div className="overflow-hidden">
-        <div className="mx-4 mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(8,15,28,0.96),rgba(4,8,18,0.98))] p-5 text-sm">
+        <div className="mx-4 mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,20,36,0.98),rgba(7,10,22,0.99))] p-5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_26px_60px_rgba(0,0,0,0.22)]">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-5">
               <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
@@ -360,9 +360,9 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
               </div>
 
               {span.status === "error" && (
-                <div className="rounded-2xl border border-rose-400/18 bg-rose-400/6 p-4">
+                <div className="rounded-2xl border border-[#C5C6C7]/18 bg-[#C5C6C7]/6 p-4">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-rose-300">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#C5C6C7]">
                       <CircleX className="h-4 w-4" />
                       {span.errorType ?? "error"}
                     </div>
@@ -370,7 +370,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                       <CopyButton text={span.errorMessage} label="error" copied={copied} onCopy={onCopy} />
                     )}
                   </div>
-                  <div className="font-mono text-xs leading-relaxed text-rose-200/70">
+                  <div className="font-mono text-xs leading-relaxed text-[#C5C6C7]/70">
                     {span.errorMessage}
                   </div>
                 </div>
@@ -431,9 +431,9 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                   <SectionHeader icon={Wrench} title="Tool calls" count={span.toolCalls.length} />
                   <div className="space-y-2">
                     {span.toolCalls.map((toolCall) => (
-                      <div key={toolCall.id} className="rounded-2xl border border-amber-300/10 bg-white/4 p-4">
+                      <div key={toolCall.id} className="rounded-2xl border border-[#45A29E]/10 bg-white/4 p-4">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="rounded-full border border-amber-300/16 bg-amber-300/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-amber-200">
+                          <span className="rounded-full border border-[#45A29E]/16 bg-[#45A29E]/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#66FCF1]">
                             {toolCall.name}
                           </span>
                           <CopyButton
@@ -465,7 +465,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
             </div>
 
             <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+              <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.74),rgba(8,11,24,0.9))] p-4">
                 <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
                   <Orbit className="h-3.5 w-3.5" />
                   Span identity
@@ -503,7 +503,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+              <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.74),rgba(8,11,24,0.9))] p-4">
                 <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
                   <Code className="h-3.5 w-3.5" />
                   Request config
@@ -673,7 +673,7 @@ function renderContentWithCodeBlocks(content: string): ReactNode {
             {lang}
           </span>
         )}
-        <span className="block font-mono text-[11px] leading-relaxed text-emerald-200/80">
+        <span className="block font-mono text-[11px] leading-relaxed text-[#66FCF1]/80">
           {code}
         </span>
       </span>
@@ -833,8 +833,8 @@ export default function TraceDetail() {
                   <motion.div
                     className={`absolute bottom-1 top-1 origin-left rounded-full ${
                       node.span.status === "error"
-                        ? "bg-[linear-gradient(90deg,#fb7185,#f97316)]"
-                        : "bg-[linear-gradient(90deg,#34d399,#38bdf8)]"
+                        ? "bg-[linear-gradient(90deg,#C5C6C7,#45A29E)]"
+                        : "bg-[linear-gradient(90deg,#45A29E,#66FCF1)]"
                     }`}
                     style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
                     initial={{ scaleX: 0 }}
@@ -884,12 +884,12 @@ export default function TraceDetail() {
               <div className="mt-2 flex items-center gap-2 text-base font-medium text-white">
                 {hasError ? (
                   <>
-                    <CircleX className="h-4 w-4 text-rose-300" />
+                    <CircleX className="h-4 w-4 text-[#C5C6C7]" />
                     Error state
                   </>
                 ) : (
                   <>
-                    <CircleCheck className="h-4 w-4 text-emerald-300" />
+                    <CircleCheck className="h-4 w-4 text-[#66FCF1]" />
                     Stable
                   </>
                 )}
@@ -906,16 +906,16 @@ export default function TraceDetail() {
         </div>
       }
     >
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link to="/" className="status-chip transition-colors hover:text-white">
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to overview</span>
           </Link>
-          <span className="truncate font-mono text-xs text-slate-500">{traceId}</span>
+          <span className="truncate rounded-full border border-white/8 bg-white/4 px-2.5 py-1 font-mono text-xs text-slate-500">{traceId}</span>
           <CopyButton text={traceId ?? ""} label="traceId" copied={copied} onCopy={copy} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {spans.length > 0 && (
             <button
               type="button"
@@ -923,9 +923,9 @@ export default function TraceDetail() {
                 const primarySpan = spans[0];
                 copy(generateCurlCommand(primarySpan), "curl");
               }}
-              className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+              className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
             >
-              {copied === "curl" ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Terminal className="h-3.5 w-3.5" />}
+              {copied === "curl" ? <Check className="h-3.5 w-3.5 text-[#66FCF1]" /> : <Terminal className="h-3.5 w-3.5" />}
               <span>{copied === "curl" ? "Copied!" : "Copy as cURL"}</span>
             </button>
           )}
@@ -935,16 +935,16 @@ export default function TraceDetail() {
               onClick={() => {
                 copy(generateTraceMarkdown(traceId ?? "", spans, totalTokens, totalCost, totalRange, hasError), "markdown");
               }}
-              className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+              className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
             >
-              {copied === "markdown" ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <FileText className="h-3.5 w-3.5" />}
+              {copied === "markdown" ? <Check className="h-3.5 w-3.5 text-[#66FCF1]" /> : <FileText className="h-3.5 w-3.5" />}
               <span>{copied === "markdown" ? "Copied!" : "Copy as Markdown"}</span>
             </button>
           )}
           <button
             type="button"
             onClick={handleExportTrace}
-            className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+            className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Export JSON</span>
@@ -953,9 +953,9 @@ export default function TraceDetail() {
             <button
               type="button"
               onClick={() => openReplay(spans[0].spanId)}
-              className="status-chip border-emerald-400/20 bg-emerald-400/8 transition-colors hover:border-emerald-400/30 hover:bg-emerald-400/14"
+              className="status-chip border-[#66FCF1]/20 bg-[#66FCF1]/10 transition-colors hover:border-[#66FCF1]/30 hover:bg-[#66FCF1]/14"
             >
-              <Play className="h-3.5 w-3.5 text-emerald-300" />
+              <Play className="h-3.5 w-3.5 text-[#66FCF1]" />
               <span>Replay</span>
             </button>
           )}
@@ -973,14 +973,24 @@ export default function TraceDetail() {
       </div>
 
       <div className="dashboard-shell overflow-hidden rounded-[26px]">
-        <div className="flex items-center gap-2.5 border-b border-white/6 px-5 py-4">
-          <Clock className="h-4 w-4 text-sky-300" />
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
-            Trace hierarchy
-          </h2>
-          <span className="ml-auto text-xs font-mono tracking-[0.18em] text-slate-500">
-            {formatDuration(totalRange)} total
-          </span>
+        <div className="flex flex-wrap items-center gap-3 border-b border-white/6 px-5 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#66FCF1]/16 bg-[#66FCF1]/10">
+            <Clock className="h-4 w-4 text-[#66FCF1]" />
+          </div>
+          <div>
+            <div className="hud-label">Execution tree</div>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+              Trace hierarchy
+            </h2>
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-slate-500">
+              {formatDuration(totalRange)} total
+            </span>
+            <span className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-slate-500">
+              {spans.length} spans
+            </span>
+          </div>
         </div>
 
         {tree.length > 0 ? (
@@ -997,8 +1007,8 @@ export default function TraceDetail() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/8">
-                <Play className="h-4.5 w-4.5 text-emerald-300" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#66FCF1]/20 bg-[#66FCF1]/10">
+                <Play className="h-4.5 w-4.5 text-[#66FCF1]" />
               </div>
               <div>
                 <DialogTitle>Trace Replay</DialogTitle>
@@ -1009,7 +1019,7 @@ export default function TraceDetail() {
 
           {!replayResult && !replayLoading && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-amber-400/20 bg-amber-500/8 p-3 text-xs text-amber-200/80">
+              <div className="rounded-xl border border-[#45A29E]/20 bg-[#45A29E]/8 p-3 text-xs text-[#C5C6C7]/80">
                 Your API key is sent directly to the provider and is never stored by LLMTap.
               </div>
               <div>
@@ -1019,11 +1029,11 @@ export default function TraceDetail() {
                   value={replayApiKey}
                   onChange={(e) => setReplayApiKey(e.target.value)}
                   placeholder="sk-... or anthropic key"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-emerald-400/30 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-[#66FCF1]/30 focus:outline-none"
                 />
               </div>
               {replayError && (
-                <div className="rounded-xl border border-rose-400/20 bg-rose-500/8 p-3 text-sm text-rose-200">
+                <div className="rounded-xl border border-[#C5C6C7]/20 bg-[#C5C6C7]/8 p-3 text-sm text-[#C5C6C7]">
                   {replayError}
                 </div>
               )}
@@ -1031,7 +1041,7 @@ export default function TraceDetail() {
                 type="button"
                 disabled={!replayApiKey.trim()}
                 onClick={handleReplay}
-                className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-xl bg-[#66FCF1] px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-[#45A29E] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Send Replay Request
               </button>
@@ -1040,7 +1050,7 @@ export default function TraceDetail() {
 
           {replayLoading && (
             <div className="flex flex-col items-center gap-3 py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-300" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#66FCF1]" />
               <p className="text-sm text-slate-400">Replaying against {spans[0]?.providerName} API...</p>
             </div>
           )}
@@ -1079,8 +1089,8 @@ export default function TraceDetail() {
                     </div>
                   </div>
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400/80">Replay Response</div>
-                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-emerald-400/12 bg-emerald-400/4 p-3 text-sm leading-6 text-slate-300">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#66FCF1]/80">Replay Response</div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#66FCF1]/12 bg-[#66FCF1]/6 p-3 text-sm leading-6 text-slate-300">
                       {replayResult.content || <span className="text-slate-600">Empty response</span>}
                     </div>
                   </div>
@@ -1097,7 +1107,7 @@ export default function TraceDetail() {
                   <button
                     type="button"
                     onClick={() => setReplayOpen(false)}
-                    className="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400"
+                    className="flex-1 rounded-xl bg-[#66FCF1] px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-[#45A29E]"
                   >
                     Done
                   </button>

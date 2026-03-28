@@ -69,8 +69,8 @@ interface ChartContextValue {
 const ChartContext = createContext<ChartContextValue | null>(null);
 
 export const chartCssVars = {
-  linePrimary: "#34d399",
-  lineSecondary: "#38bdf8",
+  linePrimary: "#66FCF1",
+  lineSecondary: "#45A29E",
 } as const;
 
 export function ChartProvider({

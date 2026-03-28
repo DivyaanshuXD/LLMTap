@@ -22,6 +22,9 @@ import {
 } from "../lib/format.ts";
 import { providerColors } from "../lib/provider-colors.ts";
 
+/* ── Shared surface classes (DRY) ────────────────────────── */
+const sectionShell = "dashboard-shell rounded-[var(--radius-card)]";
+
 function HorizontalMetricChart({
   rows,
   valueFormatter,
@@ -34,17 +37,17 @@ function HorizontalMetricChart({
   const max = Math.max(...rows.map((row) => row.value), 1);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {rows.map((row) => (
         <div
           key={row.name}
-          className="rounded-2xl border border-white/6 bg-[linear-gradient(180deg,rgba(10,16,28,0.9),rgba(5,10,20,0.94))] p-4"
+          className="rounded-[var(--radius-panel)] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,28,0.9),rgba(5,10,20,0.94))] p-4"
         >
           <div className="flex items-center justify-between gap-4">
             <span className="truncate text-sm font-medium text-slate-200">
               {row.name}
             </span>
-            <span className="font-mono text-xs text-slate-400">
+            <span className="font-mono text-sm text-slate-400">
               {valueFormatter(row.value)}
             </span>
           </div>
@@ -95,10 +98,10 @@ export default function Models() {
         header: "Model",
         cell: ({ row }) => (
           <div className="min-w-0">
-            <div className="truncate font-mono text-xs font-semibold text-slate-100">
+            <div className="truncate font-mono text-sm font-semibold text-slate-100">
               {row.original.model}
             </div>
-            <div className="mt-1 text-[11px] text-slate-500">
+            <div className="mt-1 text-xs text-slate-400">
               {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "No latency yet"} average latency
             </div>
           </div>
@@ -112,11 +115,11 @@ export default function Models() {
             <span
               className="h-2.5 w-2.5 rounded-full"
               style={{
-                backgroundColor: providerColors[row.original.provider] ?? "#a855f6",
-                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "#a855f6"}`,
+                backgroundColor: providerColors[row.original.provider] ?? "#66FCF1",
+                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "#66FCF1"}`,
               }}
             />
-            <span className="rounded-full border border-white/8 bg-white/4 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
               {row.original.provider}
             </span>
           </div>
@@ -126,7 +129,7 @@ export default function Models() {
         accessorKey: "spanCount",
         header: "Calls",
         cell: ({ row }) => (
-          <span className="inline-flex items-center justify-center rounded-full border border-white/8 bg-white/4 px-2.5 py-0.5 font-mono text-[11px] text-slate-300">
+          <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-mono text-xs text-slate-300">
             {row.original.spanCount}
           </span>
         ),
@@ -136,7 +139,7 @@ export default function Models() {
         accessorKey: "totalTokens",
         header: "Tokens",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-300">
+          <span className="font-mono text-sm text-slate-300">
             {formatCompactNumber(row.original.totalTokens)}
           </span>
         ),
@@ -146,7 +149,7 @@ export default function Models() {
         accessorKey: "totalCost",
         header: "Cost",
         cell: ({ row }) => (
-          <span className="font-mono text-xs font-semibold text-white">
+          <span className="font-mono text-sm font-semibold text-white">
             {formatCost(row.original.totalCost)}
           </span>
         ),
@@ -156,7 +159,7 @@ export default function Models() {
         accessorKey: "avgDuration",
         header: "Avg Latency",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-400">
+          <span className="font-mono text-sm text-slate-400">
             {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "-"}
           </span>
         ),
@@ -167,7 +170,7 @@ export default function Models() {
         header: "Cost/Call",
         accessorFn: (row) => (row.spanCount > 0 ? row.totalCost / row.spanCount : 0),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-500">
+          <span className="font-mono text-sm text-slate-500">
             {row.original.spanCount > 0
               ? formatCost(row.original.totalCost / row.original.spanCount)
               : "-"}
@@ -196,8 +199,8 @@ export default function Models() {
       aside={
         <div className="insight-panel">
           <LivePulse />
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+          <div className="mt-5 space-y-4">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
               <div className="hud-label">Models active</div>
               <div className="mt-2 text-lg font-medium text-white">
                 <NumberTicker value={byModel.length} />
@@ -206,7 +209,7 @@ export default function Models() {
                 Across {new Set(byModel.map((m) => m.provider)).size} providers
               </div>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
               <div className="hud-label">Highest cost model</div>
               <div className="mt-2 text-base font-medium text-white">
                 {byModel[0]?.model ?? "No data"}
@@ -222,12 +225,12 @@ export default function Models() {
       {byModel.length > 0 ? (
         <>
           <motion.div
-            className="dashboard-shell overflow-hidden rounded-[26px] px-4 py-4 sm:px-5"
+            className={`${sectionShell} overflow-hidden p-5`}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <div className="mb-3 flex items-center justify-between gap-3 px-1">
+            <div className="mb-4 flex items-center justify-between gap-3 px-1">
               <div>
                 <div className="hud-label">Model roster</div>
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
@@ -235,7 +238,7 @@ export default function Models() {
                 </h2>
               </div>
               <span className="status-chip">
-                <Layers className="h-3.5 w-3.5 text-sky-300" />
+                <Layers className="h-3.5 w-3.5 text-[#66FCF1]" />
                 <span>{byModel.length} models</span>
               </span>
             </div>
@@ -244,7 +247,7 @@ export default function Models() {
 
           <div className="grid gap-5 xl:grid-cols-2">
             <motion.div
-              className="dashboard-shell rounded-[26px] px-5 py-5"
+              className={`${sectionShell} p-5`}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.35 }}
@@ -256,13 +259,13 @@ export default function Models() {
                     Average latency by model
                   </h2>
                 </div>
-                <Clock className="h-4 w-4 text-sky-300" />
+                <Clock className="h-4 w-4 text-[#66FCF1]" />
               </div>
               {latencyData.length > 0 ? (
                 <HorizontalMetricChart
                   rows={latencyData}
                   valueFormatter={formatDuration}
-                  barClassName="bg-[linear-gradient(90deg,rgba(56,189,248,0.95),rgba(34,211,238,0.78))]"
+                  barClassName="bg-[linear-gradient(90deg,rgba(69,162,158,0.95),rgba(102,252,241,0.78))]"
                 />
               ) : (
                 <div className="empty-state h-[280px] text-slate-500">
@@ -272,7 +275,7 @@ export default function Models() {
             </motion.div>
 
             <motion.div
-              className="dashboard-shell rounded-[26px] px-5 py-5"
+              className={`${sectionShell} p-5`}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.35 }}
@@ -284,13 +287,13 @@ export default function Models() {
                     Token volume by model
                   </h2>
                 </div>
-                <Cpu className="h-4 w-4 text-emerald-300" />
+                <Cpu className="h-4 w-4 text-[#45A29E]" />
               </div>
               {tokenData.length > 0 ? (
                 <HorizontalMetricChart
                   rows={tokenData}
                   valueFormatter={formatCompactNumber}
-                  barClassName="bg-[linear-gradient(90deg,rgba(52,211,153,0.95),rgba(14,165,233,0.78))]"
+                  barClassName="bg-[linear-gradient(90deg,rgba(102,252,241,0.95),rgba(69,162,158,0.78))]"
                 />
               ) : (
                 <div className="empty-state h-[280px] text-slate-500">
@@ -301,7 +304,7 @@ export default function Models() {
           </div>
         </>
       ) : (
-        <div className="dashboard-shell rounded-[26px] p-16">
+        <div className={`${sectionShell} p-16`}>
           <div className="empty-state">
             <Gauge className="h-8 w-8 text-slate-500" />
             <div className="text-base font-medium text-white">No models tracked yet</div>

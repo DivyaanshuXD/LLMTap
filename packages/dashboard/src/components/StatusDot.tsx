@@ -18,13 +18,13 @@ export function StatusDot({
       <span
         className={cn(
           "absolute inset-0 rounded-full",
-          isError ? "bg-rose-400/25" : "bg-emerald-400/25"
+          isError ? "bg-[#C5C6C7]/20" : "bg-[#66FCF1]/25"
         )}
       />
       <span
         className={cn(
           "relative h-2 w-2 rounded-full",
-          isError ? "bg-rose-400" : "bg-emerald-300"
+          isError ? "bg-[#C5C6C7]" : "bg-[#66FCF1]"
         )}
       />
     </span>

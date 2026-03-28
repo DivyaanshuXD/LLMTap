@@ -275,9 +275,9 @@ test("overview filters stay URL-synced and trace detail opens", async ({ page })
 test("command palette navigation and traces comparison work", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Open command palette" }).click();
   await page.getByPlaceholder("Type a command or search...").fill("economics");
-  await page.getByRole("option", { name: /Economics/i }).click();
+  await expect(page.getByRole("option", { name: /Economics/i })).toBeVisible();
+  await page.getByPlaceholder("Type a command or search...").press("Enter");
   await expect(
     page.getByText("Understand where every token is converting into spend.")
   ).toBeVisible();

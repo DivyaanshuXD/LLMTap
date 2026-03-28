@@ -28,6 +28,12 @@ import { PageFrame } from "../components/PageFrame.tsx";
 import { StatusDot } from "../components/StatusDot.tsx";
 import { GlowingLineChart } from "../components/charts/line-chart.tsx";
 import {
+  Accordion,
+  AccordionItem,
+  AccordionPanel,
+  AccordionTrigger,
+} from "../components/animate-ui/components/base/accordion.tsx";
+import {
   StatisticsWithStatusGrid,
 } from "../components/shadcn-studio/blocks/statistics-with-status-grid.tsx";
 import type { StatisticsCardProps } from "../components/shadcn-studio/blocks/statistics-with-status.tsx";
@@ -46,6 +52,9 @@ import {
   formatDuration,
   formatTimeAgo,
 } from "../lib/format.ts";
+
+/* ── Shared surface classes (DRY) ────────────────────────── */
+const sectionShell = "dashboard-shell rounded-[var(--radius-card)]";
 
 const PAGE_SIZE_OPTIONS = [12, 25, 50, 100] as const;
 
@@ -194,7 +203,7 @@ export default function Dashboard() {
                 <div className="text-lg font-medium capitalize text-white">
                   {topProvider?.provider ?? "Awaiting traffic"}
                 </div>
-                <Orbit className="h-4 w-4 text-sky-300" />
+                <Orbit className="h-4 w-4 text-[#66FCF1]" />
               </div>
               <div className="mt-1 text-sm text-slate-400">
                 {topProvider
@@ -223,7 +232,8 @@ export default function Dashboard() {
       />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.95fr)]">
-        <section className="dashboard-shell rounded-[26px] px-5 py-5 sm:px-6">
+        {/* ── Cost gradient ── */}
+        <section className={`${sectionShell} p-5 sm:p-6`}>
           <div className="mb-5 flex items-center justify-between">
             <div>
               <div className="hud-label">Economic pulse</div>
@@ -232,25 +242,25 @@ export default function Dashboard() {
               </h2>
             </div>
             <div className="status-chip">
-              <Gauge className="h-3.5 w-3.5 text-sky-300" />
+              <Gauge className="h-3.5 w-3.5 text-[#66FCF1]" />
               <span>{traceQuery.periodHours}h window</span>
             </div>
           </div>
           {chartData.length > 0 ? (
-            <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(6,12,22,0.98),rgba(4,8,17,0.98))] p-4">
+            <div className="overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(6,12,22,0.98),rgba(4,8,17,0.98))] p-4">
               <GlowingLineChart
                 data={chartData}
                 xDataKey="timestamp"
                 primaryDataKey="cost"
               />
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="surface-muted rounded-2xl p-4">
+                <div className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="hud-label">Latest</div>
                   <div className="mt-2 text-lg font-semibold text-white">
                     {formatCost(chartData.at(-1)?.cost ?? 0)}
                   </div>
                 </div>
-                <div className="surface-muted rounded-2xl p-4">
+                <div className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="hud-label">Peak</div>
                   <div className="mt-2 text-lg font-semibold text-white">
                     {formatCost(
@@ -258,15 +268,15 @@ export default function Dashboard() {
                     )}
                   </div>
                 </div>
-                <div className="surface-muted rounded-2xl p-4">
+                <div className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="hud-label">Change</div>
                   <div
                     className={`mt-2 text-lg font-semibold ${
                       (chartData.at(-1)?.cost ?? 0) -
                         (chartData.at(-2)?.cost ?? chartData.at(-1)?.cost ?? 0) >=
                       0
-                        ? "text-emerald-200"
-                        : "text-rose-200"
+                        ? "text-[#66FCF1]"
+                        : "text-[#C5C6C7]"
                     }`}
                   >
                     {(chartData.at(-1)?.cost ?? 0) -
@@ -297,7 +307,8 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="dashboard-shell rounded-[26px] px-5 py-5 sm:px-6">
+        {/* ── Provider allocation ── */}
+        <section className={`${sectionShell} p-5 sm:p-6`}>
           <div className="mb-5">
             <div className="hud-label">Provider pressure</div>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
@@ -311,22 +322,22 @@ export default function Dashboard() {
                   ? (providerEntry.totalCost / (stats?.totalCost ?? 1)) * 100
                   : 0;
               return (
-                <div key={providerEntry.provider} className="surface-muted rounded-2xl p-4">
+                <div key={providerEntry.provider} className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium capitalize text-white">{providerEntry.provider}</div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-[length:var(--text-caption)] text-slate-400">
                         {providerEntry.spanCount} calls / {formatCompactNumber(providerEntry.totalTokens)} tokens
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-white">{formatCost(providerEntry.totalCost)}</div>
-                      <div className="text-xs text-slate-500">{formatDuration(providerEntry.avgDuration)}</div>
+                      <div className="text-[length:var(--text-caption)] text-slate-500">{formatDuration(providerEntry.avgDuration)}</div>
                     </div>
                   </div>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900/80">
                     <motion.div
-                      className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#34d399,#38bdf8)]"
+                      className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#45A29E,#66FCF1)]"
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: Math.max(ratio, 4) / 100 }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -340,8 +351,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
-        <section className="dashboard-shell rounded-[26px] px-4 py-4 sm:px-5 sm:py-5">
-          <div className="surface-strong mb-4 rounded-[24px] p-4">
+        {/* ── Trace dispatch queue ── */}
+        <section className={`${sectionShell} p-4 sm:p-5`}>
+          <div className="surface-strong mb-4 rounded-[var(--radius-card)] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="hud-label">Search console</div>
@@ -357,7 +369,7 @@ export default function Dashboard() {
                     updateParams({ q: undefined, provider: undefined, status: undefined, periodHours: undefined })
                   }
                   disabled={!hasActiveFilters}
-                  className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="status-chip transition-all duration-[--duration-normal] hover:border-white/[0.14] hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <X className="h-3.5 w-3.5" />
                   <span>Clear</span>
@@ -440,7 +452,7 @@ export default function Dashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full border-separate border-spacing-y-2 text-sm">
                   <thead>
-                    <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    <tr className="text-left text-[length:var(--text-hud)] uppercase tracking-[var(--tracking-hud)] text-slate-500">
                       <th className="px-4 py-2">State</th>
                       <th className="px-4 py-2">Trace</th>
                       {([["spanCount", "Spans"], ["totalTokens", "Tokens"], ["totalCost", "Cost"], ["startTime", "When"]] as const).map(([key, label]) => (
@@ -448,7 +460,7 @@ export default function Dashboard() {
                           <button
                             type="button"
                             onClick={() => toggleSort(key)}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-slate-300"
+                            className="inline-flex items-center gap-1 transition-colors duration-[--duration-fast] hover:text-slate-300"
                           >
                             {label}
                             {sortKey === key ? (
@@ -470,22 +482,22 @@ export default function Dashboard() {
                         <td className="px-4 py-4">
                           <Link
                             to={`/trace/${trace.traceId}`}
-                            className="group inline-flex max-w-[380px] flex-col gap-1 text-sm font-medium text-white transition-colors hover:text-emerald-300"
+                            className="group inline-flex max-w-[380px] flex-col gap-1 text-sm font-medium text-white transition-colors duration-[--duration-normal] hover:text-[#66FCF1]"
                           >
                             <span className="inline-flex items-center gap-2">
                               <span className="truncate">{trace.name}</span>
                               <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
                             </span>
-                            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                            <span className="font-mono text-[length:var(--text-hud)] uppercase tracking-[var(--tracking-hud)] text-slate-500">
                               {trace.traceId.slice(0, 12)}
                               {trace.totalDuration ? ` / ${formatDuration(trace.totalDuration)}` : ""}
                             </span>
                           </Link>
                         </td>
-                        <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">{trace.spanCount}</td>
-                        <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">{trace.totalTokens.toLocaleString()}</td>
-                        <td className="px-4 py-4 text-right font-mono text-xs text-slate-300">{formatCost(trace.totalCost)}</td>
-                        <td className="rounded-r-2xl px-4 py-4 text-right text-xs text-slate-500">{formatTimeAgo(trace.startTime)}</td>
+                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{trace.spanCount}</td>
+                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{trace.totalTokens.toLocaleString()}</td>
+                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{formatCost(trace.totalCost)}</td>
+                        <td className="rounded-r-2xl px-4 py-4 text-right text-[length:var(--text-caption)] text-slate-500">{formatTimeAgo(trace.startTime)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -494,14 +506,14 @@ export default function Dashboard() {
 
               <div className="mt-4 flex items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-3">
-                  <div className="text-xs text-slate-500">
+                  <div className="text-[length:var(--text-caption)] text-slate-500">
                     {totalMatches > 0 ? `Showing ${offset + 1}-${Math.min(offset + traces.length, totalMatches)} of ${totalMatches}` : "Awaiting traces"}
                   </div>
                   <Select
                     value={String(effectivePageSize)}
                     onValueChange={(val) => updateParams({ pageSize: Number(val) === 12 ? undefined : Number(val) })}
                   >
-                    <SelectTrigger className="w-auto rounded-xl px-2 py-1.5 text-xs">
+                    <SelectTrigger className="w-auto rounded-xl px-2 py-1.5 text-[length:var(--text-caption)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -536,7 +548,8 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="dashboard-shell rounded-[26px] px-5 py-5">
+        {/* ── Insights ── */}
+        <section className={`${sectionShell} p-5`}>
           <div className="mb-5">
             <div className="hud-label">Intelligence layer</div>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
@@ -550,22 +563,22 @@ export default function Dashboard() {
                   key={insight.id}
                   className={`rounded-2xl border p-4 ${
                     insight.severity === "critical"
-                      ? "border-rose-400/20 bg-rose-500/8"
+                      ? "border-[#C5C6C7]/18 bg-[#C5C6C7]/8"
                       : insight.severity === "warning"
-                        ? "border-amber-400/20 bg-amber-500/8"
-                        : "border-white/6 bg-white/4"
+                        ? "border-[#45A29E]/18 bg-[#45A29E]/8"
+                        : "border-white/[0.06] bg-white/[0.04]"
                   }`}
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-sm font-medium text-white">
-                      {insight.type === "cost_anomaly" && <AlertTriangle className="h-4 w-4 text-amber-300" />}
-                      {insight.type === "error_pattern" && <ShieldAlert className="h-4 w-4 text-rose-300" />}
-                      {insight.type === "model_recommendation" && <Lightbulb className="h-4 w-4 text-sky-300" />}
-                      {insight.type === "token_waste" && <TrendingUp className="h-4 w-4 text-purple-300" />}
+                      {insight.type === "cost_anomaly" && <AlertTriangle className="h-4 w-4 text-[#45A29E]" />}
+                      {insight.type === "error_pattern" && <ShieldAlert className="h-4 w-4 text-[#C5C6C7]" />}
+                      {insight.type === "model_recommendation" && <Lightbulb className="h-4 w-4 text-[#66FCF1]" />}
+                      {insight.type === "token_waste" && <TrendingUp className="h-4 w-4 text-[#45A29E]" />}
                       {insight.title}
                     </div>
                     {insight.metric && (
-                      <span className="shrink-0 rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[10px] font-mono text-slate-400">
+                      <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.05] px-2 py-0.5 font-mono text-[length:var(--text-hud)] text-slate-400">
                         {insight.metric}
                       </span>
                     )}
@@ -579,7 +592,7 @@ export default function Dashboard() {
               <>
                 <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <Sparkles className="h-4 w-4 text-sky-300" />
+                    <Sparkles className="h-4 w-4 text-[#66FCF1]" />
                     Health read
                   </div>
                   <p className="text-sm leading-6 text-slate-400">
@@ -590,7 +603,7 @@ export default function Dashboard() {
                 </div>
                 <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <TrendingUp className="h-4 w-4 text-emerald-300" />
+                    <TrendingUp className="h-4 w-4 text-[#45A29E]" />
                     Spend insight
                   </div>
                   <p className="text-sm leading-6 text-slate-400">
@@ -601,7 +614,7 @@ export default function Dashboard() {
                 </div>
                 <div className="surface-muted rounded-2xl p-4">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <AlertTriangle className="h-4 w-4 text-amber-300" />
+                    <AlertTriangle className="h-4 w-4 text-[#C5C6C7]" />
                     Queue focus
                   </div>
                   <p className="text-sm leading-6 text-slate-400">
@@ -615,6 +628,44 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      <section className={`${sectionShell} p-5 sm:p-6`}>
+        <div className="mb-5">
+          <div className="hud-label">Operator Briefing</div>
+          <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+            What this surface is telling you
+          </h2>
+        </div>
+        <Accordion defaultValue={["queue-health"]} multiple>
+          <AccordionItem value="queue-health" className="border-white/8">
+            <AccordionTrigger className="text-base text-white hover:no-underline">
+              What should I check first when I open LLMTap?
+            </AccordionTrigger>
+            <AccordionPanel className="leading-6 text-slate-400">
+              Start with the economic pulse, dominant provider, and latest trace. That combination tells you whether
+              traffic is flowing, whether one provider is dominating spend, and which trace should be inspected first.
+            </AccordionPanel>
+          </AccordionItem>
+          <AccordionItem value="traces-vs-economics" className="border-white/8">
+            <AccordionTrigger className="text-base text-white hover:no-underline">
+              When do I move from Overview to Traces or Economics?
+            </AccordionTrigger>
+            <AccordionPanel className="leading-6 text-slate-400">
+              Use Traces when something looks operationally wrong and you need the exact request timeline. Use Economics
+              when behavior is healthy but budget concentration or model mix looks suspicious.
+            </AccordionPanel>
+          </AccordionItem>
+          <AccordionItem value="healthy-window" className="border-white/8">
+            <AccordionTrigger className="text-base text-white hover:no-underline">
+              What does a healthy window look like?
+            </AccordionTrigger>
+            <AccordionPanel className="leading-6 text-slate-400">
+              Healthy windows show steady cost movement, low risk surface, no sudden provider concentration shifts, and
+              a queue of recent traces that stays readable instead of spiking with failures.
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+      </section>
     </PageFrame>
   );
 }

@@ -1,11 +1,11 @@
 // Canonical provider color mapping — single source of truth
 export const providerColors: Record<string, string> = {
-  openai: "#10B981",
-  anthropic: "#F59E0B",
-  google: "#3B82F6",
-  deepseek: "#8B5CF6",
-  groq: "#F97316",
-  xai: "#EC4899",
+  openai: "#66FCF1",
+  anthropic: "#45A29E",
+  google: "#C5C6C7",
+  deepseek: "#66FCF1",
+  groq: "#45A29E",
+  xai: "#C5C6C7",
 };
 
 // Provider badge style config (for ProviderBadge component)
@@ -14,34 +14,34 @@ export const providerBadgeStyles: Record<
   { bg: string; text: string; border: string }
 > = {
   openai: {
-    bg: "bg-emerald-500/12",
-    text: "text-emerald-400",
-    border: "border-emerald-500/20",
+    bg: "bg-[#66FCF1]/12",
+    text: "text-[#66FCF1]",
+    border: "border-[#66FCF1]/20",
   },
   anthropic: {
-    bg: "bg-amber-500/12",
-    text: "text-amber-400",
-    border: "border-amber-500/20",
+    bg: "bg-[#45A29E]/12",
+    text: "text-[#45A29E]",
+    border: "border-[#45A29E]/20",
   },
   google: {
-    bg: "bg-blue-500/12",
-    text: "text-blue-400",
-    border: "border-blue-500/20",
+    bg: "bg-[#C5C6C7]/12",
+    text: "text-[#C5C6C7]",
+    border: "border-[#C5C6C7]/20",
   },
   deepseek: {
-    bg: "bg-violet-500/12",
-    text: "text-violet-400",
-    border: "border-violet-500/20",
+    bg: "bg-[#66FCF1]/12",
+    text: "text-[#66FCF1]",
+    border: "border-[#66FCF1]/20",
   },
   groq: {
-    bg: "bg-orange-500/12",
-    text: "text-orange-400",
-    border: "border-orange-500/20",
+    bg: "bg-[#45A29E]/12",
+    text: "text-[#45A29E]",
+    border: "border-[#45A29E]/20",
   },
   xai: {
-    bg: "bg-pink-500/12",
-    text: "text-pink-400",
-    border: "border-pink-500/20",
+    bg: "bg-[#C5C6C7]/12",
+    text: "text-[#C5C6C7]",
+    border: "border-[#C5C6C7]/20",
   },
 };
 

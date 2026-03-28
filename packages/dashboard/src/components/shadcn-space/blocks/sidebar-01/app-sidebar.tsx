@@ -7,144 +7,165 @@ import {
   DollarSign,
   List,
   MessageSquareMore,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings2,
   TowerControl,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-
-import { NavMain } from "@/components/shadcn-space/blocks/sidebar-01/nav-main.tsx";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  SidebarItem,
+  SidebarLabel,
+  SidebarSection,
+  SidebarSectionGroup,
   useSidebar,
 } from "@/components/ui/sidebar.tsx";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { pathname } = useLocation();
-  const { open, isMobile, toggleSidebar } = useSidebar();
+  const { open, isMobile } = useSidebar();
   const expanded = isMobile || open;
 
-  const data = {
-    navMain: [
-      {
-        title: "Overview",
-        url: "/",
-        icon: ChartNoAxesColumn,
-        isActive: pathname === "/",
-      },
-      {
-        title: "Traces",
-        url: "/traces",
-        icon: List,
-        isActive: pathname.startsWith("/traces") || pathname.startsWith("/trace/"),
-      },
-      {
-        title: "Economics",
-        url: "/costs",
-        icon: DollarSign,
-        isActive: pathname.startsWith("/costs"),
-      },
-      {
-        title: "Models",
-        url: "/models",
-        icon: Cpu,
-        isActive: pathname.startsWith("/models"),
-      },
-      {
-        title: "Sessions",
-        url: "/sessions",
-        icon: MessageSquareMore,
-        isActive: pathname.startsWith("/sessions"),
-      },
-      {
-        title: "Settings",
-        url: "/settings",
-        icon: Settings2,
-        isActive: pathname.startsWith("/settings"),
-      },
-    ],
-  };
+  const navItems = [
+    {
+      title: "Overview",
+      url: "/",
+      icon: ChartNoAxesColumn,
+      isActive: pathname === "/",
+      end: true,
+    },
+    {
+      title: "Traces",
+      url: "/traces",
+      icon: List,
+      isActive: pathname.startsWith("/traces") || pathname.startsWith("/trace/"),
+    },
+    {
+      title: "Economics",
+      url: "/costs",
+      icon: DollarSign,
+      isActive: pathname.startsWith("/costs"),
+    },
+    {
+      title: "Models",
+      url: "/models",
+      icon: Cpu,
+      isActive: pathname.startsWith("/models"),
+    },
+    {
+      title: "Sessions",
+      url: "/sessions",
+      icon: MessageSquareMore,
+      isActive: pathname.startsWith("/sessions"),
+    },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings2,
+      isActive: pathname.startsWith("/settings"),
+    },
+  ];
 
   return (
-    <Sidebar
-      variant="inset"
-      className="border-cyan-300/10"
-      {...props}
-    >
-      <SidebarHeader className="py-4">
-        <SidebarMenu className="rounded-[24px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(8,17,38,0.84),rgba(2,10,26,0.86))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className={expanded ? "rounded-[18px] px-3 py-3" : "rounded-[18px] justify-center px-0 py-3"}
-              render={<NavLink to="/" end />}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,rgba(45,212,191,0.9),rgba(56,189,248,0.95))] text-slate-950 shadow-[0_10px_26px_rgba(20,184,166,0.35)]">
-                <TowerControl className="size-4" />
-              </div>
-              {expanded ? (
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/65">LLMTAP</span>
-                  <span className="truncate text-xl font-semibold tracking-[-0.04em] text-white">Mission Control</span>
-                </div>
-              ) : null}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent className="px-2 pb-3">
-        <NavMain items={data.navMain} />
-
-        {expanded ? (
-          <div className="mt-4 rounded-[24px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(7,17,35,0.86),rgba(2,10,25,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <div className="flex items-center gap-2 text-lg font-semibold text-white">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(16,185,129,0.95)]" />
-              <span className="text-sm">Local collector</span>
-            </div>
-            <p className="mt-2 text-base leading-relaxed text-slate-400">
-              Real-time traces, token economics, and span internals in one operator surface.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-[16px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,8,24,0.8))] px-3 py-2.5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.28em] text-cyan-200/55">Mode</div>
-                <div className="mt-1 font-mono text-lg text-slate-200">LOCAL</div>
-              </div>
-              <div className="rounded-[16px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,8,24,0.8))] px-3 py-2.5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.28em] text-cyan-200/55">Port</div>
-                <div className="mt-1 font-mono text-lg text-slate-200">4781</div>
-              </div>
-            </div>
+    <Sidebar intent="float" collapsible="dock" side="left" {...props}>
+      <SidebarHeader>
+        <NavLink
+          to="/"
+          end
+          className={`group flex min-w-0 items-center rounded-[22px] border border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.88),rgba(11,12,16,0.94))] shadow-[inset_0_1px_0_rgba(197,198,199,0.04)] transition-all duration-200 hover:border-[#66FCF1]/20 hover:bg-[linear-gradient(180deg,rgba(36,47,58,0.98),rgba(16,18,23,0.98))] ${
+            expanded ? "gap-3 px-3.5 py-3" : "mx-auto h-[3.5rem] w-[3.5rem] justify-center px-0 py-0"
+          }`}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#66FCF1,#45A29E)] text-[#0B0C10] shadow-[0_12px_28px_rgba(102,252,241,0.26)]">
+            <TowerControl className="size-4" />
           </div>
-        ) : null}
+          {expanded ? (
+            <div className="min-w-0">
+              <div className="truncate text-[11px] font-medium uppercase tracking-[0.3em] text-[#66FCF1]/72">
+                LLMTAP
+              </div>
+              <div className="truncate text-xl font-semibold tracking-[-0.04em] text-white">
+                Control Deck
+              </div>
+            </div>
+          ) : null}
+        </NavLink>
+      </SidebarHeader>
 
-        <div className={expanded ? "mt-auto pt-4" : "mt-auto pt-3"}>
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className={
-              expanded
-                ? "w-full rounded-[14px] border border-cyan-200/14 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,8,24,0.85))] px-4 py-2.5 text-left text-base text-slate-200 transition-colors hover:border-cyan-200/28"
-                : "flex w-full items-center justify-center rounded-[14px] border border-cyan-200/14 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,8,24,0.85))] px-0 py-2.5 text-slate-200 transition-colors hover:border-cyan-200/28"
-            }
-            aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {expanded ? (
-              <span className="flex items-center justify-between">
-                <span>Collapse sidebar</span>
-                <PanelLeftClose className="h-4 w-4" />
-              </span>
-            ) : (
-              <PanelLeftOpen className="h-4 w-4" />
-            )}
-          </button>
-        </div>
+      <SidebarContent>
+        <SidebarSectionGroup>
+          <SidebarSection label="Control Deck">
+            {navItems.map((item) => (
+              <SidebarItem
+                key={item.title}
+                to={item.url}
+                end={item.end}
+                isCurrent={item.isActive}
+                icon={<item.icon className="h-4 w-4" />}
+                label={item.title}
+              />
+            ))}
+          </SidebarSection>
+
+          {expanded ? (
+            <SidebarSection label="Runtime">
+              <div className="rounded-[22px] border border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.86),rgba(11,12,16,0.92))] px-4 py-4">
+                <div className="flex items-center gap-2 text-white">
+                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#66FCF1] shadow-[0_0_14px_rgba(102,252,241,0.7)]" />
+                  <span className="text-sm font-medium">Local collector active</span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Runtime traces, token economics, and execution trees in one local-first surface.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-[#45A29E]/14 bg-[#0B0C10]/70 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-[#66FCF1]/58">
+                      Mode
+                    </div>
+                    <div className="mt-1 font-mono text-base text-[#C5C6C7]">LOCAL</div>
+                  </div>
+                  <div className="rounded-2xl border border-[#45A29E]/14 bg-[#0B0C10]/70 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-[#66FCF1]/58">
+                      Port
+                    </div>
+                    <div className="mt-1 font-mono text-base text-[#C5C6C7]">4781</div>
+                  </div>
+                </div>
+              </div>
+            </SidebarSection>
+          ) : null}
+        </SidebarSectionGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <div
+          className={`rounded-[22px] border border-[#45A29E]/14 bg-[linear-gradient(180deg,rgba(31,40,51,0.86),rgba(11,12,16,0.92))] ${
+            expanded ? "px-4 py-3" : "mx-auto flex h-[3.5rem] w-[3.5rem] items-center justify-center px-0 py-0"
+          }`}
+        >
+          {expanded ? (
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#45A29E]/16 bg-[#0B0C10]/70 text-[#66FCF1]">
+                <TowerControl className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <SidebarLabel className="block text-sm font-medium text-white">
+                  LLMTap
+                </SidebarLabel>
+                <SidebarLabel className="block text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Local-first observability
+                </SidebarLabel>
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#45A29E]/16 bg-[#0B0C10]/70 text-[#66FCF1]">
+              <TowerControl className="h-4 w-4" />
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -22,6 +22,9 @@ import {
   formatTimeAgo,
 } from "../lib/format.ts";
 
+/* ── Shared surface classes (DRY) ────────────────────────── */
+const sectionShell = "dashboard-shell rounded-[var(--radius-card)]";
+
 export default function Sessions() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "lastSeen", desc: true },
@@ -45,16 +48,16 @@ export default function Sessions() {
             to={`/traces?q=${encodeURIComponent(row.original.sessionId)}`}
             className="group inline-flex min-w-0 items-center gap-3"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-sky-300 transition-colors group-hover:border-emerald-400/20 group-hover:text-emerald-300">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-panel)] border border-white/10 bg-white/5 text-[#66FCF1] transition-colors hover:border-[#45A29E]/20 hover:text-[#66FCF1]">
               <MessageSquareMore className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-mono text-xs font-semibold text-slate-100 transition-colors group-hover:text-emerald-300">
+              <span className="block truncate font-mono text-sm font-semibold text-slate-100 transition-colors hover:text-[#66FCF1]">
                 {row.original.sessionId.length > 28
                   ? `${row.original.sessionId.slice(0, 26)}...`
                   : row.original.sessionId}
               </span>
-              <span className="mt-1 block text-[11px] text-slate-500">
+              <span className="mt-1 block text-xs text-slate-400">
                 Last active {formatTimeAgo(row.original.lastSeen)}
               </span>
             </span>
@@ -65,7 +68,7 @@ export default function Sessions() {
         accessorKey: "traceCount",
         header: "Traces",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-300">{row.original.traceCount}</span>
+          <span className="font-mono text-sm text-slate-300">{row.original.traceCount}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -73,7 +76,7 @@ export default function Sessions() {
         accessorKey: "spanCount",
         header: "Spans",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-300">{row.original.spanCount}</span>
+          <span className="font-mono text-sm text-slate-300">{row.original.spanCount}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -81,7 +84,7 @@ export default function Sessions() {
         accessorKey: "totalTokens",
         header: "Tokens",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-300">
+          <span className="font-mono text-sm text-slate-300">
             {formatCompactNumber(row.original.totalTokens)}
           </span>
         ),
@@ -91,7 +94,7 @@ export default function Sessions() {
         accessorKey: "totalCost",
         header: "Cost",
         cell: ({ row }) => (
-          <span className="font-mono text-xs font-semibold text-white">
+          <span className="font-mono text-sm font-semibold text-white">
             {formatCost(row.original.totalCost)}
           </span>
         ),
@@ -102,12 +105,12 @@ export default function Sessions() {
         header: "Errors",
         cell: ({ row }) =>
           row.original.errorCount > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 text-[10px] font-bold text-rose-300">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#C5C6C7]/20 bg-[#C5C6C7]/10 px-2 py-0.5 text-xs font-bold text-[#C5C6C7]">
               <AlertTriangle className="h-3 w-3" />
               {row.original.errorCount}
             </span>
           ) : (
-            <span className="font-mono text-xs text-slate-500">0</span>
+            <span className="font-mono text-sm text-slate-500">0</span>
           ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -115,7 +118,7 @@ export default function Sessions() {
         accessorKey: "firstSeen",
         header: "First Seen",
         cell: ({ row }) => (
-          <span className="text-xs text-slate-500">{formatTimeAgo(row.original.firstSeen)}</span>
+          <span className="text-sm text-slate-400">{formatTimeAgo(row.original.firstSeen)}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -123,7 +126,7 @@ export default function Sessions() {
         accessorKey: "lastSeen",
         header: "Last Active",
         cell: ({ row }) => (
-          <span className="text-xs text-slate-500">{formatTimeAgo(row.original.lastSeen)}</span>
+          <span className="text-sm text-slate-400">{formatTimeAgo(row.original.lastSeen)}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -148,8 +151,8 @@ export default function Sessions() {
       aside={
         <div className="insight-panel">
           <LivePulse />
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+          <div className="mt-5 space-y-4">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
               <div className="hud-label">Active sessions</div>
               <div className="mt-2 text-lg font-medium text-white">
                 <NumberTicker value={totalSessions} />
@@ -158,7 +161,7 @@ export default function Sessions() {
                 {totalTraces} traces across all sessions
               </div>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
               <div className="hud-label">Session spend</div>
               <div className="mt-2 text-base font-medium text-white">
                 {formatCost(totalCost)}
@@ -173,12 +176,12 @@ export default function Sessions() {
     >
       {sessions.length > 0 ? (
         <motion.div
-          className="dashboard-shell overflow-hidden rounded-[26px] px-4 py-4 sm:px-5"
+          className={`${sectionShell} overflow-hidden p-5`}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <div className="mb-4 flex items-center justify-between gap-3 px-1">
             <div>
               <div className="hud-label">Session registry</div>
               <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
@@ -186,22 +189,22 @@ export default function Sessions() {
               </h2>
             </div>
             <span className="status-chip">
-              <Users className="h-3.5 w-3.5 text-sky-300" />
+              <Users className="h-3.5 w-3.5 text-[#66FCF1]" />
               <span>{totalSessions} sessions</span>
             </span>
           </div>
           <DataTable columns={sessionColumns} data={sessions} sorting={sorting} onSortingChange={setSorting} />
         </motion.div>
       ) : (
-        <div className="dashboard-shell rounded-[26px] p-16">
+        <div className={`${sectionShell} p-16`}>
           <div className="empty-state">
             <MessageSquareMore className="h-8 w-8 text-slate-500" />
             <div className="text-base font-medium text-white">No sessions tracked yet</div>
             <div className="max-w-md text-center text-sm text-slate-400">
-              Sessions appear when you pass a <code className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-emerald-300">sessionId</code> to
+              Sessions appear when you pass a <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[#66FCF1]">sessionId</code> to
               the SDK. This groups related traces into logical conversations or workflows.
             </div>
-            <pre className="mt-4 max-w-lg rounded-2xl border border-white/8 bg-white/4 p-4 text-left font-mono text-xs text-slate-300">
+            <pre className="mt-5 max-w-lg rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5 text-left font-mono text-sm text-slate-300">
 {`import { init } from "@llmtap/sdk";
 
 init({ sessionId: "user-session-123" });`}

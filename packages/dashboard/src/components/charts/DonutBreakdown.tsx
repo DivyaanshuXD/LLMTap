@@ -81,7 +81,7 @@ export function DonutBreakdown({
           return (
             <div
               key={segment.label}
-              className="rounded-2xl border border-white/6 bg-white/4 p-4"
+              className="rounded-[var(--radius-panel)] border border-white/6 bg-white/4 p-4"
             >
               <div className="flex items-center gap-3">
                 <span

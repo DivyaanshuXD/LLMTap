@@ -19,22 +19,22 @@ export type StatisticsCardProps = {
 
 const statusConfig = {
   within: {
-    color: "bg-green-600/10 dark:bg-green-400/10 text-green-600 dark:text-green-400",
+    color: "bg-[#66FCF1]/10 text-[#66FCF1]",
     icon: <TrendingUpIcon />,
     label: "On Track",
   },
   observe: {
-    color: "bg-amber-600/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400",
+    color: "bg-[#45A29E]/10 text-[#45A29E]",
     icon: <MinusIcon />,
     label: "Stable",
   },
   exceed: {
-    color: "bg-destructive/10 text-destructive",
+    color: "bg-[#C5C6C7]/10 text-[#C5C6C7]",
     icon: <TrendingDownIcon />,
     label: "At Risk",
   },
   unknown: {
-    color: "bg-sky-600/10 dark:bg-sky-400/10 text-sky-600 dark:text-sky-400",
+    color: "bg-[#1F2833] text-[#C5C6C7]",
     icon: <ShieldAlertIcon />,
     label: "Under Review",
   },
@@ -51,14 +51,14 @@ export default function StatisticsWithStatus({
   return (
     <div
       className={cn(
-        "flex flex-col justify-center gap-1.5 rounded-lg border border-white/10 bg-white/4 shadow-sm px-4 py-3 min-h-[96px]",
+        "flex flex-col justify-center gap-1.5 rounded-[var(--radius-panel)] border border-white/10 bg-white/4 shadow-sm px-4 py-3 min-h-[96px]",
         className
       )}
     >
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground font-medium">{title}</p>
         {icon && (
-          <div className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md [&>svg]:size-3.5">
+          <div className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-2xl [&>svg]:size-3.5">
             {icon}
           </div>
         )}

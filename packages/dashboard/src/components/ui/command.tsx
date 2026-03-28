@@ -28,7 +28,8 @@ const CommandDialog = ({
 }: React.ComponentProps<typeof Dialog>) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="max-w-[640px] overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(8,13,25,0.992),rgba(3,7,15,0.998))] p-0 shadow-[0_50px_140px_rgba(0,0,0,0.72)]">
+      <DialogContent className="max-w-[680px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(31,40,51,0.992),rgba(11,12,16,0.998))] p-0 shadow-[0_50px_140px_rgba(0,0,0,0.78),0_0_0_1px_rgba(102,252,241,0.05)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(102,252,241,0.14),transparent_58%)]" />
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-slate-500 [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3">
           {children}
         </Command>
@@ -42,10 +43,10 @@ const CommandInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
   <div
-    className="mx-3 mt-3 flex items-center rounded-[20px] border border-sky-400/18 bg-[linear-gradient(180deg,rgba(11,19,34,0.98),rgba(5,10,22,0.99))] px-3 shadow-[inset_0_-1px_0_rgba(52,211,153,0.55),0_20px_50px_rgba(0,0,0,0.24)]"
+    className="mx-3 mt-3 flex items-center rounded-[22px] border border-[#66FCF1]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.98),rgba(11,12,16,0.99))] px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_20px_50px_rgba(0,0,0,0.24)]"
     cmdk-input-wrapper=""
   >
-    <Search className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+    <Search className="mr-2 h-4 w-4 shrink-0 text-[#66FCF1]" />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
@@ -64,7 +65,7 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[340px] overflow-y-auto overflow-x-hidden px-2 pb-3 pt-3", className)}
+    className={cn("max-h-[360px] overflow-y-auto overflow-x-hidden px-2 pb-3 pt-3", className)}
     {...props}
   />
 ));
@@ -116,7 +117,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-2 rounded-2xl border border-transparent px-3 py-3 text-sm text-slate-300 outline-none transition-all data-[disabled=true]:pointer-events-none data-[selected=true]:border-white/10 data-[selected=true]:bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(9,14,25,0.98))] data-[selected=true]:text-white data-[selected=true]:shadow-[0_20px_40px_rgba(0,0,0,0.18)] data-[disabled=true]:opacity-50 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
+      "relative flex cursor-pointer select-none items-center gap-3 rounded-[18px] border border-transparent px-3 py-3 text-sm text-slate-300 outline-none transition-all data-[disabled=true]:pointer-events-none data-[selected=true]:border-[#66FCF1]/18 data-[selected=true]:bg-[linear-gradient(135deg,rgba(36,47,58,0.98),rgba(16,18,23,0.98))] data-[selected=true]:text-white data-[selected=true]:shadow-[0_18px_38px_rgba(0,0,0,0.24)] data-[disabled=true]:opacity-50 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
       className
     )}
     {...props}

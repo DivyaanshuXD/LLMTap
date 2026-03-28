@@ -26,7 +26,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 border border-white/8 bg-[linear-gradient(180deg,rgba(8,14,28,0.98),rgba(4,8,18,0.99))] shadow-[0_40px_100px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-300",
+  "fixed z-50 gap-4 border border-white/8 bg-[linear-gradient(180deg,rgba(31,40,51,0.98),rgba(11,12,16,0.99))] shadow-[0_40px_100px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-300",
   {
     variants: {
       side: {
@@ -63,7 +63,7 @@ const SheetContent = React.forwardRef<
         <DialogPrimitive.Title>Panel</DialogPrimitive.Title>
       </VisuallyHidden.Root>
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/8 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/8 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#66FCF1]/45">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

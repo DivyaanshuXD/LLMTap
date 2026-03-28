@@ -11,16 +11,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group toast group-[.toaster]:bg-slate-900/95 group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-slate-200 group-[.toaster]:border-white/10 group-[.toaster]:shadow-[0_16px_40px_rgba(0,0,0,0.4)] group-[.toaster]:rounded-2xl",
           description: "group-[.toast]:text-slate-400",
           actionButton:
-            "group-[.toast]:bg-emerald-500 group-[.toast]:text-slate-950",
+            "group-[.toast]:bg-[#66FCF1] group-[.toast]:text-slate-950",
           cancelButton:
             "group-[.toast]:bg-white/6 group-[.toast]:text-slate-400",
           success:
-            "group-[.toaster]:border-emerald-400/20 group-[.toaster]:text-emerald-200",
+            "group-[.toaster]:border-[#45A29E]/25 group-[.toaster]:text-[#66FCF1]",
           error:
-            "group-[.toaster]:border-rose-400/20 group-[.toaster]:text-rose-200",
+            "group-[.toaster]:border-[#C5C6C7]/20 group-[.toaster]:text-[#C5C6C7]",
           warning:
-            "group-[.toaster]:border-amber-400/20 group-[.toaster]:text-amber-200",
-          info: "group-[.toaster]:border-sky-400/20 group-[.toaster]:text-sky-200",
+            "group-[.toaster]:border-[#45A29E]/25 group-[.toaster]:text-[#45A29E]",
+          info: "group-[.toaster]:border-[#66FCF1]/20 group-[.toaster]:text-[#66FCF1]",
         },
       }}
       {...props}

@@ -32,8 +32,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="mx-auto flex w-full max-w-[1500px] flex-col items-center justify-center gap-6 py-24">
         <div className="dashboard-shell flex max-w-lg flex-col items-center gap-5 rounded-[28px] px-8 py-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-400/10">
-            <AlertTriangle className="h-7 w-7 text-rose-300" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#C5C6C7]/20 bg-[#C5C6C7]/10">
+            <AlertTriangle className="h-7 w-7 text-[#C5C6C7]" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">

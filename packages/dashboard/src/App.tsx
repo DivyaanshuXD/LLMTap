@@ -66,34 +66,34 @@ function App() {
 
         <div className="pointer-events-none fixed inset-0 overflow-hidden">
           <AnimatedGridPattern />
-          <div className="absolute left-[-12rem] top-16 h-[28rem] w-[28rem] rounded-full bg-emerald-400/8 blur-3xl" />
-          <div className="absolute right-[-8rem] top-0 h-[24rem] w-[24rem] rounded-full bg-sky-400/10 blur-3xl" />
-          <div className="absolute bottom-[-10rem] left-1/2 h-[24rem] w-[36rem] -translate-x-1/2 rounded-full bg-amber-300/5 blur-3xl" />
+          <div className="absolute left-[-12rem] top-16 h-[28rem] w-[28rem] rounded-full bg-[#66fcf1]/8 blur-3xl" />
+          <div className="absolute right-[-8rem] top-0 h-[24rem] w-[24rem] rounded-full bg-[#45a29e]/10 blur-3xl" />
+          <div className="absolute bottom-[-10rem] left-1/2 h-[24rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#66fcf1]/6 blur-3xl" />
         </div>
         <SidebarProvider>
           <AppSidebar />
 
           <div className="flex min-h-screen flex-1 flex-col">
-            <header className="border-b border-white/6 px-4 py-4 sm:px-6 lg:px-8">
-              <div className="dashboard-shell flex items-center justify-between gap-4 rounded-[28px] px-5 py-4">
-                <div className="flex items-center gap-3">
+            <header className="sticky top-3 z-30 px-4 pt-3 sm:px-6 lg:px-8">
+              <div className="dashboard-shell mx-auto flex max-w-[1500px] items-center justify-between gap-3 rounded-[28px] border-white/8 px-4 py-3 sm:px-4.5">
+                <div className="flex items-center gap-2.5">
                   <SidebarTrigger />
                   <div>
                     <div className="hud-label">Operator Surface</div>
-                    <div className="mt-1 flex items-center gap-3">
-                      <h2 className="text-lg font-semibold tracking-[-0.04em] text-white sm:text-xl">
+                    <div className="mt-0.5 flex items-center gap-2.5">
+                      <h2 className="text-base font-semibold tracking-[-0.04em] text-white sm:text-lg">
                         LLM runtime intelligence
                       </h2>
-                      <span className="hidden rounded-full border border-white/8 bg-white/6 px-2.5 py-1 text-[11px] font-mono text-slate-400 sm:inline-flex">
+                      <span className="hidden rounded-full border border-white/8 bg-white/6 px-2 py-0.5 text-[10px] font-mono text-slate-400 sm:inline-flex">
                         v0.1.0
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <CommandPalette />
                   <div className="status-chip hidden sm:flex">
-                    <Sparkles className="h-3.5 w-3.5 text-sky-300" />
+                    <Sparkles className="h-3.5 w-3.5 text-[#66fcf1]" />
                     <span>Streaming observability</span>
                   </div>
                   <LivePulse />
@@ -130,7 +130,7 @@ function App() {
             <footer className="px-4 pb-5 sm:px-6 lg:px-8">
               <div className="dashboard-shell flex flex-col gap-3 rounded-[24px] px-5 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.8)]" />
+                  <span className="h-2 w-2 rounded-full bg-[#66fcf1] shadow-[0_0_14px_rgba(102,252,241,0.7)]" />
                   <span>Open-source LLM observability, built for local-first workflows.</span>
                 </div>
                 <span className="font-mono tracking-[0.18em] text-slate-500">

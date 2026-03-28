@@ -71,11 +71,11 @@ function CopyCodeButton({
     <button
       type="button"
       onClick={() => onCopy(label, text)}
-      className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-400 transition-colors hover:text-white"
+      className="rounded-2xl border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:text-white"
       title={`Copy ${label}`}
     >
       {copied === label ? (
-        <Check className="h-3.5 w-3.5 text-emerald-300" />
+        <Check className="h-3.5 w-3.5 text-[#66FCF1]" />
       ) : (
         <Copy className="h-3.5 w-3.5" />
       )}
@@ -97,24 +97,24 @@ export function GettingStartedPanel({
   }
 
   return (
-    <div className="surface-strong rounded-[26px] p-5 sm:p-6">
+    <div className="surface-strong rounded-[var(--radius-card)] p-5 sm:p-6">
       <div className="max-w-3xl">
         <div className="hud-label">First successful trace</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">
           LLMTap is already running locally. The remaining change happens in your app.
         </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          Running <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap</code> starts the
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          Running <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap</code> starts the
           collector and opens this dashboard automatically. You do not edit LLMTap itself from here. You edit the
           codebase that is already making LLM calls.
         </p>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-emerald-400/14 bg-emerald-400/8 p-4 text-sm text-emerald-100">
+      <div className="mt-5 rounded-[var(--radius-panel)] border border-[#45A29E]/18 bg-[#45A29E]/10 p-4 text-sm text-[#C5C6C7]">
         Put the wrap code in the same file where your app currently does{" "}
-        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-emerald-50">new OpenAI()</code>,{" "}
-        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-emerald-50">new Anthropic()</code>, or{" "}
-        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-emerald-50">new GoogleGenerativeAI()</code>.
+        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-[#66FCF1]">new OpenAI()</code>,{" "}
+        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-[#66FCF1]">new Anthropic()</code>, or{" "}
+        <code className="rounded bg-black/20 px-1.5 py-0.5 font-mono text-[#66FCF1]">new GoogleGenerativeAI()</code>.
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -124,10 +124,10 @@ export function GettingStartedPanel({
               key={key}
               type="button"
               onClick={() => setProvider(key)}
-              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
                 provider === key
-                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
-                  : "border-white/8 bg-white/4 text-slate-400 hover:text-white"
+                  ? "border-[#45A29E]/20 bg-[#45A29E]/12 text-[#66FCF1]"
+                  : "border-white/10 bg-white/5 text-slate-400 hover:text-white"
               }`}
             >
               {step.label}
@@ -136,10 +136,10 @@ export function GettingStartedPanel({
         )}
       </div>
 
-      <div className={`mt-5 grid gap-4 ${compact ? "xl:grid-cols-3" : "lg:grid-cols-3"}`}>
-        <div className="surface-muted rounded-2xl p-4">
+      <div className={`mt-5 grid gap-5 ${compact ? "xl:grid-cols-3" : "lg:grid-cols-3"}`}>
+        <div className="surface-muted rounded-[var(--radius-panel)] p-5">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/12 text-[11px] font-bold text-emerald-200">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#45A29E]/15 text-xs font-bold text-[#66FCF1]">
               1
             </span>
             <div className="text-sm font-semibold text-white">Collector is already up</div>
@@ -147,15 +147,15 @@ export function GettingStartedPanel({
           <p className="mt-3 text-sm leading-6 text-slate-400">
             This command started the local collector and opened the dashboard in your browser.
           </p>
-          <div className="mt-3 flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-black/35 p-3">
-            <pre className="overflow-x-auto text-xs leading-relaxed text-emerald-200">npx llmtap</pre>
+          <div className="mt-3 flex items-start justify-between gap-3 rounded-[var(--radius-panel)] border border-white/10 bg-black/40 p-3">
+            <pre className="overflow-x-auto text-sm leading-relaxed text-[#66FCF1]">npx llmtap</pre>
             <CopyCodeButton label="start" text="npx llmtap" copied={copied} onCopy={copy} />
           </div>
         </div>
 
-        <div className="surface-muted rounded-2xl p-4">
+        <div className="surface-muted rounded-[var(--radius-panel)] p-5">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/12 text-[11px] font-bold text-emerald-200">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#45A29E]/15 text-xs font-bold text-[#66FCF1]">
               2
             </span>
             <div className="text-sm font-semibold text-white">Wrap your existing client</div>
@@ -164,15 +164,15 @@ export function GettingStartedPanel({
             Change the file in your app where the provider client is created. After wrapping, you keep using the SDK
             the same way.
           </p>
-          <div className="mt-3 flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-black/35 p-3">
-            <pre className="overflow-x-auto text-xs leading-relaxed text-emerald-200">{current.wrapCode}</pre>
+          <div className="mt-3 flex items-start justify-between gap-3 rounded-[var(--radius-panel)] border border-white/10 bg-black/40 p-3">
+            <pre className="overflow-x-auto text-sm leading-relaxed text-[#66FCF1]">{current.wrapCode}</pre>
             <CopyCodeButton label="wrap" text={current.wrapCode} copied={copied} onCopy={copy} />
           </div>
         </div>
 
-        <div className="surface-muted rounded-2xl p-4">
+        <div className="surface-muted rounded-[var(--radius-panel)] p-5">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/12 text-[11px] font-bold text-emerald-200">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#45A29E]/15 text-xs font-bold text-[#66FCF1]">
               3
             </span>
             <div className="text-sm font-semibold text-white">Run one real request</div>
@@ -181,60 +181,60 @@ export function GettingStartedPanel({
             Trigger any normal model call in that same app. LLMTap captures it automatically and the first trace should
             appear here in a few seconds.
           </p>
-          <div className="mt-3 flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-black/35 p-3">
-            <pre className="overflow-x-auto text-xs leading-relaxed text-emerald-200">{current.requestCode}</pre>
+          <div className="mt-3 flex items-start justify-between gap-3 rounded-[var(--radius-panel)] border border-white/10 bg-black/40 p-3">
+            <pre className="overflow-x-auto text-sm leading-relaxed text-[#66FCF1]">{current.requestCode}</pre>
             <CopyCodeButton label="request" text={current.requestCode} copied={copied} onCopy={copy} />
           </div>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="surface-muted rounded-2xl p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <FolderCode className="h-4 w-4 text-sky-300" />
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="surface-muted rounded-[var(--radius-panel)] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+            <FolderCode className="h-4 w-4 text-[#66FCF1]" />
             Where this code usually goes
           </div>
-          <div className="grid gap-2 text-sm text-slate-400 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+          <div className="grid gap-3 text-sm text-slate-400 sm:grid-cols-2">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               Next.js route or server action
             </div>
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               Express / Fastify backend file
             </div>
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               Agent runner or worker script
             </div>
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               CLI script already calling the provider
             </div>
           </div>
         </div>
 
-        <div className="surface-muted rounded-2xl p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <SearchCheck className="h-4 w-4 text-emerald-300" />
+        <div className="surface-muted rounded-[var(--radius-panel)] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+            <SearchCheck className="h-4 w-4 text-[#45A29E]" />
             How to know it worked
           </div>
-          <div className="space-y-2 text-sm text-slate-400">
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+          <div className="space-y-3 text-sm text-slate-400">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               A new trace appears in the Overview or Traces page.
             </div>
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
               Token, cost, and latency numbers start changing.
             </div>
-            <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
-              If nothing appears, run <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap doctor</code>.
+            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 px-4 py-3">
+              If nothing appears, run <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap doctor</code>.
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400">
-        <span className="status-chip border-emerald-400/12 bg-emerald-400/8 text-emerald-100">
+      <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-400">
+        <span className="status-chip border-[#45A29E]/16 bg-[#45A29E]/12 text-[#66FCF1]">
           <Terminal className="h-3.5 w-3.5" />
           Collector + dashboard start automatically
         </span>
-        <span className="status-chip border-sky-400/12 bg-sky-400/8 text-sky-100">
+        <span className="status-chip border-[#66FCF1]/16 bg-[#66FCF1]/10 text-[#66FCF1]">
           <Play className="h-3.5 w-3.5" />
           One real request is enough to validate the setup
         </span>

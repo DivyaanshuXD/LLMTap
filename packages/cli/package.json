@@ -1,6 +1,6 @@
 {
   "name": "llmtap",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "DevTools for AI Agents - See every LLM call, trace agent workflows, track costs",
   "type": "module",
   "bin": {
@@ -16,8 +16,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@llmtap/collector": "^0.1.3",
-    "@llmtap/shared": "^0.1.3",
+    "@llmtap/collector": "^0.1.4",
+    "@llmtap/shared": "^0.1.4",
     "chalk": "^5.4.0",
     "commander": "^13.0.0",
     "open": "^10.1.0"

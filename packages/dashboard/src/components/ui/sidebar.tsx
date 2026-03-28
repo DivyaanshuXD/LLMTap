@@ -2,13 +2,32 @@
 
 import * as React from "react";
 import { PanelLeft } from "lucide-react";
+import { NavLink, type NavLinkProps } from "react-router-dom";
+import { GravityStarsBackground } from "@/components/backgrounds/GravityStarsBackground.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { cn } from "@/lib/utils.ts";
 
+const SIDEBAR_WIDTH = 272;
+const SIDEBAR_DOCK_WIDTH = 98;
+const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+
 type SidebarContextValue = {
+  state: "expanded" | "collapsed";
   open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  openMobile: boolean;
-  setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>;
+  setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
+  isOpenOnMobile: boolean;
+  setIsOpenOnMobile: React.Dispatch<React.SetStateAction<boolean>>;
   isMobile: boolean;
   toggleSidebar: () => void;
 };
@@ -18,230 +37,478 @@ const SidebarContext = React.createContext<SidebarContextValue | null>(null);
 export function useSidebar() {
   const context = React.useContext(SidebarContext);
   if (!context) {
-    throw new Error("useSidebar must be used within SidebarProvider");
+    throw new Error("useSidebar must be used within a SidebarProvider.");
   }
   return context;
 }
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(true);
+interface SidebarProviderProps extends React.ComponentProps<"div"> {
+  defaultOpen?: boolean;
+  isOpen?: boolean;
+  shortcut?: string;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function SidebarProvider({
+  defaultOpen = true,
+  isOpen: openProp,
+  onOpenChange,
+  className,
+  style,
+  children,
+  shortcut = "b",
+  ...props
+}: SidebarProviderProps) {
+  const isMobileValue = useIsMobile();
+  const isMobile = isMobileValue ?? false;
   const [openMobile, setOpenMobile] = React.useState(false);
-  const [isMobile, setIsMobile] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
 
   React.useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+    const cookieMatch = document.cookie.match(
+      new RegExp(`(?:^|; )${SIDEBAR_COOKIE_NAME}=([^;]+)`)
+    );
+    if (!cookieMatch?.[1] || openProp !== undefined) return;
+    setInternalOpen(cookieMatch[1] === "true");
+  }, [openProp]);
+
+  const open = openProp ?? internalOpen;
+
+  const setOpen = React.useCallback(
+    (value: boolean | ((open: boolean) => boolean)) => {
+      const next = typeof value === "function" ? value(open) : value;
+      if (onOpenChange) onOpenChange(next);
+      else setInternalOpen(next);
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${next}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    },
+    [onOpenChange, open]
+  );
+
+  const isMobileRef = React.useRef(isMobile);
+  isMobileRef.current = isMobile;
 
   const toggleSidebar = React.useCallback(() => {
-    if (isMobile) {
-      setOpenMobile((prev) => !prev);
-    } else {
-      setOpen((prev) => !prev);
-    }
-  }, [isMobile]);
+    if (isMobileRef.current) setOpenMobile((prev) => !prev);
+    else setOpen((prev) => !prev);
+  }, [setOpen]);
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== shortcut.toLowerCase()) {
+        return;
+      }
+
+      const active = document.activeElement;
+      const isTextInput =
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active?.getAttribute("contenteditable") === "true" ||
+        active?.getAttribute("role") === "textbox";
+
+      if (isTextInput) return;
+      event.preventDefault();
+      toggleSidebar();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [shortcut, toggleSidebar]);
+
+  const value = React.useMemo<SidebarContextValue>(
+    () => ({
+      state: open ? "expanded" : "collapsed",
+      open,
+      setOpen,
+      isOpenOnMobile: openMobile,
+      setIsOpenOnMobile: setOpenMobile,
+      isMobile,
+      toggleSidebar,
+    }),
+    [isMobile, open, openMobile, setOpen, toggleSidebar]
+  );
+
+  if (isMobileValue === undefined) return null;
 
   return (
-    <SidebarContext.Provider
-      value={{
-        open,
-        setOpen,
-        openMobile,
-        setOpenMobile,
-        isMobile,
-        toggleSidebar,
-      }}
-    >
-      <div className="relative flex min-h-screen w-full">{children}</div>
+    <SidebarContext.Provider value={value}>
+      <div
+        className={cn("group/sidebar-root flex min-h-screen w-full text-[#C5C6C7]", className)}
+        style={
+          {
+            "--sidebar-width": `${SIDEBAR_WIDTH}px`,
+            "--sidebar-width-dock": `${SIDEBAR_DOCK_WIDTH}px`,
+            ...style,
+          } as React.CSSProperties
+        }
+        {...props}
+      >
+        {children}
+      </div>
     </SidebarContext.Provider>
   );
 }
 
-type SidebarProps = React.HTMLAttributes<HTMLElement> & {
-  variant?: "sidebar" | "inset";
+type SidebarProps = React.ComponentProps<"div"> & {
+  intent?: "default" | "float" | "inset";
+  collapsible?: "hidden" | "dock" | "none";
+  side?: "left" | "right";
+  closeButton?: boolean;
 };
 
-export function Sidebar({ className, children }: SidebarProps) {
-  const { open, openMobile, isMobile, setOpenMobile } = useSidebar();
+function SidebarChrome({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex h-full w-full flex-col overflow-hidden rounded-[30px] border border-[#45A29E]/18",
+        "bg-[linear-gradient(180deg,rgba(31,40,51,0.94),rgba(11,12,16,0.98))]",
+        "shadow-[0_28px_80px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(197,198,199,0.04)] backdrop-blur-2xl",
+        className
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-85">
+        <GravityStarsBackground
+          className="h-full w-full text-[#66FCF1]"
+          starsCount={34}
+          starsSize={1.35}
+          starsOpacity={0.52}
+          glowIntensity={8}
+          movementSpeed={0.12}
+          mouseInfluence={72}
+          gravityStrength={42}
+        />
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(102,252,241,0.16),transparent_35%),radial-gradient(circle_at_bottom,rgba(69,162,158,0.14),transparent_38%)]" />
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(102,252,241,0.45),transparent)]" />
+      <div className="relative flex h-full flex-col">{children}</div>
+    </div>
+  );
+}
+
+export function Sidebar({
+  children,
+  closeButton = true,
+  collapsible = "dock",
+  side = "left",
+  intent = "float",
+  className,
+  ...props
+}: SidebarProps) {
+  const { isMobile, state, isOpenOnMobile, setIsOpenOnMobile } = useSidebar();
+  const width = state === "collapsed" ? SIDEBAR_DOCK_WIDTH : SIDEBAR_WIDTH;
+
+  if (collapsible === "none") {
+    return (
+      <aside
+        data-slot="sidebar"
+        data-state={state}
+        className={cn("hidden h-screen md:block", className)}
+        style={{ width: SIDEBAR_WIDTH }}
+        {...props}
+      >
+        <SidebarChrome>{children}</SidebarChrome>
+      </aside>
+    );
+  }
 
   if (isMobile) {
     return (
-      <>
-        {openMobile ? (
-          <button
-            type="button"
-            aria-label="Close sidebar overlay"
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpenMobile(false)}
-          />
-        ) : null}
-        <aside
-          data-slot="sidebar"
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 w-73 border-r border-cyan-300/10 bg-[linear-gradient(180deg,rgba(7,13,28,0.98),rgba(2,8,24,0.98))] shadow-[0_0_0_1px_rgba(125,211,252,0.08),0_22px_64px_rgba(0,0,0,0.55)] transition-transform duration-300",
-            openMobile ? "translate-x-0" : "-translate-x-full",
-            className
-          )}
+      <Sheet open={isOpenOnMobile} onOpenChange={setIsOpenOnMobile}>
+        <SheetContent
+          side={side}
+          className="w-[18rem] border-none bg-transparent p-3 shadow-none"
+          aria-label="Sidebar"
         >
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,rgba(16,185,129,0.18),transparent_44%),radial-gradient(circle_at_92%_0%,rgba(56,189,248,0.14),transparent_36%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(125,211,252,0.06)_1px,transparent_1px)] bg-size-[100%_38px] opacity-30" />
-          </div>
-          <div data-slot="sidebar-inner" className="relative flex h-full flex-col">{children}</div>
-        </aside>
-      </>
+          <SidebarChrome className="rounded-[28px]">
+            {children}
+          </SidebarChrome>
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
-    <aside
+    <div
       data-slot="sidebar"
-      data-open={open ? "true" : "false"}
-      className={cn(
-        "relative z-20 border-r border-cyan-300/10 bg-[linear-gradient(180deg,rgba(7,13,28,0.78),rgba(2,8,24,0.88))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_64px_rgba(1,8,20,0.46)] backdrop-blur-xl transition-[width] duration-300",
-        open ? "w-73" : "w-23",
-        className
-      )}
+      data-state={state}
+      data-collapsible={state === "collapsed" ? collapsible : "expanded"}
+      data-intent={intent}
+      data-side={side}
+      className={cn("group/sidebar relative hidden md:block", className)}
+      {...props}
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_8%,rgba(16,185,129,0.2),transparent_44%),radial-gradient(circle_at_92%_0%,rgba(56,189,248,0.16),transparent_36%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(125,211,252,0.05)_1px,transparent_1px)] bg-size-[100%_38px] opacity-35" />
+      <div
+        aria-hidden="true"
+        className="transition-[width] duration-200 ease-linear"
+        style={{ width }}
+      />
+      <div
+        className={cn(
+          "fixed bottom-0 top-0 z-20 hidden p-3 md:flex",
+          side === "left" ? "left-0" : "right-0"
+        )}
+        style={{ width }}
+      >
+        <SidebarChrome>{children}</SidebarChrome>
       </div>
-      <div data-slot="sidebar-inner" className="relative flex h-full flex-col overflow-hidden">{children}</div>
-    </aside>
+    </div>
   );
 }
 
-export function SidebarTrigger({ className }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const { toggleSidebar } = useSidebar();
+export function SidebarHeader({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
 
-  return (
-    <button
-      type="button"
-      data-slot="sidebar-trigger"
-      onClick={toggleSidebar}
-      className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,8,24,0.9))] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_20px_rgba(16,185,129,0.15)] transition-all hover:border-emerald-300/35 hover:text-white",
-        className
-      )}
-      aria-label="Toggle sidebar"
-    >
-      <PanelLeft className="h-4 w-4" />
-    </button>
-  );
-}
-
-export function SidebarHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div data-slot="sidebar-header" className={cn("px-4", className)} {...props} />;
-}
-
-export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div data-slot="sidebar-content" className={cn("flex-1", className)} {...props} />;
-}
-
-export function SidebarMenu({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) {
-  return <ul data-slot="sidebar-menu" className={cn("space-y-1.5", className)} {...props} />;
-}
-
-export function SidebarMenuItem({ className, ...props }: React.LiHTMLAttributes<HTMLLIElement>) {
-  return <li data-slot="sidebar-menu-item" className={cn(className)} {...props} />;
-}
-
-export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div data-slot="sidebar-group" className={cn("py-2", className)} {...props} />;
-}
-
-export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      data-slot="sidebar-group-label"
-      className={cn("px-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-200/45", className)}
+      data-slot="sidebar-header"
+      className={cn(
+        "flex flex-col gap-3",
+        collapsed ? "items-center px-3 py-4" : "px-4 py-4",
+        className
+      )}
       {...props}
     />
   );
 }
 
-type SidebarMenuButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  isActive?: boolean;
-  tooltip?: string;
-  render?: React.ReactElement<any>;
-  size?: "default" | "lg";
-};
-
-export function SidebarMenuButton({
+export function SidebarContent({
   className,
-  isActive,
-  tooltip,
-  render,
-  size,
-  children,
   ...props
-}: SidebarMenuButtonProps) {
-  const classes = cn(
-    "group relative flex w-full items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-300 transition-all",
-    "before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-opacity before:content-[''] before:bg-[linear-gradient(120deg,rgba(20,184,166,0.14),rgba(56,189,248,0.1),rgba(16,185,129,0.06))]",
-    "hover:border-cyan-200/20 hover:text-white hover:before:opacity-100",
-    size === "lg" && "py-2.5",
-    isActive && "border-emerald-300/24 bg-[linear-gradient(120deg,rgba(16,185,129,0.22),rgba(56,189,248,0.11))] text-white shadow-[0_0_0_1px_rgba(16,185,129,0.16),0_18px_40px_rgba(3,20,40,0.42)]",
-    className
-  );
-
-  if (render) {
-    return React.cloneElement(render as React.ReactElement<any>, {
-      ...props,
-      title: tooltip,
-      className: cn(classes, (render.props as any).className),
-      children,
-    });
-  }
+}: React.ComponentProps<"div">) {
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
 
   return (
-    <button type="button" title={tooltip} className={classes} {...props}>
-      {children}
-    </button>
+    <div
+      data-slot="sidebar-content"
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden",
+        collapsed ? "items-center px-3 pb-4" : "px-3 pb-4",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
-export function SidebarMenuSub({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) {
-  return <ul data-slot="sidebar-menu-sub" className={cn("ml-4 mt-1.5 space-y-1.5 border-l border-cyan-200/14 pl-2", className)} {...props} />;
-}
-
-export function SidebarMenuSubItem({ className, ...props }: React.LiHTMLAttributes<HTMLLIElement>) {
-  return <li data-slot="sidebar-menu-sub-item" className={cn(className)} {...props} />;
-}
-
-type SidebarMenuSubButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  isActive?: boolean;
-  render?: React.ReactElement<any>;
-};
-
-export function SidebarMenuSubButton({
+export function SidebarFooter({
   className,
-  isActive,
-  render,
-  children,
   ...props
-}: SidebarMenuSubButtonProps) {
-  const classes = cn(
-    "group relative flex w-full items-center rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 transition-all",
-    "hover:border-cyan-200/18 hover:bg-cyan-300/6 hover:text-white",
-    isActive && "border-cyan-300/24 bg-cyan-300/10 text-white",
-    className
-  );
-
-  if (render) {
-    return React.cloneElement(render as React.ReactElement<any>, {
-      ...props,
-      className: cn(classes, (render.props as any).className),
-      children,
-    });
-  }
+}: React.ComponentProps<"div">) {
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
 
   return (
-    <button type="button" className={classes} {...props}>
+    <div
+      data-slot="sidebar-footer"
+      className={cn(
+        "mt-auto",
+        collapsed ? "px-3 py-4" : "px-3 pb-4 pt-3",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function SidebarSectionGroup({
+  className,
+  ...props
+}: React.ComponentProps<"section">) {
+  return (
+    <section
+      data-slot="sidebar-section-group"
+      className={cn("flex w-full flex-col gap-3", className)}
+      {...props}
+    />
+  );
+}
+
+interface SidebarSectionProps extends React.ComponentProps<"div"> {
+  label?: string;
+}
+
+export function SidebarSection({
+  label,
+  className,
+  children,
+  ...props
+}: SidebarSectionProps) {
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
+
+  return (
+    <div
+      data-slot="sidebar-section"
+      className={cn(
+        "w-full rounded-[26px] border border-[#45A29E]/14 bg-[linear-gradient(180deg,rgba(31,40,51,0.78),rgba(11,12,16,0.88))] shadow-[inset_0_1px_0_rgba(197,198,199,0.04)]",
+        collapsed
+          ? "mx-auto w-auto border-transparent bg-transparent p-0 shadow-none"
+          : "p-3",
+        className
+      )}
+      {...props}
+    >
+      {!collapsed && label ? (
+        <HeaderLabel>{label}</HeaderLabel>
+      ) : null}
+      <div className={cn("flex flex-col gap-2", collapsed ? "items-center" : "")}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function HeaderLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-2 pb-2 text-[11px] font-medium uppercase tracking-[0.24em] text-[#66FCF1]/65">
       {children}
-    </button>
+    </div>
+  );
+}
+
+type SidebarItemProps = Omit<NavLinkProps, "className" | "children"> & {
+  icon: React.ReactNode;
+  label: string;
+  badge?: string | number;
+  isCurrent?: boolean;
+  className?: string;
+};
+
+export function SidebarItem({
+  icon,
+  label,
+  badge,
+  isCurrent,
+  className,
+  ...props
+}: SidebarItemProps) {
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
+
+  const content = (
+    <NavLink
+      aria-current={isCurrent ? "page" : undefined}
+      className={({ isActive }) =>
+        cn(
+          "group/sidebar-item relative flex min-w-0 items-center overflow-hidden rounded-[20px] border text-sm transition-all duration-200",
+          collapsed ? "h-[3.4rem] w-[3.4rem] justify-center px-0" : "h-12 gap-3 px-3.5",
+          "border-transparent text-slate-300",
+          collapsed
+            ? "hover:bg-white/[0.03] hover:text-white"
+            : "hover:border-[#66FCF1]/18 hover:bg-[#66FCF1]/8 hover:text-white",
+          collapsed && (isCurrent || isActive)
+            ? "bg-[rgba(102,252,241,0.05)] text-white"
+            : undefined,
+          !collapsed && (isCurrent || isActive) &&
+            "border-[#45A29E]/22 bg-[linear-gradient(135deg,rgba(69,162,158,0.16),rgba(102,252,241,0.08))] text-white shadow-[0_0_0_1px_rgba(102,252,241,0.08)]",
+          className
+        )
+      }
+      {...props}
+    >
+      <span
+        data-slot="icon"
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/8 bg-[linear-gradient(180deg,rgba(31,40,51,0.84),rgba(11,12,16,0.94))] text-slate-300 shadow-[inset_0_1px_0_rgba(197,198,199,0.04)]",
+          collapsed
+            ? "group-hover/sidebar-item:border-[#66FCF1]/14 group-hover/sidebar-item:bg-[#66FCF1]/8"
+            : undefined,
+          collapsed
+            ? "group-aria-[current=page]/sidebar-item:border-[#45A29E]/14 group-aria-[current=page]/sidebar-item:bg-[linear-gradient(135deg,rgba(69,162,158,0.16),rgba(102,252,241,0.08))] group-aria-[current=page]/sidebar-item:text-[#66FCF1] group-aria-[current=page]/sidebar-item:shadow-[0_0_0_1px_rgba(102,252,241,0.06)]"
+            : "group-aria-[current=page]/sidebar-item:border-[#45A29E]/18 group-aria-[current=page]/sidebar-item:text-[#66FCF1]"
+        )}
+      >
+        {icon}
+      </span>
+      {!collapsed ? (
+        <>
+          <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
+          {badge ? (
+            <span className="rounded-full border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-mono text-slate-400">
+              {badge}
+            </span>
+          ) : null}
+        </>
+      ) : null}
+    </NavLink>
+  );
+
+  if (!collapsed) return content;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function SidebarLabel({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  const { state, isMobile } = useSidebar();
+  if (state === "collapsed" && !isMobile) return null;
+
+  return (
+    <span
+      data-slot="sidebar-label"
+      className={cn("truncate", className)}
+      {...props}
+    />
+  );
+}
+
+export function SidebarTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar } = useSidebar();
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      aria-label={props["aria-label"] ?? "Toggle Sidebar"}
+      className={cn(
+        "rounded-xl border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.94),rgba(11,12,16,0.96))] text-slate-300 shadow-[0_0_20px_rgba(102,252,241,0.08)] hover:border-[#66FCF1]/18 hover:bg-[linear-gradient(180deg,rgba(36,47,58,0.98),rgba(16,18,23,0.98))] hover:text-white",
+        className
+      )}
+      onClick={(event) => {
+        props.onClick?.(event);
+        if (!event.defaultPrevented) toggleSidebar();
+      }}
+      {...props}
+    >
+      {props.children ?? <PanelLeft className="h-4 w-4" />}
+    </Button>
+  );
+}
+
+export function SidebarRail({
+  className,
+  ...props
+}: React.ComponentProps<"button">) {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button
+      type="button"
+      data-slot="sidebar-rail"
+      aria-label="Toggle Sidebar"
+      onClick={toggleSidebar}
+      className={cn("hidden", className)}
+      {...props}
+    />
   );
 }

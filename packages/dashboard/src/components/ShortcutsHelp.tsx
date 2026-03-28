@@ -31,7 +31,7 @@ export function ShortcutsHelp({ open, onClose }: ShortcutsHelpProps) {
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/8 bg-white/5">
-              <Keyboard className="h-4.5 w-4.5 text-emerald-300" />
+              <Keyboard className="h-4.5 w-4.5 text-[#66FCF1]" />
             </div>
             <div>
               <DialogTitle>Keyboard Shortcuts</DialogTitle>

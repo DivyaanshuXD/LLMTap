@@ -3,13 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchDbInfo, resetData, exportTraces, applyRetention, exportOtlpJson, forwardOtlp } from "../api/client.ts";
 import { toast } from "sonner";
 import {
-  AlertTriangle,
   Check,
   Copy,
   Database,
   DollarSign,
   Download,
-  HardDrive,
   Info,
   Plus,
   RotateCcw,
@@ -21,6 +19,12 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GettingStartedPanel } from "../components/GettingStartedPanel.tsx";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionPanel,
+  AccordionTrigger,
+} from "../components/animate-ui/components/base/accordion.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
 import {
@@ -197,54 +201,120 @@ export default function Settings() {
       <GettingStartedPanel compact />
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <motion.div
-          className="dashboard-shell rounded-[26px] px-5 py-5"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <div className="mb-5 flex items-center gap-2">
-            <Database className="h-4 w-4 text-sky-300" />
-            <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
-              Database status
-            </h2>
-          </div>
-          <div className="space-y-2">
-            <InfoRow label="Size on disk" value={dbInfo ? formatBytes(dbInfo.sizeBytes) : "-"} />
-            <InfoRow label="Total spans" value={String(dbInfo?.spanCount ?? 0)} mono />
-            <InfoRow label="Total traces" value={String(dbInfo?.traceCount ?? 0)} mono />
-            <InfoRow label="Journal mode" value={dbInfo?.walMode?.toUpperCase() ?? "-"} mono />
-            <InfoRow
-              label="Data range"
-              value={
-                dbInfo?.oldestSpan && dbInfo?.newestSpan
-                  ? `${formatTimeAgo(dbInfo.oldestSpan)} to ${formatTimeAgo(dbInfo.newestSpan)}`
-                  : "No data"
-              }
-            />
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-              <span className="text-sm text-slate-400">Storage path</span>
-              <div className="flex items-center gap-2">
-                <span className="max-w-[220px] truncate font-mono text-xs text-slate-300">
-                  {dbInfo?.path ?? "-"}
-                </span>
-                {dbInfo?.path && (
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(dbInfo.path, "path")}
-                    className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-400 transition-colors hover:text-white"
-                  >
-                    {copied === "path" ? (
-                      <Check className="h-3 w-3 text-emerald-300" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </button>
-                )}
+        <div className="space-y-5">
+          <motion.div
+            className="dashboard-shell rounded-[26px] px-5 py-5"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <div className="mb-5 flex items-center gap-2">
+              <Database className="h-4 w-4 text-[#66FCF1]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+                Database status
+              </h2>
+            </div>
+            <div className="space-y-2">
+              <InfoRow label="Size on disk" value={dbInfo ? formatBytes(dbInfo.sizeBytes) : "-"} />
+              <InfoRow label="Total spans" value={String(dbInfo?.spanCount ?? 0)} mono />
+              <InfoRow label="Total traces" value={String(dbInfo?.traceCount ?? 0)} mono />
+              <InfoRow label="Journal mode" value={dbInfo?.walMode?.toUpperCase() ?? "-"} mono />
+              <InfoRow
+                label="Data range"
+                value={
+                  dbInfo?.oldestSpan && dbInfo?.newestSpan
+                    ? `${formatTimeAgo(dbInfo.oldestSpan)} to ${formatTimeAgo(dbInfo.newestSpan)}`
+                    : "No data"
+                }
+              />
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                <span className="text-sm text-slate-400">Storage path</span>
+                <div className="flex items-center gap-2">
+                  <span className="max-w-[220px] truncate font-mono text-xs text-slate-300">
+                    {dbInfo?.path ?? "-"}
+                  </span>
+                  {dbInfo?.path && (
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(dbInfo.path, "path")}
+                      className="rounded-2xl border border-white/8 bg-white/4 p-1.5 text-slate-400 transition-colors hover:text-white"
+                    >
+                      {copied === "path" ? (
+                        <Check className="h-3 w-3 text-[#66FCF1]" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.div
+            className="dashboard-shell rounded-[26px] px-5 py-5"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06, duration: 0.35 }}
+          >
+            <div className="mb-5">
+              <div className="hud-label">Settings FAQ</div>
+              <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+                Before you change the collector
+              </h2>
+            </div>
+            <Accordion defaultValue={["local-data"]} multiple>
+              <AccordionItem value="local-data" className="border-white/8">
+                <AccordionTrigger className="text-base text-white hover:no-underline">
+                  What stays local on this machine?
+                </AccordionTrigger>
+                <AccordionPanel className="leading-6 text-slate-400">
+                  The collector database, exports, retention operations, replay tools, and diagnostics stay local first.
+                  LLMTap only sends traces outward when you explicitly export or forward them.
+                </AccordionPanel>
+              </AccordionItem>
+              <AccordionItem value="retention" className="border-white/8">
+                <AccordionTrigger className="text-base text-white hover:no-underline">
+                  What happens when I apply retention?
+                </AccordionTrigger>
+                <AccordionPanel className="leading-6 text-slate-400">
+                  Retention deletes stored spans older than the selected window immediately. If you need a rollback
+                  point, run a backup first and then apply retention.
+                </AccordionPanel>
+              </AccordionItem>
+              <AccordionItem value="backup-restore" className="border-white/8">
+                <AccordionTrigger className="text-base text-white hover:no-underline">
+                  When should I backup, export, or restore?
+                </AccordionTrigger>
+                <AccordionPanel className="leading-6 text-slate-400">
+                  Use export for analysis outside LLMTap, backup before aggressive cleanup or experiments, and restore
+                  when you need to return the collector to a known-good local state quickly.
+                </AccordionPanel>
+              </AccordionItem>
+              <AccordionItem value="otlp" className="border-white/8">
+                <AccordionTrigger className="text-base text-white hover:no-underline">
+                  Does OTLP forwarding make LLMTap cloud-only?
+                </AccordionTrigger>
+                <AccordionPanel className="leading-6 text-slate-400">
+                  No. LLMTap still runs locally. OTLP forwarding is an explicit send step for traces you choose to push
+                  into another backend like Tempo, Jaeger, Datadog, or Honeycomb.
+                </AccordionPanel>
+              </AccordionItem>
+              <AccordionItem value="empty-dashboard" className="border-white/8">
+                <AccordionTrigger className="text-base text-white hover:no-underline">
+                  What do I do if the dashboard is still empty?
+                </AccordionTrigger>
+                <AccordionPanel className="leading-6 text-slate-400">
+                  Run one real model request from the app you wrapped, then refresh this page. If nothing appears, run
+                  <code className="mx-1 rounded-full bg-white/6 px-2 py-0.5 font-mono text-slate-300">
+                    npx llmtap doctor
+                  </code>
+                  in the instrumented project to check the collector, SDK install, and local database path.
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+          </motion.div>
+        </div>
 
         <div className="space-y-5">
           <motion.div
@@ -254,7 +324,7 @@ export default function Settings() {
             transition={{ delay: 0.1, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Download className="h-4 w-4 text-emerald-300" />
+              <Download className="h-4 w-4 text-[#66FCF1]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
                 Export data
               </h2>
@@ -291,7 +361,7 @@ export default function Settings() {
             transition={{ delay: 0.15, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-rose-300" />
+              <Trash2 className="h-4 w-4 text-[#C5C6C7]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
                 Reset data
               </h2>
@@ -303,11 +373,11 @@ export default function Settings() {
               type="button"
               onClick={() => setConfirmResetOpen(true)}
               disabled={resetting}
-              className="inline-flex items-center gap-2 rounded-full border border-rose-400/20 bg-rose-400/8 px-4 py-2.5 text-sm font-medium text-rose-200 transition-colors hover:border-rose-400/30 hover:bg-rose-400/14 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full border border-[#C5C6C7]/20 bg-[#C5C6C7]/8 px-4 py-2.5 text-sm font-medium text-[#C5C6C7] transition-colors hover:border-[#C5C6C7]/30 hover:bg-[#C5C6C7]/14 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resetDone ? (
                 <>
-                  <Check className="h-4 w-4 text-emerald-300" />
+                  <Check className="h-4 w-4 text-[#66FCF1]" />
                   <span>Data cleared</span>
                 </>
               ) : (
@@ -326,13 +396,14 @@ export default function Settings() {
             transition={{ delay: 0.2, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-amber-300" />
+              <DollarSign className="h-4 w-4 text-[#45A29E]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
-                Pricing overrides
+                Pricing override generator
               </h2>
             </div>
             <p className="mb-4 text-sm text-slate-400">
-              Override built-in per-model pricing. Use this for custom or private models not in the default table.
+              Build the SDK snippet for custom or private model pricing. These entries are not applied automatically
+              inside the dashboard and they do not rewrite already captured trace costs.
             </p>
 
             {pricingOverrides.length > 0 && (
@@ -349,7 +420,7 @@ export default function Settings() {
                       <button
                         type="button"
                         onClick={() => setPricingOverrides((prev) => prev.filter((_, j) => j !== i))}
-                        className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-500 transition-colors hover:text-rose-300"
+                        className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-500 transition-colors hover:text-[#C5C6C7]"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -366,13 +437,13 @@ export default function Settings() {
                     value={newPricing.provider}
                     onChange={(e) => setNewPricing((p) => ({ ...p, provider: e.target.value }))}
                     placeholder="Provider"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:outline-none"
+                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                   <input
                     value={newPricing.model}
                     onChange={(e) => setNewPricing((p) => ({ ...p, model: e.target.value }))}
                     placeholder="Model name"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:outline-none"
+                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                   <input
                     value={newPricing.inputCostPer1M}
@@ -380,7 +451,7 @@ export default function Settings() {
                     placeholder="Input $/M"
                     type="number"
                     step="0.01"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:outline-none"
+                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                   <input
                     value={newPricing.outputCostPer1M}
@@ -388,7 +459,7 @@ export default function Settings() {
                     placeholder="Output $/M"
                     type="number"
                     step="0.01"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/30 focus:outline-none"
+                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                 </div>
                 <div className="mt-3 flex items-center gap-2">
@@ -397,8 +468,8 @@ export default function Settings() {
                     onClick={() => {
                       if (newPricing.provider && newPricing.model && newPricing.inputCostPer1M && newPricing.outputCostPer1M) {
                         setPricingOverrides((prev) => [...prev, { ...newPricing }]);
-                        toast.success("Pricing override added", {
-                          description: `${newPricing.provider}/${newPricing.model} is ready to use.`,
+                        toast.success("Pricing snippet added", {
+                          description: `${newPricing.provider}/${newPricing.model} was added to the generated SDK snippet.`,
                         });
                         setNewPricing({ provider: "", model: "", inputCostPer1M: "", outputCostPer1M: "" });
                         setShowAddPricing(false);
@@ -426,15 +497,18 @@ export default function Settings() {
                 className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Add pricing override</span>
+                <span>Add pricing snippet</span>
               </button>
             )}
 
             {pricingOverrides.length > 0 && (
               <div className="mt-4 rounded-2xl border border-white/8 bg-white/4 p-4">
                 <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  SDK code to apply these overrides
+                  SDK code to paste into your app
                 </div>
+                <p className="mb-3 text-xs leading-relaxed text-slate-400">
+                  Put this next to your LLMTap initialization or provider setup so future traces use your custom prices.
+                </p>
                 <pre className="font-mono text-xs leading-relaxed text-slate-300">
 {`import { setPricing } from "@llmtap/sdk";
 ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inputCostPer1M}, ${e.outputCostPer1M});`).join("\n")}`}
@@ -450,7 +524,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.25, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Timer className="h-4 w-4 text-purple-300" />
+              <Timer className="h-4 w-4 text-[#45A29E]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
                 Data retention
               </h2>
@@ -490,7 +564,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
               >
                 {retentionSaved ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-300" />
+                    <Check className="h-3.5 w-3.5 text-[#66FCF1]" />
                     <span>
                       {retentionDeleted !== null && retentionDeleted > 0
                         ? `Cleaned ${retentionDeleted} spans`
@@ -514,7 +588,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.27, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Send className="h-4 w-4 text-cyan-300" />
+              <Send className="h-4 w-4 text-[#66FCF1]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
                 OpenTelemetry Export
               </h2>
@@ -549,7 +623,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                     setOtlpExporting(false);
                   }
                 }}
-                className="flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2.5 text-sm font-medium text-cyan-300 transition-colors hover:bg-cyan-400/20"
+                className="flex items-center gap-2 rounded-2xl border border-[#66FCF1]/20 bg-[#66FCF1]/10 px-4 py-2.5 text-sm font-medium text-[#66FCF1] transition-colors hover:bg-[#66FCF1]/20"
               >
                 <Download className="h-3.5 w-3.5" />
                 {otlpExporting ? "Exporting..." : "Download OTLP JSON"}
@@ -565,14 +639,14 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                     value={otlpEndpoint}
                     onChange={(e) => { setOtlpEndpoint(e.target.value); setOtlpResult(null); }}
                     placeholder="http://localhost:4318/v1/traces"
-                    className="flex-1 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-cyan-400/30 focus:outline-none"
+                    className="flex-1 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                   <input
                     type="text"
                     value={otlpService}
                     onChange={(e) => setOtlpService(e.target.value)}
                     placeholder="service name"
-                    className="w-32 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-cyan-400/30 focus:outline-none"
+                    className="w-32 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -595,13 +669,13 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                         setOtlpForwarding(false);
                       }
                     }}
-                    className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-300 transition-colors hover:bg-cyan-400/20 disabled:opacity-40"
+                    className="rounded-xl border border-[#66FCF1]/20 bg-[#66FCF1]/10 px-4 py-2 text-sm font-medium text-[#66FCF1] transition-colors hover:bg-[#66FCF1]/20 disabled:opacity-40"
                   >
                     {otlpForwarding ? "Sending..." : "Send"}
                   </button>
                 </div>
                 {otlpResult && (
-                  <p className={`mt-2 text-xs ${otlpResult.startsWith("Error") ? "text-rose-400" : "text-emerald-400"}`}>
+                  <p className={`mt-2 text-xs ${otlpResult.startsWith("Error") ? "text-[#C5C6C7]" : "text-[#66FCF1]"}`}>
                     {otlpResult}
                   </p>
                 )}
@@ -620,7 +694,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.3, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Info className="h-4 w-4 text-sky-300" />
+              <Info className="h-4 w-4 text-[#66FCF1]" />
               <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
                 First-run help
               </h2>
@@ -628,7 +702,7 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  <SearchCheck className="h-3.5 w-3.5 text-emerald-300" />
+                  <SearchCheck className="h-3.5 w-3.5 text-[#45A29E]" />
                   Where the wrap code belongs
                 </div>
                 <p className="text-xs leading-relaxed text-slate-400">
@@ -660,6 +734,7 @@ npx llmtap restore llmtap-backup.db`}
               </div>
             </div>
           </motion.div>
+
         </div>
       </div>
     </PageFrame>
@@ -677,7 +752,7 @@ npx llmtap restore llmtap-backup.db`}
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleReset()}
-              className="border-rose-400/20 bg-rose-500 text-white hover:bg-rose-400"
+              className="border-[#C5C6C7]/20 bg-[#C5C6C7] text-slate-950 hover:bg-[#C5C6C7]/90"
             >
               Delete all data
             </AlertDialogAction>
@@ -698,7 +773,7 @@ npx llmtap restore llmtap-backup.db`}
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => executeRetention(parseInt(retentionDays, 10))}
-              className="border-rose-400/20 bg-rose-500 text-white hover:bg-rose-400"
+              className="border-[#C5C6C7]/20 bg-[#C5C6C7] text-slate-950 hover:bg-[#C5C6C7]/90"
             >
               Delete old data
             </AlertDialogAction>
