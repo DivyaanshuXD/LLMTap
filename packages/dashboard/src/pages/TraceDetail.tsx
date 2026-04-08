@@ -32,6 +32,7 @@ import { fetchTraceSpans, replaySpan } from "../api/client.ts";
 import type { Span, Message, ContentPart, ReplayResult } from "../api/client.ts";
 import { LivePulse } from "../components/LivePulse.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
+import { EmptyState } from "../components/system/EmptyState.tsx";
 import { formatCost, formatDuration } from "../lib/format.ts";
 import { getTextContent } from "../lib/content.ts";
 import { ProviderBadge } from "../components/ProviderBadge.tsx";
@@ -98,10 +99,10 @@ function CopyButton({ text, label, copied, onCopy }: { text: string; label: stri
     <button
       type="button"
       onClick={(e) => { e.stopPropagation(); onCopy(text, label); }}
-      className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-500 transition-colors hover:text-white"
+      className="rounded-lg border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.035)] p-1.5 text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)]"
       title="Copy to clipboard"
     >
-      {copied === label ? <Check className="h-3 w-3 text-[#66FCF1]" /> : <Copy className="h-3 w-3" />}
+      {copied === label ? <Check className="h-3 w-3 text-[var(--color-accent)]" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -117,12 +118,23 @@ function MetaCard({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.78),rgba(8,11,24,0.9))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <div className="deck-card h-full rounded-[calc(var(--radius-panel)+4px)] p-4">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
         <Icon className="h-3 w-3" />
         {label}
       </div>
-      <div className="font-mono text-sm font-semibold text-slate-100">{value}</div>
+      <div
+        className="text-[var(--color-text-primary)]"
+        style={{
+          fontFamily: "var(--font-operator)",
+          fontSize: "28px",
+          fontWeight: 700,
+          lineHeight: "0.92",
+          letterSpacing: "-0.04em",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -138,14 +150,14 @@ function InlineMetric({
 }) {
   const toneClass =
     tone === "success"
-      ? "border-[#66FCF1]/16 bg-[#66FCF1]/8 text-[#C5C6C7]"
+      ? "border-[var(--color-accent)]/16 bg-[var(--color-accent)]/8 text-[var(--color-text-primary)]"
       : tone === "danger"
-        ? "border-[#C5C6C7]/16 bg-[#C5C6C7]/8 text-[#C5C6C7]"
-        : "border-white/8 bg-white/4 text-slate-100";
+        ? "border-[var(--color-text-primary)]/16 bg-[var(--color-text-primary)]/8 text-[var(--color-text-primary)]"
+        : "border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.035)] text-[var(--color-text-primary)]";
 
   return (
     <div className={`rounded-2xl border px-3 py-2 ${toneClass}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">{label}</div>
       <div className="mt-1 font-mono text-xs font-semibold">{value}</div>
     </div>
   );
@@ -172,7 +184,7 @@ function SectionHeader({
       <Icon className="h-3.5 w-3.5" />
       <span>{title}</span>
       {typeof count === "number" ? (
-        <span className="rounded-full border border-white/8 bg-white/4 px-2 py-0.5 font-mono text-[10px] text-slate-300">
+        <span className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
           {count}
         </span>
       ) : null}
@@ -184,7 +196,7 @@ function SectionHeader({
       <button
         type="button"
         onClick={onToggle}
-        className="mb-3 flex w-full items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 transition-colors hover:text-slate-300"
+        className="mb-3 flex w-full items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
       >
         {content}
       </button>
@@ -192,7 +204,7 @@ function SectionHeader({
   }
 
   return (
-    <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+    <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
       {content}
     </div>
   );
@@ -200,17 +212,17 @@ function SectionHeader({
 
 function RoleBadge({ role, type }: { role: string; type: "input" | "output" }) {
   const roleStyles: Record<string, string> = {
-    system: "bg-[#1F2833]/90 text-[#C5C6C7] border-[#45A29E]/16",
-    user: "bg-[#66FCF1]/10 text-[#C5C6C7] border-[#66FCF1]/16",
-    assistant: "bg-[#45A29E]/10 text-[#66FCF1] border-[#45A29E]/16",
-    tool: "bg-[#C5C6C7]/10 text-[#C5C6C7] border-[#C5C6C7]/16",
-    function: "bg-[#C5C6C7]/10 text-[#C5C6C7] border-[#C5C6C7]/16",
+    system: "bg-[var(--color-panel)]/90 text-[var(--color-text-primary)] border-[var(--color-accent-2)]/16",
+    user: "bg-[var(--color-accent)]/10 text-[var(--color-text-primary)] border-[var(--color-accent)]/16",
+    assistant: "bg-[var(--color-accent-2)]/10 text-[var(--color-accent)] border-[var(--color-accent-2)]/16",
+    tool: "bg-[var(--color-text-primary)]/10 text-[var(--color-text-primary)] border-[var(--color-text-primary)]/16",
+    function: "bg-[var(--color-text-primary)]/10 text-[var(--color-text-primary)] border-[var(--color-text-primary)]/16",
   };
 
   const fallback =
     type === "input"
-      ? "bg-[#66FCF1]/10 text-[#C5C6C7] border-[#66FCF1]/16"
-      : "bg-[#45A29E]/10 text-[#66FCF1] border-[#45A29E]/16";
+      ? "bg-[var(--color-accent)]/10 text-[var(--color-text-primary)] border-[var(--color-accent)]/16"
+      : "bg-[var(--color-accent-2)]/10 text-[var(--color-accent)] border-[var(--color-accent-2)]/16";
 
   return (
     <span
@@ -264,26 +276,26 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
   const text = getTextContent(rawContent);
   const images = rawContent && typeof rawContent !== "string" ? getImageUrls(rawContent) : [];
   const borderClass =
-    type === "input" ? "border-white/8" : "border-[#66FCF1]/12";
+    type === "input" ? "border-[var(--border-dim)]" : "border-[var(--color-accent)]/12";
   const copyId = `msg-${type}-${message.role}-${text.slice(0, 20)}`;
 
   return (
-    <div className={`rounded-2xl border ${borderClass} bg-[linear-gradient(180deg,rgba(18,24,41,0.68),rgba(8,11,24,0.9))] p-4`}>
+    <div className={`rounded-2xl border ${borderClass} bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.68),rgba(var(--ch-bg-base),0.9))] p-4`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <RoleBadge role={message.role} type={type} />
           {message.name && (
-            <span className="font-mono text-[10px] text-slate-500">{message.name}</span>
+            <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">{message.name}</span>
           )}
           {images.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[#45A29E]/16 bg-[#1F2833]/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#C5C6C7]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-accent-2)]/16 bg-[var(--color-panel)]/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">
               <ImageIcon className="h-2.5 w-2.5" />
               {images.length} image{images.length > 1 ? "s" : ""}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-slate-600">
+          <span className="font-mono text-[10px] text-[var(--color-text-disabled)]">
             ~{estimateTokens(rawContent)} tok
           </span>
           {text && (
@@ -292,7 +304,7 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
         </div>
       </div>
       {text && (
-        <pre className="mt-2.5 whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-200">
+        <pre className="mt-2.5 whitespace-pre-wrap font-mono text-xs leading-relaxed text-[var(--color-text-secondary)]">
           {renderContentWithCodeBlocks(text)}
         </pre>
       )}
@@ -304,7 +316,7 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative overflow-hidden rounded-lg border border-white/10 bg-slate-950/60 transition-colors hover:border-white/20"
+              className="group relative overflow-hidden rounded-lg border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] transition-colors hover:border-[var(--border-default)]"
             >
               <img
                 src={url}
@@ -313,7 +325,7 @@ function MessageBlock({ message, type, copied, onCopy }: { message: Message; typ
                 loading="lazy"
               />
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white">Open</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-primary)]">Open</span>
               </span>
             </a>
           ))}
@@ -338,7 +350,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
       style={{ display: "grid" }}
     >
       <div className="overflow-hidden">
-        <div className="mx-4 mb-4 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,20,36,0.98),rgba(7,10,22,0.99))] p-5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_26px_60px_rgba(0,0,0,0.22)]">
+        <div className="mx-4 mb-4 rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.92),rgba(var(--ch-bg-deep),0.97),rgba(var(--ch-bg-base),0.99))] p-5 text-sm shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.04),0_26px_60px_rgba(0,0,0,0.22)]">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-5">
               <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
@@ -360,9 +372,9 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
               </div>
 
               {span.status === "error" && (
-                <div className="rounded-2xl border border-[#C5C6C7]/18 bg-[#C5C6C7]/6 p-4">
+                <div className="rounded-2xl border border-[var(--color-text-primary)]/18 bg-[var(--color-text-primary)]/6 p-4">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#C5C6C7]">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-primary)]">
                       <CircleX className="h-4 w-4" />
                       {span.errorType ?? "error"}
                     </div>
@@ -370,7 +382,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                       <CopyButton text={span.errorMessage} label="error" copied={copied} onCopy={onCopy} />
                     )}
                   </div>
-                  <div className="font-mono text-xs leading-relaxed text-[#C5C6C7]/70">
+                  <div className="font-mono text-xs leading-relaxed text-[var(--color-text-primary)]/70">
                     {span.errorMessage}
                   </div>
                 </div>
@@ -431,9 +443,9 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                   <SectionHeader icon={Wrench} title="Tool calls" count={span.toolCalls.length} />
                   <div className="space-y-2">
                     {span.toolCalls.map((toolCall) => (
-                      <div key={toolCall.id} className="rounded-2xl border border-[#45A29E]/10 bg-white/4 p-4">
+                      <div key={toolCall.id} className="rounded-2xl border border-[var(--color-accent-2)]/10 bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.7),rgba(var(--ch-bg-base),0.86))] p-4">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="rounded-full border border-[#45A29E]/16 bg-[#45A29E]/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#66FCF1]">
+                          <span className="rounded-full border border-[var(--color-accent-2)]/16 bg-[var(--color-accent-2)]/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[var(--color-accent)]">
                             {toolCall.name}
                           </span>
                           <CopyButton
@@ -443,16 +455,16 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
                             onCopy={onCopy}
                           />
                         </div>
-                        <pre className="mt-2.5 overflow-x-auto font-mono text-xs leading-relaxed text-slate-200">
+                        <pre className="mt-2.5 overflow-x-auto font-mono text-xs leading-relaxed text-[var(--color-text-secondary)]">
                           {formatJSON(toolCall.arguments)}
                         </pre>
                         {toolCall.result && (
                           <>
-                            <div className="my-2 border-t border-white/6" />
-                            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">
+                            <div className="my-2 border-t border-[var(--border-dim)]" />
+                            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">
                               Result
                             </div>
-                            <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-slate-300">
+                            <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-[var(--color-text-secondary)]">
                               {toolCall.result}
                             </pre>
                           </>
@@ -465,46 +477,46 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
             </div>
 
             <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-              <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.74),rgba(8,11,24,0.9))] p-4">
-                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.74),rgba(var(--ch-bg-base),0.9))] p-4">
+                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   <Orbit className="h-3.5 w-3.5" />
                   Span identity
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Span ID</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">Span ID</div>
                     <div className="mt-1 flex items-center gap-2">
-                      <code className="min-w-0 flex-1 truncate font-mono text-xs text-slate-200">{span.spanId}</code>
+                      <code className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--color-text-secondary)]">{span.spanId}</code>
                       <CopyButton text={span.spanId} label="spanId" copied={copied} onCopy={onCopy} />
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Operation</div>
-                    <div className="mt-1 text-sm text-slate-200">{span.operationName}</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">Operation</div>
+                    <div className="mt-1 text-sm text-[var(--color-text-secondary)]">{span.operationName}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Provider</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">Provider</div>
                     <div className="mt-1">
                       <ProviderBadge provider={span.providerName} />
                     </div>
                   </div>
                   {span.parentSpanId && (
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Parent span</div>
-                      <div className="mt-1 font-mono text-xs text-slate-300">{span.parentSpanId}</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">Parent span</div>
+                      <div className="mt-1 font-mono text-xs text-[var(--color-text-secondary)]">{span.parentSpanId}</div>
                     </div>
                   )}
                   {span.sessionId && (
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Session</div>
-                      <div className="mt-1 font-mono text-xs text-slate-300">{span.sessionId}</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-disabled)]">Session</div>
+                      <div className="mt-1 font-mono text-xs text-[var(--color-text-secondary)]">{span.sessionId}</div>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,24,41,0.74),rgba(8,11,24,0.9))] p-4">
-                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.74),rgba(var(--ch-bg-base),0.9))] p-4">
+                <div className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   <Code className="h-3.5 w-3.5" />
                   Request config
                 </div>
@@ -666,14 +678,14 @@ function renderContentWithCodeBlocks(content: string): ReactNode {
     const code = match[2];
 
     parts.push(
-      <span key={key++} className="my-1.5 block rounded-lg border border-white/8 bg-slate-950/80 px-3 py-2">
+      <span key={key++} className="my-1.5 block rounded-lg border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.78)] px-3 py-2">
         {lang && (
-          <span className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+          <span className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
             <Code className="h-3 w-3" />
             {lang}
           </span>
         )}
-        <span className="block font-mono text-[11px] leading-relaxed text-[#66FCF1]/80">
+        <span className="block font-mono text-[11px] leading-relaxed text-[var(--color-accent)]/80">
           {code}
         </span>
       </span>
@@ -773,82 +785,93 @@ export default function TraceDetail() {
 
     return (
       <Fragment key={node.span.spanId}>
-        <div className="border-t border-white/6 first:border-t-0">
-          <div className="flex items-start gap-2 px-4 py-3 sm:px-5">
-            <div className="flex items-center" style={{ paddingLeft: `${depth * 22}px` }}>
-              {hasChildren ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCollapsed((current) => ({
-                      ...current,
-                      [node.span.spanId]: !current[node.span.spanId],
-                    }))
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/8 bg-white/4 text-slate-400 transition-colors hover:text-white"
-                >
-                  <ChevronRight className={`h-4 w-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
-                </button>
-              ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/8 bg-white/4 text-slate-500">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                </span>
-              )}
-            </div>
+        <div className="border-t border-[var(--border-dim)] first:border-t-0">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setSelectedSpanId(isSelected ? null : node.span.spanId)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setSelectedSpanId(isSelected ? null : node.span.spanId);
+              }
+            }}
+            className={`grid w-full gap-3 px-4 py-3 text-left transition-colors sm:grid-cols-[minmax(0,380px)_minmax(0,1fr)_110px] sm:items-center sm:px-5 ${
+              isSelected ? "bg-[rgba(var(--ch-accent),0.06)]" : "hover:bg-[rgba(var(--ch-text-primary),0.03)]"
+            }`}
+          >
+            <div className="min-w-0">
+              <div
+                className="flex min-w-0 items-start gap-3"
+                style={{ paddingLeft: `${depth * 22}px` }}
+              >
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setCollapsed((current) => ({
+                        ...current,
+                        [node.span.spanId]: !current[node.span.spanId],
+                      }));
+                    }}
+                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.035)] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)]"
+                  >
+                    <ChevronRight className={`h-4 w-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
+                  </button>
+                ) : (
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] text-[var(--color-text-tertiary)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-tertiary)]" />
+                  </span>
+                )}
 
-            <button
-              type="button"
-              onClick={() => setSelectedSpanId(isSelected ? null : node.span.spanId)}
-              className={`grid min-w-0 flex-1 gap-3 rounded-[22px] px-3 py-3 text-left transition-colors sm:grid-cols-[minmax(0,320px)_minmax(0,1fr)_88px] sm:items-center ${
-                isSelected ? "bg-white/8" : "hover:bg-white/4"
-              }`}
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <StatusDot status={node.span.status} />
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-white">{node.span.name}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
-                      <ProviderBadge provider={node.span.providerName} />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                        {node.span.operationName}
-                      </span>
-                      {hasChildren ? (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                          {countDescendants(node)} child
-                          {countDescendants(node) === 1 ? "" : "ren"}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <StatusDot status={node.span.status} />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">{node.span.name}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2.5">
+                        <ProviderBadge provider={node.span.providerName} />
+                        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                          {node.span.operationName}
                         </span>
-                      ) : null}
+                        {hasChildren ? (
+                          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                            {countDescendants(node)} child
+                            {countDescendants(node) === 1 ? "" : "ren"}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="min-w-0">
-                <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                  <span>{Math.round(node.span.startTime - minTime)}ms</span>
-                  <span>{node.span.duration ? formatDuration(node.span.duration) : "instant"}</span>
-                </div>
-                <div className="relative h-8 overflow-hidden rounded-full bg-slate-950/90">
-                  <motion.div
-                    className={`absolute bottom-1 top-1 origin-left rounded-full ${
-                      node.span.status === "error"
-                        ? "bg-[linear-gradient(90deg,#C5C6C7,#45A29E)]"
-                        : "bg-[linear-gradient(90deg,#45A29E,#66FCF1)]"
-                    }`}
-                    style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                  />
-                </div>
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                <span>{Math.round(node.span.startTime - minTime)}ms</span>
+                <span>{node.span.duration ? formatDuration(node.span.duration) : "instant"}</span>
               </div>
+              <div className="relative h-8 overflow-hidden rounded-full bg-[rgba(var(--ch-bg-base),0.88)]">
+                <motion.div
+                  className={`absolute bottom-1 top-1 origin-left rounded-full ${
+                    node.span.status === "error"
+                      ? "bg-[linear-gradient(90deg,var(--color-text-primary),var(--color-accent-2))]"
+                      : "bg-[linear-gradient(90deg,var(--color-accent-2),var(--color-accent))]"
+                  }`}
+                  style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+            </div>
 
-              <div className="text-right font-mono text-[11px] text-slate-400">
-                <div className="text-slate-200">{formatCost(node.span.totalCost)}</div>
-                <div>{node.span.totalTokens.toLocaleString()} tok</div>
-              </div>
-            </button>
+            <div className="text-right font-mono text-[11px] text-[var(--color-text-tertiary)]">
+              <div className="text-[var(--color-text-secondary)]">{formatCost(node.span.totalCost)}</div>
+              <div>{node.span.totalTokens.toLocaleString()} tok</div>
+            </div>
           </div>
         </div>
 
@@ -862,7 +885,7 @@ export default function TraceDetail() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1500px] space-y-6">
+      <div className="mx-auto max-w-[1760px] space-y-6">
         <div className="skeleton-panel h-44 rounded-[28px]" />
         <div className="skeleton-panel h-28 rounded-[24px]" />
         <div className="skeleton-panel h-72 rounded-[24px]" />
@@ -879,26 +902,26 @@ export default function TraceDetail() {
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="deck-card deck-card--accent">
               <div className="hud-label">Current status</div>
-              <div className="mt-2 flex items-center gap-2 text-base font-medium text-white">
+              <div className="mt-2 flex items-center gap-2 text-base font-medium text-[var(--color-text-primary)]">
                 {hasError ? (
                   <>
-                    <CircleX className="h-4 w-4 text-[#C5C6C7]" />
+                    <CircleX className="h-4 w-4 text-[var(--color-text-primary)]" />
                     Error state
                   </>
                 ) : (
                   <>
-                    <CircleCheck className="h-4 w-4 text-[#66FCF1]" />
+                    <CircleCheck className="h-4 w-4 text-[var(--color-accent)]" />
                     Stable
                   </>
                 )}
               </div>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="deck-card">
               <div className="hud-label">Hierarchy</div>
-              <div className="mt-2 text-base font-medium text-white">{tree.length} root spans</div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">{tree.length} root spans</div>
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 {formatDuration(totalRange)} elapsed from first to last event
               </div>
             </div>
@@ -906,13 +929,28 @@ export default function TraceDetail() {
         </div>
       }
     >
+      <div className="pill-strip w-fit max-w-full overflow-x-auto">
+        <span className="pill-item">
+          trace <strong>{traceId?.slice(0, 10) ?? "unknown"}</strong>
+        </span>
+        <span className="pill-item">
+          spans <strong>{spans.length}</strong>
+        </span>
+        <span className="pill-item">
+          tokens <strong>{totalTokens}</strong>
+        </span>
+        <span className="pill-item">
+          status <strong>{hasError ? "error" : "stable"}</strong>
+        </span>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Link to="/" className="status-chip transition-colors hover:text-white">
+          <Link to="/" className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-accent),0.06)] hover:text-[var(--color-text-primary)]">
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to overview</span>
           </Link>
-          <span className="truncate rounded-full border border-white/8 bg-white/4 px-2.5 py-1 font-mono text-xs text-slate-500">{traceId}</span>
+          <span className="truncate rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2.5 py-1 font-mono text-xs text-[var(--color-text-tertiary)]">{traceId}</span>
           <CopyButton text={traceId ?? ""} label="traceId" copied={copied} onCopy={copy} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -923,9 +961,9 @@ export default function TraceDetail() {
                 const primarySpan = spans[0];
                 copy(generateCurlCommand(primarySpan), "curl");
               }}
-              className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
+              className="terminal-action"
             >
-              {copied === "curl" ? <Check className="h-3.5 w-3.5 text-[#66FCF1]" /> : <Terminal className="h-3.5 w-3.5" />}
+              {copied === "curl" ? <Check className="h-3.5 w-3.5 text-[var(--color-accent)]" /> : <Terminal className="h-3.5 w-3.5" />}
               <span>{copied === "curl" ? "Copied!" : "Copy as cURL"}</span>
             </button>
           )}
@@ -935,16 +973,16 @@ export default function TraceDetail() {
               onClick={() => {
                 copy(generateTraceMarkdown(traceId ?? "", spans, totalTokens, totalCost, totalRange, hasError), "markdown");
               }}
-              className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
+              className="terminal-action"
             >
-              {copied === "markdown" ? <Check className="h-3.5 w-3.5 text-[#66FCF1]" /> : <FileText className="h-3.5 w-3.5" />}
+              {copied === "markdown" ? <Check className="h-3.5 w-3.5 text-[var(--color-accent)]" /> : <FileText className="h-3.5 w-3.5" />}
               <span>{copied === "markdown" ? "Copied!" : "Copy as Markdown"}</span>
             </button>
           )}
           <button
             type="button"
             onClick={handleExportTrace}
-            className="status-chip transition-colors hover:border-[#66FCF1]/16 hover:bg-white/8"
+            className="terminal-action"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Export JSON</span>
@@ -953,9 +991,9 @@ export default function TraceDetail() {
             <button
               type="button"
               onClick={() => openReplay(spans[0].spanId)}
-              className="status-chip border-[#66FCF1]/20 bg-[#66FCF1]/10 transition-colors hover:border-[#66FCF1]/30 hover:bg-[#66FCF1]/14"
+              className="terminal-action"
             >
-              <Play className="h-3.5 w-3.5 text-[#66FCF1]" />
+              <Play className="h-3.5 w-3.5 text-[var(--color-accent)]" />
               <span>Replay</span>
             </button>
           )}
@@ -973,33 +1011,41 @@ export default function TraceDetail() {
       </div>
 
       <div className="dashboard-shell overflow-hidden rounded-[26px]">
-        <div className="flex flex-wrap items-center gap-3 border-b border-white/6 px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#66FCF1]/16 bg-[#66FCF1]/10">
-            <Clock className="h-4 w-4 text-[#66FCF1]" />
+        <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-dim)] px-5 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[var(--color-accent)]/16 bg-[var(--color-accent)]/10">
+            <Clock className="h-4 w-4 text-[var(--color-accent)]" />
           </div>
           <div>
             <div className="hud-label">Execution tree</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+            <h2 className="page-section-title mt-1">
               Trace hierarchy
             </h2>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-slate-500">
+            <span className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-[var(--color-text-tertiary)]">
               {formatDuration(totalRange)} total
             </span>
-            <span className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-slate-500">
+            <span className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2.5 py-1 text-xs font-mono tracking-[0.16em] text-[var(--color-text-tertiary)]">
               {spans.length} spans
             </span>
           </div>
         </div>
 
         {tree.length > 0 ? (
-          <div className="py-2">{tree.map((node) => renderNode(node))}</div>
-        ) : (
-          <div className="empty-state h-[280px]">
-            <Layers className="h-8 w-8 text-slate-500" />
-            <div className="text-base font-medium text-white">No spans found for this trace</div>
+          <div className="py-2">
+            <div className="grid gap-3 border-b border-[var(--border-dim)] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] sm:grid-cols-[minmax(0,380px)_minmax(0,1fr)_110px] sm:px-5">
+              <span>Span</span>
+              <span>Timeline</span>
+              <span className="text-right">Spend / Tokens</span>
+            </div>
+            {tree.map((node) => renderNode(node))}
           </div>
+        ) : (
+          <EmptyState
+            title="No spans found for this trace"
+            description="This trace exists, but there are no captured span events to render in the execution tree yet."
+            className="h-[280px]"
+          />
         )}
       </div>
 
@@ -1007,8 +1053,8 @@ export default function TraceDetail() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#66FCF1]/20 bg-[#66FCF1]/10">
-                <Play className="h-4.5 w-4.5 text-[#66FCF1]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10">
+                <Play className="h-4.5 w-4.5 text-[var(--color-accent)]" />
               </div>
               <div>
                 <DialogTitle>Trace Replay</DialogTitle>
@@ -1019,21 +1065,21 @@ export default function TraceDetail() {
 
           {!replayResult && !replayLoading && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-[#45A29E]/20 bg-[#45A29E]/8 p-3 text-xs text-[#C5C6C7]/80">
+              <div className="rounded-xl border border-[var(--color-accent-2)]/20 bg-[var(--color-accent-2)]/8 p-3 text-xs text-[var(--color-text-primary)]/80">
                 Your API key is sent directly to the provider and is never stored by LLMTap.
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-400">Provider API Key</label>
+                <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-tertiary)]">Provider API Key</label>
                 <input
                   type="password"
                   value={replayApiKey}
                   onChange={(e) => setReplayApiKey(e.target.value)}
                   placeholder="sk-... or anthropic key"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-[#66FCF1]/30 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-accent)]/30 focus:outline-none"
                 />
               </div>
               {replayError && (
-                <div className="rounded-xl border border-[#C5C6C7]/20 bg-[#C5C6C7]/8 p-3 text-sm text-[#C5C6C7]">
+                <div className="rounded-xl border border-[var(--color-text-primary)]/20 bg-[var(--color-text-primary)]/8 p-3 text-sm text-[var(--color-text-primary)]">
                   {replayError}
                 </div>
               )}
@@ -1041,7 +1087,7 @@ export default function TraceDetail() {
                 type="button"
                 disabled={!replayApiKey.trim()}
                 onClick={handleReplay}
-                className="w-full rounded-xl bg-[#66FCF1] px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-[#45A29E] disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-xl bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-bg-base)] transition-colors hover:bg-[var(--color-accent-2)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Send Replay Request
               </button>
@@ -1050,8 +1096,8 @@ export default function TraceDetail() {
 
           {replayLoading && (
             <div className="flex flex-col items-center gap-3 py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-[#66FCF1]" />
-              <p className="text-sm text-slate-400">Replaying against {spans[0]?.providerName} API...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-[var(--color-accent)]" />
+              <p className="text-sm text-[var(--color-text-tertiary)]">Replaying against {spans[0]?.providerName} API...</p>
             </div>
           )}
 
@@ -1063,35 +1109,35 @@ export default function TraceDetail() {
             return (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tokens</div>
-                    <div className="mt-1 font-mono text-sm text-white">
-                      {originalSpan.totalTokens} <span className="text-slate-500">vs</span> {replayResult.totalTokens}
+                  <div className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">Tokens</div>
+                    <div className="mt-1 font-mono text-sm text-[var(--color-text-primary)]">
+                      {originalSpan.totalTokens} <span className="text-[var(--color-text-tertiary)]">vs</span> {replayResult.totalTokens}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Duration</div>
-                    <div className="mt-1 font-mono text-sm text-white">
-                      {formatDuration(originalSpan.duration ?? 0)} <span className="text-slate-500">vs</span> {formatDuration(replayResult.duration)}
+                  <div className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">Duration</div>
+                    <div className="mt-1 font-mono text-sm text-[var(--color-text-primary)]">
+                      {formatDuration(originalSpan.duration ?? 0)} <span className="text-[var(--color-text-tertiary)]">vs</span> {formatDuration(replayResult.duration)}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model</div>
-                    <div className="mt-1 truncate font-mono text-xs text-white">{replayResult.responseModel}</div>
+                  <div className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">Model</div>
+                    <div className="mt-1 truncate font-mono text-xs text-[var(--color-text-primary)]">{replayResult.responseModel}</div>
                   </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Original Response</div>
-                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-white/8 bg-white/4 p-3 text-sm leading-6 text-slate-300">
-                      {originalOutput || <span className="text-slate-600">No content captured</span>}
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">Original Response</div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] p-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      {originalOutput || <span className="text-[var(--color-text-disabled)]">No content captured</span>}
                     </div>
                   </div>
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#66FCF1]/80">Replay Response</div>
-                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#66FCF1]/12 bg-[#66FCF1]/6 p-3 text-sm leading-6 text-slate-300">
-                      {replayResult.content || <span className="text-slate-600">Empty response</span>}
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]/80">Replay Response</div>
+                    <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[var(--color-accent)]/12 bg-[var(--color-accent)]/6 p-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      {replayResult.content || <span className="text-[var(--color-text-disabled)]">Empty response</span>}
                     </div>
                   </div>
                 </div>
@@ -1100,14 +1146,14 @@ export default function TraceDetail() {
                   <button
                     type="button"
                     onClick={() => { setReplayResult(null); setReplayError(null); }}
-                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/10"
+                    className="flex-1 rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] px-4 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[rgba(var(--ch-text-primary),0.06)]"
                   >
                     Replay Again
                   </button>
                   <button
                     type="button"
                     onClick={() => setReplayOpen(false)}
-                    className="flex-1 rounded-xl bg-[#66FCF1] px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-[#45A29E]"
+                    className="flex-1 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-bg-base)] transition-colors hover:bg-[var(--color-accent-2)]"
                   >
                     Done
                   </button>

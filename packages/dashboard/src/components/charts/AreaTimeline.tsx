@@ -47,13 +47,13 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="surface-muted rounded-2xl p-4">
           <div className="hud-label">Latest</div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[var(--color-text-primary)]">
             {valueFormatter(latestValue)}
           </div>
         </div>
         <div className="surface-muted rounded-2xl p-4">
           <div className="hud-label">Peak</div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[var(--color-text-primary)]">
             {valueFormatter(maxValue)}
           </div>
         </div>
@@ -61,7 +61,7 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
           <div className="hud-label">Change</div>
           <div
             className={`mt-2 text-lg font-semibold ${
-              delta >= 0 ? "text-[#66FCF1]" : "text-[#C5C6C7]"
+              delta >= 0 ? "text-[var(--color-accent)]" : "text-[var(--color-text-primary)]"
             }`}
           >
             {delta >= 0 ? "+" : "-"}
@@ -70,7 +70,7 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(6,12,22,0.98),rgba(4,8,17,0.98))] p-4">
+      <div className="overflow-hidden rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.96),rgba(var(--ch-bg-base),0.99))] p-4">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="h-[260px] w-full"
@@ -79,12 +79,12 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
         >
           <defs>
             <linearGradient id="llmtap-area-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="rgba(69,162,158,0.38)" />
-              <stop offset="100%" stopColor="rgba(102,252,241,0.02)" />
+              <stop offset="0%" stopColor="rgba(var(--ch-accent-2), 0.38)" />
+              <stop offset="100%" stopColor="rgba(var(--ch-accent), 0.02)" />
             </linearGradient>
             <linearGradient id="llmtap-area-line" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor="#45A29E" />
-              <stop offset="100%" stopColor="#66FCF1" />
+              <stop offset="0%" stopColor="var(--color-accent-2)" />
+              <stop offset="100%" stopColor="var(--color-accent)" />
             </linearGradient>
           </defs>
 
@@ -97,13 +97,13 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
                   x2={width - paddingX}
                   y1={y}
                   y2={y}
-                  stroke="rgba(148,163,184,0.12)"
+                  stroke="rgba(var(--ch-text-primary),0.12)"
                   strokeDasharray="5 8"
                 />
                 <text
                   x={paddingX}
                   y={Math.max(y - 8, 12)}
-                  fill="rgba(148,163,184,0.72)"
+                  fill="rgba(var(--ch-text-primary),0.72)"
                   fontSize="10"
                   fontFamily="var(--font-mono)"
                 >
@@ -133,15 +133,15 @@ export function AreaTimeline({ points, valueFormatter }: AreaTimelineProps) {
                   cx={point.x}
                   cy={point.y}
                   r={isLatest ? 6 : 4}
-                  fill={isLatest ? "#C5C6C7" : "#45A29E"}
-                  stroke={isLatest ? "#66FCF1" : "rgba(11,12,16,0.95)"}
+                  fill={isLatest ? "var(--color-text-primary)" : "var(--color-accent-2)"}
+                  stroke={isLatest ? "var(--color-accent)" : "rgba(var(--ch-bg-base),0.95)"}
                   strokeWidth={isLatest ? 3 : 2}
                 />
                 <text
                   x={point.x}
                   y={height - 12}
                   textAnchor={index === 0 ? "start" : index === coordinates.length - 1 ? "end" : "middle"}
-                  fill="rgba(148,163,184,0.68)"
+                  fill="rgba(var(--ch-text-primary),0.68)"
                   fontSize="10"
                   fontFamily="var(--font-mono)"
                 >

@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "./ui/table.tsx";
 import { cn } from "../lib/utils.ts";
+import { EmptyState } from "./system/EmptyState.tsx";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
@@ -85,23 +86,32 @@ export function DataTable<TData>({
   if (data.length === 0) {
     return (
       emptyState ?? (
-        <div className="empty-state h-65 text-slate-500">No rows available.</div>
+        <EmptyState
+          title="No rows available"
+          description="This surface will populate when LLMTap receives matching data for the current view."
+        />
       )
     );
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-white/10 bg-[linear-gradient(180deg,rgba(8,13,24,0.97),rgba(4,8,17,0.98))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_20px_46px_rgba(0,0,0,0.36)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(125,211,252,0.28),transparent)]" />
-      <div className="pointer-events-none absolute -left-20 top-0 h-40 w-40 rounded-full bg-[#66FCF1]/8 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-0 h-36 w-36 rounded-full bg-[#45A29E]/8 blur-3xl" />
+    <div className="dashboard-shell relative overflow-hidden rounded-[calc(var(--radius-panel)+8px)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(var(--ch-accent),0.28),transparent)]" />
+      <div className="pointer-events-none absolute -left-20 top-0 h-40 w-40 rounded-full bg-[var(--color-accent)]/8 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-0 h-36 w-36 rounded-full bg-[var(--color-accent-2)]/8 blur-3xl" />
 
-      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/8 bg-white/[0.03] px-4 py-3.5 sm:px-5">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          Grid controls
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.025)] px-4 py-3.5 sm:px-5">
+        <div>
+          <div className="hud-label">Operator ledger</div>
+          <div className="mt-1 font-mono text-xs text-[var(--color-text-secondary)]">
+            {data.length} visible rows
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+          <span className="badge hidden md:inline-flex">
+            dense mode
+          </span>
+          <SlidersHorizontal className="h-4 w-4 text-[var(--color-text-tertiary)]" />
           <Select
             value={table.getAllColumns().filter((column) => column.getIsVisible()).length.toString()}
             onValueChange={(value) => {
@@ -114,7 +124,7 @@ export function DataTable<TData>({
               });
             }}
           >
-            <SelectTrigger className="h-8 w-42.5 border-white/10 bg-slate-950/60 text-xs text-slate-200">
+            <SelectTrigger className="h-8 w-42.5 rounded-[var(--radius-panel)] border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-xs text-[var(--color-text-secondary)]">
               <SelectValue placeholder="Visible columns" />
             </SelectTrigger>
             <SelectContent>
@@ -129,12 +139,12 @@ export function DataTable<TData>({
       </div>
 
       <div className="relative max-h-[62vh] overflow-auto">
-        <Table className="min-w-195 w-full table-auto">
-          <TableHeader className="sticky top-0 z-20 bg-[rgba(8,14,26,0.96)] backdrop-blur-xl">
+        <Table className="min-w-195 w-full table-auto text-[13px]">
+          <TableHeader className="sticky top-0 z-20 bg-[rgba(var(--ch-bg-base),0.96)] backdrop-blur-xl">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b border-white/8 bg-[linear-gradient(90deg,rgba(15,23,42,0.72),rgba(8,14,26,0.96),rgba(15,23,42,0.72))] hover:bg-[linear-gradient(90deg,rgba(15,23,42,0.72),rgba(8,14,26,0.96),rgba(15,23,42,0.72))]"
+                className="border-b border-[var(--border-dim)] bg-[linear-gradient(90deg,rgba(var(--ch-bg-panel),0.8),rgba(var(--ch-bg-base),0.98),rgba(var(--ch-bg-panel),0.8))] hover:bg-[linear-gradient(90deg,rgba(var(--ch-bg-panel),0.8),rgba(var(--ch-bg-base),0.98),rgba(var(--ch-bg-panel),0.8))]"
               >
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
@@ -144,7 +154,7 @@ export function DataTable<TData>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "h-12 whitespace-nowrap border-b border-white/8 px-4 text-[10px] font-semibold tracking-[0.18em] text-slate-400",
+                        "h-12 whitespace-nowrap border-b border-[var(--border-dim)] px-4 text-[10px] font-semibold tracking-[0.18em] text-[var(--color-text-tertiary)]",
                         header.column.columnDef.meta &&
                           typeof header.column.columnDef.meta === "object" &&
                           "className" in header.column.columnDef.meta
@@ -156,7 +166,7 @@ export function DataTable<TData>({
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
-                          className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+                          className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--color-text-primary)]"
                         >
                           {flexRender(
                             header.column.columnDef.header,
@@ -185,7 +195,7 @@ export function DataTable<TData>({
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
-                  "group border-b border-white/7 bg-transparent transition-colors hover:bg-white/[0.035]",
+                  "group border-b border-[var(--border-dim)] bg-transparent transition-colors odd:bg-[rgba(var(--ch-text-primary),0.012)] hover:bg-[rgba(var(--ch-accent),0.035)]",
                   onRowClick ? "cursor-pointer" : undefined,
                   typeof rowClassName === "function" ? rowClassName(row) : rowClassName
                 )}
@@ -194,7 +204,7 @@ export function DataTable<TData>({
                   <TableCell
                     key={cell.id}
                     className={cn(
-                      "border-b border-white/7 px-4 py-3.5 align-middle transition-colors duration-200 group-hover:border-[#66FCF1]/10",
+                      "border-b border-[var(--border-dim)] px-4 py-3.5 align-middle transition-colors duration-200 group-hover:border-[var(--color-accent)]/10",
                       index === 0 ? "pl-5" : undefined,
                       index === row.getVisibleCells().length - 1 ? "pr-5" : undefined,
                       cell.column.columnDef.meta &&
@@ -213,14 +223,14 @@ export function DataTable<TData>({
         </Table>
       </div>
 
-      <div className="relative z-10 flex items-center justify-between gap-3 border-t border-white/8 bg-white/[0.025] px-4 py-3 sm:px-5">
-        <div className="hidden items-center gap-2 text-xs text-slate-400 md:flex">
+      <div className="relative z-10 flex items-center justify-between gap-3 border-t border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.02)] px-4 py-3 sm:px-5">
+        <div className="hidden items-center gap-2 text-xs text-[var(--color-text-tertiary)] md:flex">
           <span>Rows per page</span>
           <Select
             value={String(table.getState().pagination.pageSize)}
             onValueChange={(value) => table.setPageSize(Number(value))}
           >
-            <SelectTrigger className="h-8 w-20 border-white/10 bg-slate-950/60 text-xs">
+            <SelectTrigger className="h-8 w-20 rounded-[var(--radius-panel)] border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent side="top">
@@ -232,13 +242,13 @@ export function DataTable<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="text-xs font-medium text-slate-300">
+        <div className="text-xs font-medium text-[var(--color-text-secondary)]">
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/70 text-slate-300 transition-colors hover:border-white/16 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
             aria-label="Go to first page"
@@ -247,7 +257,7 @@ export function DataTable<TData>({
           </button>
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/70 text-slate-300 transition-colors hover:border-white/16 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             aria-label="Go to previous page"
@@ -256,7 +266,7 @@ export function DataTable<TData>({
           </button>
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/70 text-slate-300 transition-colors hover:border-white/16 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             aria-label="Go to next page"
@@ -265,7 +275,7 @@ export function DataTable<TData>({
           </button>
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/70 text-slate-300 transition-colors hover:border-white/16 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.72)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
             aria-label="Go to last page"

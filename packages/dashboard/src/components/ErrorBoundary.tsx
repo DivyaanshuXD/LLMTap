@@ -30,23 +30,23 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col items-center justify-center gap-6 py-24">
+      <div className="mx-auto flex w-full max-w-[1760px] flex-col items-center justify-center gap-6 py-24">
         <div className="dashboard-shell flex max-w-lg flex-col items-center gap-5 rounded-[28px] px-8 py-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#C5C6C7]/20 bg-[#C5C6C7]/10">
-            <AlertTriangle className="h-7 w-7 text-[#C5C6C7]" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--color-text-primary)]/20 bg-[var(--color-text-primary)]/10">
+            <AlertTriangle className="h-7 w-7 text-[var(--color-text-primary)]" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
               {this.props.fallbackTitle ?? "Something went wrong"}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
               {this.state.error?.message ?? "An unexpected error occurred."}
             </p>
           </div>
           <button
             type="button"
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+            className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.86)]"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Retry</span>

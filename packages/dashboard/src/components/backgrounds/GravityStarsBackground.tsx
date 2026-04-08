@@ -1,324 +1,169 @@
 "use client";
 
 import * as React from "react";
-
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  type HTMLMotionProps,
+  type SpringOptions,
+  type Transition,
+} from "motion/react";
 import { cn } from "@/lib/utils.ts";
 
-type MouseGravity = "attract" | "repel";
-type GlowAnimation = "instant" | "ease" | "spring";
-type StarsInteractionType = "bounce" | "merge";
-
-export type GravityStarsProps = {
-  starsCount?: number;
-  starsSize?: number;
-  starsOpacity?: number;
-  glowIntensity?: number;
-  glowAnimation?: GlowAnimation;
-  movementSpeed?: number;
-  mouseInfluence?: number;
-  mouseGravity?: MouseGravity;
-  gravityStrength?: number;
-  starsInteraction?: boolean;
-  starsInteractionType?: StarsInteractionType;
-} & React.ComponentProps<"div">;
-
-type Particle = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
+export type StarLayerProps = HTMLMotionProps<"div"> & {
+  count: number;
   size: number;
-  opacity: number;
-  baseOpacity: number;
-  mass: number;
-  glowMultiplier?: number;
-  glowVelocity?: number;
+  transition: Transition;
+  starColor: string;
 };
 
-export function GravityStarsBackground({
-  starsCount = 75,
-  starsSize = 2,
-  starsOpacity = 0.75,
-  glowIntensity = 15,
-  glowAnimation = "ease",
-  movementSpeed = 0.3,
-  mouseInfluence = 100,
-  mouseGravity = "attract",
-  gravityStrength = 75,
-  starsInteraction = false,
-  starsInteractionType = "bounce",
+function generateStars(count: number, starColor: string) {
+  const shadows: string[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const x = Math.floor(Math.random() * 4000) - 2000;
+    const y = Math.floor(Math.random() * 4000) - 2000;
+    shadows.push(`${x}px ${y}px ${starColor}`);
+  }
+  return shadows.join(", ");
+}
+
+export function StarLayer({
+  count,
+  size,
+  transition,
+  starColor,
   className,
   ...props
-}: GravityStarsProps) {
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
-  const animRef = React.useRef<number | null>(null);
-  const starsRef = React.useRef<Particle[]>([]);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
-  const [dpr, setDpr] = React.useState(1);
-  const [canvasSize, setCanvasSize] = React.useState({ width: 800, height: 600 });
+}: StarLayerProps) {
+  const [boxShadow, setBoxShadow] = React.useState("");
 
-  const readColor = React.useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return "#ffffff";
-    return getComputedStyle(el).color || "#ffffff";
-  }, []);
+  React.useEffect(() => {
+    setBoxShadow(generateStars(count, starColor));
+  }, [count, starColor]);
 
-  const initStars = React.useCallback(
-    (w: number, h: number) => {
-      starsRef.current = Array.from({ length: starsCount }).map(() => {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = movementSpeed * (0.5 + Math.random() * 0.5);
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          size: Math.random() * starsSize + 1,
-          opacity: starsOpacity,
-          baseOpacity: starsOpacity,
-          mass: Math.random() * 0.5 + 0.5,
-          glowMultiplier: 1,
-          glowVelocity: 0,
-        };
-      });
-    },
-    [movementSpeed, starsCount, starsOpacity, starsSize]
+  return (
+    <motion.div
+      data-slot="star-layer"
+      animate={{ y: [0, -2000] }}
+      transition={transition}
+      className={cn("absolute left-0 top-0 h-[2000px] w-full", className)}
+      {...props}
+    >
+      <div
+        className="absolute rounded-full bg-transparent"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          boxShadow,
+        }}
+      />
+      <div
+        className="absolute top-[2000px] rounded-full bg-transparent"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          boxShadow,
+        }}
+      />
+    </motion.div>
   );
+}
 
-  const redistributeStars = React.useCallback((w: number, h: number) => {
-    starsRef.current.forEach((p) => {
-      p.x = Math.random() * w;
-      p.y = Math.random() * h;
-    });
-  }, []);
+export type StarsBackgroundProps = React.ComponentProps<"div"> & {
+  factor?: number;
+  speed?: number;
+  transition?: SpringOptions;
+  starColor?: string;
+  pointerEvents?: boolean;
+  transparent?: boolean;
+  blendMode?: React.CSSProperties["mixBlendMode"];
+  fieldOpacity?: number;
+  layers?: Array<{
+    count: number;
+    size: number;
+    durationMultiplier: number;
+  }>;
+};
 
-  const resizeCanvas = React.useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    const rect = container.getBoundingClientRect();
-    const nextDpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-    setDpr(nextDpr);
-    canvas.width = Math.max(1, Math.floor(rect.width * nextDpr));
-    canvas.height = Math.max(1, Math.floor(rect.height * nextDpr));
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
-    setCanvasSize({ width: rect.width, height: rect.height });
-    if (starsRef.current.length === 0) initStars(rect.width, rect.height);
-    else redistributeStars(rect.width, rect.height);
-  }, [initStars, redistributeStars]);
+export function StarsBackground({
+  children,
+  className,
+  factor = 0.05,
+  speed = 50,
+  transition = { stiffness: 50, damping: 20 },
+  starColor = "rgba(var(--rgb-accent-max), 0.32)",
+  pointerEvents = true,
+  transparent = false,
+  blendMode = "screen",
+  fieldOpacity = 1,
+  layers = [
+    { count: 1000, size: 1, durationMultiplier: 1 },
+    { count: 400, size: 2, durationMultiplier: 2 },
+    { count: 200, size: 3, durationMultiplier: 3 },
+  ],
+  ...props
+}: StarsBackgroundProps) {
+  const offsetX = useMotionValue(1);
+  const offsetY = useMotionValue(1);
 
-  const handlePointerMove = React.useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    if ("touches" in e) {
-      const t = e.touches[0];
-      if (!t) return;
-      mouseRef.current = { x: t.clientX - rect.left, y: t.clientY - rect.top };
-      return;
-    }
-    mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }, []);
+  const springX = useSpring(offsetX, transition);
+  const springY = useSpring(offsetY, transition);
 
-  const updateStars = React.useCallback(() => {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-    const mouse = mouseRef.current;
-
-    for (let i = 0; i < starsRef.current.length; i++) {
-      const p = starsRef.current[i];
-      if (!p) continue;
-
-      const dx = mouse.x - p.x;
-      const dy = mouse.y - p.y;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist < mouseInfluence && dist > 0) {
-        const force = (mouseInfluence - dist) / mouseInfluence;
-        const nx = dx / dist;
-        const ny = dy / dist;
-        const g = force * (gravityStrength * 0.001);
-
-        if (mouseGravity === "attract") {
-          p.vx += nx * g;
-          p.vy += ny * g;
-        } else {
-          p.vx -= nx * g;
-          p.vy -= ny * g;
-        }
-
-        p.opacity = Math.min(1, p.baseOpacity + force * 0.4);
-        const targetGlow = 1 + force * 2;
-        const currentGlow = p.glowMultiplier || 1;
-
-        if (glowAnimation === "instant") {
-          p.glowMultiplier = targetGlow;
-        } else if (glowAnimation === "ease") {
-          p.glowMultiplier = currentGlow + (targetGlow - currentGlow) * 0.15;
-        } else {
-          const spring = (targetGlow - currentGlow) * 0.2;
-          p.glowVelocity = (p.glowVelocity || 0) * 0.85 + spring;
-          p.glowMultiplier = currentGlow + (p.glowVelocity || 0);
-        }
-      } else {
-        p.opacity = Math.max(p.baseOpacity * 0.3, p.opacity - 0.02);
-        const targetGlow = 1;
-        const currentGlow = p.glowMultiplier || 1;
-
-        if (glowAnimation === "instant") {
-          p.glowMultiplier = targetGlow;
-        } else if (glowAnimation === "ease") {
-          p.glowMultiplier = Math.max(1, currentGlow + (targetGlow - currentGlow) * 0.08);
-        } else {
-          const spring = (targetGlow - currentGlow) * 0.15;
-          p.glowVelocity = (p.glowVelocity || 0) * 0.9 + spring;
-          p.glowMultiplier = Math.max(1, currentGlow + (p.glowVelocity || 0));
-        }
-      }
-
-      if (starsInteraction) {
-        for (let j = i + 1; j < starsRef.current.length; j++) {
-          const o = starsRef.current[j];
-          if (!o) continue;
-          const dx2 = o.x - p.x;
-          const dy2 = o.y - p.y;
-          const d = Math.hypot(dx2, dy2);
-          const minD = p.size + o.size + 5;
-          if (d >= minD || d <= 0) continue;
-
-          if (starsInteractionType === "bounce") {
-            const nx = dx2 / d;
-            const ny = dy2 / d;
-            const rvx = p.vx - o.vx;
-            const rvy = p.vy - o.vy;
-            const speed = rvx * nx + rvy * ny;
-            if (speed < 0) continue;
-            const impulse = (2 * speed) / (p.mass + o.mass);
-            p.vx -= impulse * o.mass * nx;
-            p.vy -= impulse * o.mass * ny;
-            o.vx += impulse * p.mass * nx;
-            o.vy += impulse * p.mass * ny;
-            const overlap = minD - d;
-            p.x -= nx * overlap * 0.5;
-            p.y -= ny * overlap * 0.5;
-            o.x += nx * overlap * 0.5;
-            o.y += ny * overlap * 0.5;
-          } else {
-            const mergeForce = (minD - d) / minD;
-            p.glowMultiplier = (p.glowMultiplier || 1) + mergeForce * 0.5;
-            o.glowMultiplier = (o.glowMultiplier || 1) + mergeForce * 0.5;
-            const af = mergeForce * 0.01;
-            p.vx += dx2 * af;
-            p.vy += dy2 * af;
-            o.vx -= dx2 * af;
-            o.vy -= dy2 * af;
-          }
-        }
-      }
-
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vx += (Math.random() - 0.5) * 0.001;
-      p.vy += (Math.random() - 0.5) * 0.001;
-      p.vx *= 0.999;
-      p.vy *= 0.999;
-
-      if (p.x < 0) p.x = w;
-      if (p.x > w) p.x = 0;
-      if (p.y < 0) p.y = h;
-      if (p.y > h) p.y = 0;
-    }
-  }, [
-    canvasSize.height,
-    canvasSize.width,
-    glowAnimation,
-    gravityStrength,
-    mouseGravity,
-    mouseInfluence,
-    starsInteraction,
-    starsInteractionType,
-  ]);
-
-  const drawStars = React.useCallback(
-    (ctx: CanvasRenderingContext2D) => {
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      const color = readColor();
-      for (const p of starsRef.current) {
-        ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = glowIntensity * (p.glowMultiplier || 1) * 2;
-        ctx.globalAlpha = p.opacity;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(p.x * dpr, p.y * dpr, p.size * dpr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
+  const handleMouseMove = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      offsetX.set(-(event.clientX - centerX) * factor);
+      offsetY.set(-(event.clientY - centerY) * factor);
     },
-    [dpr, glowIntensity, readColor]
+    [factor, offsetX, offsetY]
   );
-
-  const animate = React.useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    updateStars();
-    drawStars(ctx);
-    animRef.current = requestAnimationFrame(animate);
-  }, [drawStars, updateStars]);
-
-  React.useEffect(() => {
-    resizeCanvas();
-    const container = containerRef.current;
-    const observer =
-      typeof ResizeObserver !== "undefined" ? new ResizeObserver(resizeCanvas) : null;
-    if (container && observer) observer.observe(container);
-    window.addEventListener("resize", resizeCanvas);
-    return () => {
-      window.removeEventListener("resize", resizeCanvas);
-      observer?.disconnect();
-    };
-  }, [resizeCanvas]);
-
-  React.useEffect(() => {
-    if (starsRef.current.length === 0) {
-      initStars(canvasSize.width, canvasSize.height);
-    } else {
-      starsRef.current.forEach((p) => {
-        p.baseOpacity = starsOpacity;
-        p.opacity = starsOpacity;
-        const speed = Math.hypot(p.vx, p.vy);
-        if (speed > 0) {
-          const ratio = movementSpeed / speed;
-          p.vx *= ratio;
-          p.vy *= ratio;
-        }
-      });
-    }
-  }, [canvasSize.height, canvasSize.width, initStars, movementSpeed, starsCount, starsOpacity]);
-
-  React.useEffect(() => {
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    };
-  }, [animate]);
 
   return (
     <div
-      ref={containerRef}
-      data-slot="gravity-stars-background"
-      className={cn("relative size-full overflow-hidden", className)}
-      onMouseMove={handlePointerMove}
-      onTouchMove={handlePointerMove}
+      data-slot="stars-background"
+      className={cn(
+        "relative size-full overflow-hidden",
+        transparent
+          ? "bg-transparent"
+          : "bg-[radial-gradient(ellipse_at_bottom,var(--color-surface)_0%,var(--color-ink)_100%)]",
+        className
+      )}
+      onMouseMove={factor > 0 ? handleMouseMove : undefined}
       {...props}
     >
-      <canvas ref={canvasRef} className="block h-full w-full" />
+      <motion.div
+        style={{
+          x: springX,
+          y: springY,
+          opacity: fieldOpacity,
+          mixBlendMode: blendMode,
+          willChange: "transform, opacity",
+        }}
+        className={cn({ "pointer-events-none": !pointerEvents })}
+      >
+        {layers.map((layer) => (
+          <StarLayer
+            key={`${layer.count}-${layer.size}-${layer.durationMultiplier}`}
+            count={layer.count}
+            size={layer.size}
+            transition={{
+              repeat: Infinity,
+              duration: speed * layer.durationMultiplier,
+              ease: "linear",
+            }}
+            starColor={starColor}
+          />
+        ))}
+      </motion.div>
+      {children}
     </div>
   );
+}
+
+export type GravityStarsProps = StarsBackgroundProps;
+
+export function GravityStarsBackground(props: GravityStarsProps) {
+  return <StarsBackground {...props} />;
 }

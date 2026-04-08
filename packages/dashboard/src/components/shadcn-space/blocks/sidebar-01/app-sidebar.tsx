@@ -74,19 +74,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavLink
           to="/"
           end
-          className={`group flex min-w-0 items-center rounded-[22px] border border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.88),rgba(11,12,16,0.94))] shadow-[inset_0_1px_0_rgba(197,198,199,0.04)] transition-all duration-200 hover:border-[#66FCF1]/20 hover:bg-[linear-gradient(180deg,rgba(36,47,58,0.98),rgba(16,18,23,0.98))] ${
-            expanded ? "gap-3 px-3.5 py-3" : "mx-auto h-[3.5rem] w-[3.5rem] justify-center px-0 py-0"
+          className={`group flex min-w-0 items-center rounded-[26px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.92),rgba(var(--ch-bg-panel),0.98))] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.05),0_24px_56px_rgba(0,0,0,0.22)] transition-[background,border-color,box-shadow] duration-[240ms] ease-[var(--ease-out)] hover:border-[var(--border-default)] hover:bg-[linear-gradient(180deg,var(--color-card),var(--color-panel))] ${
+            expanded ? "gap-3.5 px-4 py-3.5" : "mx-auto h-[3.75rem] w-[3.75rem] justify-center px-0 py-0"
           }`}
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#66FCF1,#45A29E)] text-[#0B0C10] shadow-[0_12px_28px_rgba(102,252,241,0.26)]">
+          <div className={`flex shrink-0 items-center justify-center rounded-[18px] border border-[var(--border-default)] bg-[linear-gradient(145deg,var(--color-accent-max),var(--color-accent-2))] text-[var(--color-bg-base)] shadow-[0_14px_30px_rgba(var(--ch-accent),0.22)] transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:scale-[1.03] ${expanded ? "h-10 w-10" : "h-11 w-11"}`}>
             <TowerControl className="size-4" />
           </div>
           {expanded ? (
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-medium uppercase tracking-[0.3em] text-[#66FCF1]/72">
+              <div className="truncate text-[11px] font-medium uppercase tracking-[0.3em] text-[var(--color-accent-max)]/72">
                 LLMTAP
               </div>
-              <div className="truncate text-xl font-semibold tracking-[-0.04em] text-white">
+              <div
+                className="truncate text-[var(--color-text-primary)]"
+                style={{
+                  fontFamily: "var(--font-operator)",
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  lineHeight: "1",
+                  letterSpacing: "-0.04em",
+                }}
+              >
                 Control Deck
               </div>
             </div>
@@ -111,26 +120,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
           {expanded ? (
             <SidebarSection label="Runtime">
-              <div className="rounded-[22px] border border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.86),rgba(11,12,16,0.92))] px-4 py-4">
-                <div className="flex items-center gap-2 text-white">
-                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#66FCF1] shadow-[0_0_14px_rgba(102,252,241,0.7)]" />
+              <div className="rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.9),rgba(var(--ch-bg-panel),0.98))] px-4 py-4">
+                <div className="flex items-center gap-2 text-[var(--color-text-primary)]">
+                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-accent)] shadow-[0_0_14px_rgba(var(--ch-accent), 0.7)]" />
                   <span className="text-sm font-medium">Local collector active</span>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                   Runtime traces, token economics, and execution trees in one local-first surface.
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-[#45A29E]/14 bg-[#0B0C10]/70 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.24em] text-[#66FCF1]/58">
+                  <div className="rounded-2xl border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-accent)]/58">
                       Mode
                     </div>
-                    <div className="mt-1 font-mono text-base text-[#C5C6C7]">LOCAL</div>
+                    <div className="mt-1 font-mono text-base text-[var(--color-text-primary)]">LOCAL</div>
                   </div>
-                  <div className="rounded-2xl border border-[#45A29E]/14 bg-[#0B0C10]/70 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.24em] text-[#66FCF1]/58">
+                  <div className="rounded-2xl border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-accent)]/58">
                       Port
                     </div>
-                    <div className="mt-1 font-mono text-base text-[#C5C6C7]">4781</div>
+                    <div className="mt-1 font-mono text-base text-[var(--color-text-primary)]">4781</div>
                   </div>
                 </div>
               </div>
@@ -141,26 +150,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarFooter>
         <div
-          className={`rounded-[22px] border border-[#45A29E]/14 bg-[linear-gradient(180deg,rgba(31,40,51,0.86),rgba(11,12,16,0.92))] ${
-            expanded ? "px-4 py-3" : "mx-auto flex h-[3.5rem] w-[3.5rem] items-center justify-center px-0 py-0"
+          className={`rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.88),rgba(var(--ch-bg-panel),0.98))] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.05)] transition-[background,border-color,box-shadow] duration-[240ms] ease-[var(--ease-out)] ${
+            expanded ? "px-4 py-3" : "mx-auto flex h-[3.75rem] w-[3.75rem] items-center justify-center px-0 py-0"
           }`}
         >
           {expanded ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#45A29E]/16 bg-[#0B0C10]/70 text-[#66FCF1]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]">
                 <TowerControl className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <SidebarLabel className="block text-sm font-medium text-white">
+                <SidebarLabel className="block text-sm font-medium text-[var(--color-text-primary)]">
                   LLMTap
                 </SidebarLabel>
-                <SidebarLabel className="block text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <SidebarLabel className="block text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
                   Local-first observability
                 </SidebarLabel>
               </div>
             </div>
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#45A29E]/16 bg-[#0B0C10]/70 text-[#66FCF1]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[20px] border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]">
               <TowerControl className="h-4 w-4" />
             </div>
           )}

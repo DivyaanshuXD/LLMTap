@@ -7,12 +7,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-white/10 bg-white/6 text-slate-300",
-        success: "border-[#66fcf1]/20 bg-[#66fcf1]/14 text-[#66fcf1]",
-        warning: "border-[#45a29e]/20 bg-[#45a29e]/15 text-[#45a29e]",
-        error: "border-[#c5c6c7]/20 bg-[#c5c6c7]/15 text-[#c5c6c7]",
-        info: "border-[#45a29e]/20 bg-[#45a29e]/14 text-[#66fcf1]",
-        purple: "border-[#45a29e]/20 bg-[#45a29e]/14 text-[#66fcf1]",
+        default: "border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.05)] text-[var(--color-text-secondary)]",
+        success: "border-[var(--color-accent)]/20 bg-[var(--color-accent)]/14 text-[var(--color-accent)]",
+        warning: "border-[var(--color-accent-2)]/20 bg-[var(--color-accent-2)]/15 text-[var(--color-accent-2)]",
+        error: "border-[var(--color-text-primary)]/20 bg-[var(--color-text-primary)]/15 text-[var(--color-text-primary)]",
+        info: "border-[var(--color-accent-2)]/20 bg-[var(--color-accent-2)]/14 text-[var(--color-accent)]",
+        purple: "border-[var(--color-accent-2)]/20 bg-[var(--color-accent-2)]/14 text-[var(--color-accent)]",
       },
     },
     defaultVariants: {

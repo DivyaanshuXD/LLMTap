@@ -187,7 +187,7 @@ export function GlowingLineChart({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Badge
           variant="info"
-          className="border-[#66FCF1]/18 bg-[#66FCF1]/12 text-[#66FCF1]"
+          className="border-[var(--color-accent)]/18 bg-[var(--color-accent)]/12 text-[var(--color-accent)]"
         >
           <TrendingUp className="h-3.5 w-3.5" />
           <span>live trend</span>
@@ -195,16 +195,16 @@ export function GlowingLineChart({
 
         {activePoint ? (
           <div className="flex flex-wrap items-center gap-2">
-            <div className="rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-medium text-slate-300">
+            <div className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)]">
               {activePoint.label}
             </div>
-            <div className="rounded-full border border-[#45A29E]/20 bg-[#45A29E]/12 px-3 py-1.5 font-mono text-xs text-[#C5C6C7]">
+            <div className="rounded-full border border-[var(--color-accent-2)]/20 bg-[var(--color-accent-2)]/12 px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
               {activePoint.primaryValue.toLocaleString(undefined, {
                 maximumFractionDigits: 4,
               })}
             </div>
             {secondaryDataKey && activePoint.secondaryValue !== undefined && (
-              <div className="rounded-full border border-[#66FCF1]/18 bg-[#66FCF1]/10 px-3 py-1.5 font-mono text-xs text-[#C5C6C7]">
+              <div className="rounded-full border border-[var(--color-accent)]/18 bg-[var(--color-accent)]/10 px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
                 {activePoint.secondaryValue.toLocaleString(undefined, {
                   maximumFractionDigits: 4,
                 })}
@@ -214,8 +214,8 @@ export function GlowingLineChart({
         ) : null}
       </div>
 
-      <div className="relative overflow-hidden rounded-[24px] border border-white/7 bg-[linear-gradient(180deg,rgba(15,23,42,0.62),rgba(9,13,28,0.92))] p-3">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(102,252,241,0.16),transparent_60%)]" />
+      <div className="relative overflow-hidden rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.74),rgba(var(--ch-bg-base),0.96))] p-3">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(var(--ch-accent), 0.16),transparent_60%)]" />
         <svg
           aria-hidden="true"
           className="h-[320px] w-full"
@@ -229,8 +229,8 @@ export function GlowingLineChart({
               y1="0"
               y2="1"
             >
-              <stop offset="0%" stopColor="#45A29E" stopOpacity="0.38" />
-              <stop offset="100%" stopColor="#45A29E" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--color-accent-2)" stopOpacity="0.38" />
+              <stop offset="100%" stopColor="var(--color-accent-2)" stopOpacity="0" />
             </linearGradient>
             <linearGradient
               id={`line-stroke-${chartId}`}
@@ -239,8 +239,8 @@ export function GlowingLineChart({
               y1="0"
               y2="0"
             >
-              <stop offset="0%" stopColor="#45A29E" />
-              <stop offset="100%" stopColor="#66FCF1" />
+              <stop offset="0%" stopColor="var(--color-accent-2)" />
+              <stop offset="100%" stopColor="var(--color-accent)" />
             </linearGradient>
             <filter
               id={`line-glow-${chartId}`}
@@ -264,7 +264,7 @@ export function GlowingLineChart({
               x2={CHART_WIDTH - CHART_PADDING.right}
               y1={lineY}
               y2={lineY}
-              stroke="rgba(148,163,184,0.16)"
+              stroke="rgba(var(--ch-text-primary),0.16)"
               strokeDasharray="4 8"
             />
           ))}
@@ -274,7 +274,7 @@ export function GlowingLineChart({
             x2={CHART_WIDTH - CHART_PADDING.right}
             y1={geometry.baselineY}
             y2={geometry.baselineY}
-            stroke="rgba(148,163,184,0.2)"
+            stroke="rgba(var(--ch-text-primary),0.2)"
           />
 
           {geometry.primaryArea ? (
@@ -289,7 +289,7 @@ export function GlowingLineChart({
             <path
               d={geometry.secondaryPath}
               fill="none"
-              stroke="#C5C6C7"
+              stroke="var(--color-text-primary)"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeOpacity="0.55"
@@ -311,7 +311,7 @@ export function GlowingLineChart({
               <path
                 d={geometry.primaryPath}
                 fill="none"
-                stroke="rgba(255,255,255,0.16)"
+                stroke="rgba(var(--ch-text-primary),0.16)"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="1"
@@ -326,15 +326,15 @@ export function GlowingLineChart({
                 x2={activePoint.x}
                 y1={CHART_PADDING.top}
                 y2={geometry.baselineY}
-                stroke="rgba(102,252,241,0.24)"
+                stroke="rgba(var(--ch-accent), 0.24)"
                 strokeDasharray="4 6"
               />
               <circle
                 cx={activePoint.x}
                 cy={activePoint.yPrimary}
-                fill="#C5C6C7"
+                fill="var(--color-text-primary)"
                 r="5"
-                stroke="#66FCF1"
+                stroke="var(--color-accent)"
                 strokeWidth="3"
               />
             </>
@@ -345,7 +345,7 @@ export function GlowingLineChart({
               key={`${tick.index}-${tick.label}`}
               x={tick.x}
               y={CHART_HEIGHT - 12}
-              fill="rgba(148,163,184,0.74)"
+              fill="rgba(var(--ch-text-primary),0.74)"
               fontSize="11"
               textAnchor="middle"
             >
@@ -401,9 +401,9 @@ export function GlowingLineChart({
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/7 bg-white/5 px-4 py-3">
+    <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] px-4 py-3">
       <div className="hud-label">{label}</div>
-      <div className="mt-2 font-mono text-sm text-slate-200">{value}</div>
+      <div className="mt-2 font-mono text-sm text-[var(--color-text-primary)]">{value}</div>
     </div>
   );
 }

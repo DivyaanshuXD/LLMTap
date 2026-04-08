@@ -14,6 +14,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "../components/DataTable.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import { EmptyState } from "../components/system/EmptyState.tsx";
 import { NumberTicker } from "../components/magicui/number-ticker.tsx";
 import {
   formatCompactNumber,
@@ -41,17 +42,17 @@ function HorizontalMetricChart({
       {rows.map((row) => (
         <div
           key={row.name}
-          className="rounded-[var(--radius-panel)] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,28,0.9),rgba(5,10,20,0.94))] p-4"
+          className="rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.78),rgba(var(--ch-bg-base),0.94))] p-4"
         >
           <div className="flex items-center justify-between gap-4">
-            <span className="truncate text-sm font-medium text-slate-200">
+            <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
               {row.name}
             </span>
-            <span className="font-mono text-sm text-slate-400">
+            <span className="font-mono text-sm text-[var(--color-text-secondary)]">
               {valueFormatter(row.value)}
             </span>
           </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-950/80">
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[rgba(var(--ch-bg-base),0.82)]">
             <motion.div
               className={`h-full rounded-full ${barClassName}`}
               initial={{ width: 0 }}
@@ -98,10 +99,10 @@ export default function Models() {
         header: "Model",
         cell: ({ row }) => (
           <div className="min-w-0">
-            <div className="truncate font-mono text-sm font-semibold text-slate-100">
+            <div className="truncate font-mono text-sm font-semibold text-[var(--color-text-primary)]">
               {row.original.model}
             </div>
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-[var(--color-text-secondary)]">
               {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "No latency yet"} average latency
             </div>
           </div>
@@ -115,11 +116,11 @@ export default function Models() {
             <span
               className="h-2.5 w-2.5 rounded-full"
               style={{
-                backgroundColor: providerColors[row.original.provider] ?? "#66FCF1",
-                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "#66FCF1"}`,
+                backgroundColor: providerColors[row.original.provider] ?? "var(--color-accent)",
+                boxShadow: `0 0 10px ${providerColors[row.original.provider] ?? "var(--color-accent)"}`,
               }}
             />
-            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
+            <span className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
               {row.original.provider}
             </span>
           </div>
@@ -129,7 +130,7 @@ export default function Models() {
         accessorKey: "spanCount",
         header: "Calls",
         cell: ({ row }) => (
-          <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-mono text-xs text-slate-300">
+          <span className="inline-flex items-center justify-center rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2.5 py-0.5 font-mono text-xs text-[var(--color-text-secondary)]">
             {row.original.spanCount}
           </span>
         ),
@@ -139,7 +140,7 @@ export default function Models() {
         accessorKey: "totalTokens",
         header: "Tokens",
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-300">
+          <span className="font-mono text-sm text-[var(--color-text-secondary)]">
             {formatCompactNumber(row.original.totalTokens)}
           </span>
         ),
@@ -149,7 +150,7 @@ export default function Models() {
         accessorKey: "totalCost",
         header: "Cost",
         cell: ({ row }) => (
-          <span className="font-mono text-sm font-semibold text-white">
+          <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)]">
             {formatCost(row.original.totalCost)}
           </span>
         ),
@@ -159,7 +160,7 @@ export default function Models() {
         accessorKey: "avgDuration",
         header: "Avg Latency",
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-400">
+          <span className="font-mono text-sm text-[var(--color-text-tertiary)]">
             {row.original.avgDuration ? formatDuration(row.original.avgDuration) : "-"}
           </span>
         ),
@@ -170,7 +171,7 @@ export default function Models() {
         header: "Cost/Call",
         accessorFn: (row) => (row.spanCount > 0 ? row.totalCost / row.spanCount : 0),
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-500">
+          <span className="font-mono text-sm text-[var(--color-text-tertiary)]">
             {row.original.spanCount > 0
               ? formatCost(row.original.totalCost / row.original.spanCount)
               : "-"}
@@ -184,7 +185,7 @@ export default function Models() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1500px] space-y-8">
+      <div className="mx-auto max-w-[1760px] space-y-8">
         <div className="skeleton-panel h-44 rounded-[28px]" />
         <div className="skeleton-panel h-80 rounded-[24px]" />
       </div>
@@ -200,21 +201,21 @@ export default function Models() {
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-5 space-y-4">
-            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
+            <div className="deck-card deck-card--accent">
               <div className="hud-label">Models active</div>
-              <div className="mt-2 text-lg font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 <NumberTicker value={byModel.length} />
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 Across {new Set(byModel.map((m) => m.provider)).size} providers
               </div>
             </div>
-            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
+            <div className="deck-card">
               <div className="hud-label">Highest cost model</div>
-              <div className="mt-2 text-base font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 {byModel[0]?.model ?? "No data"}
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 {byModel[0] ? formatCost(byModel[0].totalCost) : "-"}
               </div>
             </div>
@@ -222,6 +223,21 @@ export default function Models() {
         </div>
       }
     >
+      <div className="pill-strip w-fit max-w-full overflow-x-auto">
+        <span className="pill-item">
+          window <strong>168h</strong>
+        </span>
+        <span className="pill-item">
+          models <strong>{byModel.length}</strong>
+        </span>
+        <span className="pill-item">
+          providers <strong>{new Set(byModel.map((m) => m.provider)).size}</strong>
+        </span>
+        <span className="pill-item">
+          tokens <strong>{formatCompactNumber(stats?.totalTokens ?? 0)}</strong>
+        </span>
+      </div>
+
       {byModel.length > 0 ? (
         <>
           <motion.div
@@ -231,14 +247,14 @@ export default function Models() {
             transition={{ duration: 0.35 }}
           >
             <div className="mb-4 flex items-center justify-between gap-3 px-1">
-              <div>
-                <div className="hud-label">Model roster</div>
-                <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
-                  Performance by model
-                </h2>
-              </div>
+            <div>
+              <div className="hud-label">Model roster</div>
+              <h2 className="page-section-title mt-1">
+                Performance by model
+              </h2>
+            </div>
               <span className="status-chip">
-                <Layers className="h-3.5 w-3.5 text-[#66FCF1]" />
+                <Layers className="h-3.5 w-3.5 text-[var(--color-accent)]" />
                 <span>{byModel.length} models</span>
               </span>
             </div>
@@ -255,22 +271,24 @@ export default function Models() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <div className="hud-label">Latency profile</div>
-                  <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+                  <h2 className="page-section-title mt-1">
                     Average latency by model
                   </h2>
                 </div>
-                <Clock className="h-4 w-4 text-[#66FCF1]" />
+                <Clock className="h-4 w-4 text-[var(--color-accent)]" />
               </div>
               {latencyData.length > 0 ? (
                 <HorizontalMetricChart
                   rows={latencyData}
                   valueFormatter={formatDuration}
-                  barClassName="bg-[linear-gradient(90deg,rgba(69,162,158,0.95),rgba(102,252,241,0.78))]"
+                  barClassName="bg-[linear-gradient(90deg,rgba(var(--ch-accent-2),0.95),rgba(var(--ch-accent),0.78))]"
                 />
               ) : (
-                <div className="empty-state h-[280px] text-slate-500">
-                  No latency data available yet.
-                </div>
+                <EmptyState
+                  title="No latency data available yet"
+                  description="Latency lanes appear once calls have enough timing data to compare across models."
+                  className="h-[280px]"
+                />
               )}
             </motion.div>
 
@@ -283,35 +301,34 @@ export default function Models() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <div className="hud-label">Token distribution</div>
-                  <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+                  <h2 className="page-section-title mt-1">
                     Token volume by model
                   </h2>
                 </div>
-                <Cpu className="h-4 w-4 text-[#45A29E]" />
+                <Cpu className="h-4 w-4 text-[var(--color-accent-2)]" />
               </div>
               {tokenData.length > 0 ? (
                 <HorizontalMetricChart
                   rows={tokenData}
                   valueFormatter={formatCompactNumber}
-                  barClassName="bg-[linear-gradient(90deg,rgba(102,252,241,0.95),rgba(69,162,158,0.78))]"
+                  barClassName="bg-[linear-gradient(90deg,rgba(var(--ch-accent),0.95),rgba(var(--ch-accent-2),0.78))]"
                 />
               ) : (
-                <div className="empty-state h-[280px] text-slate-500">
-                  No token distribution data available yet.
-                </div>
+                <EmptyState
+                  title="No token distribution data available yet"
+                  description="Token lanes appear once captured model traffic reaches the collector."
+                  className="h-[280px]"
+                />
               )}
             </motion.div>
           </div>
         </>
       ) : (
         <div className={`${sectionShell} p-16`}>
-          <div className="empty-state">
-            <Gauge className="h-8 w-8 text-slate-500" />
-            <div className="text-base font-medium text-white">No models tracked yet</div>
-            <div className="max-w-sm text-center text-sm text-slate-400">
-              Start sending traced API calls and model metrics will populate automatically.
-            </div>
-          </div>
+          <EmptyState
+            title="No models tracked yet"
+            description="Start sending traced API calls and model metrics will populate automatically."
+          />
         </div>
       )}
     </PageFrame>

@@ -7,7 +7,30 @@ export function StatusDot({
   status: string;
   className?: string;
 }) {
-  const isError = status === "error";
+  const tone =
+    status === "error"
+      ? {
+          halo: "rgba(var(--ch-error), 0.16)",
+          fill: "var(--color-error)",
+          shadow: "0 0 8px rgba(var(--ch-error), 0.38)",
+        }
+      : status === "warning"
+        ? {
+            halo: "rgba(var(--ch-warning), 0.16)",
+            fill: "var(--color-warning)",
+            shadow: "0 0 8px rgba(var(--ch-warning), 0.34)",
+          }
+        : status === "active"
+          ? {
+              halo: "rgba(var(--ch-accent), 0.18)",
+              fill: "var(--color-accent)",
+              shadow: "var(--glow-dot)",
+            }
+          : {
+              halo: "rgba(var(--ch-accent-2), 0.16)",
+              fill: "var(--color-accent-2)",
+              shadow: "0 0 8px rgba(var(--ch-accent-2), 0.28)",
+            };
   return (
     <span
       className={cn(
@@ -16,16 +39,15 @@ export function StatusDot({
       )}
     >
       <span
-        className={cn(
-          "absolute inset-0 rounded-full",
-          isError ? "bg-[#C5C6C7]/20" : "bg-[#66FCF1]/25"
-        )}
+        className="absolute inset-0 rounded-full"
+        style={{ background: tone.halo }}
       />
       <span
-        className={cn(
-          "relative h-2 w-2 rounded-full",
-          isError ? "bg-[#C5C6C7]" : "bg-[#66FCF1]"
-        )}
+        className="relative h-2 w-2 rounded-full"
+        style={{
+          background: tone.fill,
+          boxShadow: tone.shadow,
+        }}
       />
     </span>
   );

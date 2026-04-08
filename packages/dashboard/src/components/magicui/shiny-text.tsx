@@ -27,7 +27,7 @@ export function ShinyText({
           backgroundRepeat: "no-repeat",
           backgroundPosition: "0 0",
           backgroundImage:
-            "linear-gradient(120deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 60%)",
+            "linear-gradient(120deg, rgba(var(--ch-text-primary),0) 40%, rgba(var(--ch-text-primary),0.8) 50%, rgba(var(--ch-text-primary),0) 60%)",
           WebkitBackgroundClip: "text",
         } as React.CSSProperties
       }

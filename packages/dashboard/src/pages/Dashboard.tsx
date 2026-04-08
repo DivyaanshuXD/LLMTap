@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchStats, fetchTraces, fetchInsights } from "../api/client.ts";
 import {
   Activity,
@@ -52,6 +52,13 @@ import {
   formatDuration,
   formatTimeAgo,
 } from "../lib/format.ts";
+import {
+  CommandBar,
+  CostTag,
+  EmptyState,
+  ProviderBadge,
+  TraceRow,
+} from "../components/system/index.ts";
 
 /* ── Shared surface classes (DRY) ────────────────────────── */
 const sectionShell = "dashboard-shell rounded-[var(--radius-card)]";
@@ -59,6 +66,7 @@ const sectionShell = "dashboard-shell rounded-[var(--radius-card)]";
 const PAGE_SIZE_OPTIONS = [12, 25, 50, 100] as const;
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get("q") ?? "";
   const deferredSearch = useDeferredValue(searchTerm);
@@ -197,26 +205,35 @@ export default function Dashboard() {
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-4 grid gap-3">
-            <div className="surface-strong rounded-2xl p-4">
+            <div className="deck-card deck-card--accent">
               <div className="hud-label">Dominant provider</div>
               <div className="mt-2 flex items-center justify-between">
-                <div className="text-lg font-medium capitalize text-white">
+                <div
+                  className="capitalize text-[var(--color-text-primary)]"
+                  style={{
+                    fontFamily: "var(--font-operator)",
+                    fontSize: "30px",
+                    fontWeight: 700,
+                    lineHeight: "0.92",
+                    letterSpacing: "-0.04em",
+                  }}
+                >
                   {topProvider?.provider ?? "Awaiting traffic"}
                 </div>
-                <Orbit className="h-4 w-4 text-[#66FCF1]" />
+                <Orbit className="h-4 w-4 text-[var(--color-accent)]" />
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 {topProvider
                   ? `${topProvider.spanCount} calls, ${formatCost(topProvider.totalCost)} spend`
                   : "No provider activity yet"}
               </div>
             </div>
-            <div className="surface-strong rounded-2xl p-4">
+            <div className="deck-card">
               <div className="hud-label">Latest trace</div>
-              <div className="mt-2 text-base font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 {latestTrace?.name ?? "No recent traces"}
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 {latestTrace
                   ? `${formatTimeAgo(latestTrace.startTime)} / ${latestTrace.spanCount} spans`
                   : "Start sending spans to populate the deck"}
@@ -226,6 +243,21 @@ export default function Dashboard() {
         </div>
       }
     >
+      <div className="pill-strip w-fit max-w-full overflow-x-auto">
+        <span className="pill-item">
+          window <strong>{traceQuery.periodHours}h</strong>
+        </span>
+        <span className="pill-item">
+          providers <strong>{providerOptions.length || 0}</strong>
+        </span>
+        <span className="pill-item">
+          traces <strong>{totalMatches}</strong>
+        </span>
+        <span className="pill-item">
+          status <strong>{stats?.errorCount ? "watching" : "stable"}</strong>
+        </span>
+      </div>
+
       <StatisticsWithStatusGrid
         cards={dashboardStatsCards}
         className="max-w-none px-0 sm:px-0 lg:px-0"
@@ -237,17 +269,17 @@ export default function Dashboard() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <div className="hud-label">Economic pulse</div>
-              <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+              <h2 className="page-section-title mt-1">
                 Cost gradient
               </h2>
             </div>
             <div className="status-chip">
-              <Gauge className="h-3.5 w-3.5 text-[#66FCF1]" />
+              <Gauge className="h-3.5 w-3.5 text-[var(--color-accent)]" />
               <span>{traceQuery.periodHours}h window</span>
             </div>
           </div>
           {chartData.length > 0 ? (
-            <div className="overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(6,12,22,0.98),rgba(4,8,17,0.98))] p-4">
+            <div className="surface-strong overflow-hidden rounded-[var(--radius-card)] p-4">
               <GlowingLineChart
                 data={chartData}
                 xDataKey="timestamp"
@@ -256,13 +288,13 @@ export default function Dashboard() {
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <div className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="hud-label">Latest</div>
-                  <div className="mt-2 text-lg font-semibold text-white">
+                  <div className="mt-2 text-lg font-semibold text-[var(--color-text-primary)]">
                     {formatCost(chartData.at(-1)?.cost ?? 0)}
                   </div>
                 </div>
                 <div className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="hud-label">Peak</div>
-                  <div className="mt-2 text-lg font-semibold text-white">
+                  <div className="mt-2 text-lg font-semibold text-[var(--color-text-primary)]">
                     {formatCost(
                       Math.max(...chartData.map((point) => point.cost), 0)
                     )}
@@ -275,8 +307,8 @@ export default function Dashboard() {
                       (chartData.at(-1)?.cost ?? 0) -
                         (chartData.at(-2)?.cost ?? chartData.at(-1)?.cost ?? 0) >=
                       0
-                        ? "text-[#66FCF1]"
-                        : "text-[#C5C6C7]"
+                        ? "text-[var(--color-accent)]"
+                        : "text-[var(--color-text-primary)]"
                     }`}
                   >
                     {(chartData.at(-1)?.cost ?? 0) -
@@ -297,13 +329,11 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="empty-state h-[320px]">
-              <TrendingUp className="h-8 w-8 text-slate-500" />
-              <div className="text-base font-medium text-white">No cost movement yet</div>
-              <div className="max-w-sm text-center text-sm text-slate-500">
-                This turns into a live spend curve as soon as the collector receives traced calls.
-              </div>
-            </div>
+            <EmptyState
+              title="No cost movement yet"
+              description="This turns into a live spend curve as soon as the collector receives traced calls."
+              className="min-h-[320px]"
+            />
           )}
         </section>
 
@@ -311,12 +341,12 @@ export default function Dashboard() {
         <section className={`${sectionShell} p-5 sm:p-6`}>
           <div className="mb-5">
             <div className="hud-label">Provider pressure</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+            <h2 className="page-section-title mt-1">
               Allocation by provider
             </h2>
           </div>
           <div className="space-y-4">
-            {(stats?.byProvider ?? []).map((providerEntry) => {
+            {(stats?.byProvider ?? []).length > 0 ? (stats?.byProvider ?? []).map((providerEntry) => {
               const ratio =
                 (stats?.totalCost ?? 0) > 0
                   ? (providerEntry.totalCost / (stats?.totalCost ?? 1)) * 100
@@ -325,19 +355,19 @@ export default function Dashboard() {
                 <div key={providerEntry.provider} className="surface-muted rounded-[var(--radius-panel)] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-sm font-medium capitalize text-white">{providerEntry.provider}</div>
-                      <div className="text-[length:var(--text-caption)] text-slate-400">
+                      <ProviderBadge provider={providerEntry.provider} />
+                      <div className="text-[length:var(--text-caption)] text-[var(--color-text-secondary)]">
                         {providerEntry.spanCount} calls / {formatCompactNumber(providerEntry.totalTokens)} tokens
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-white">{formatCost(providerEntry.totalCost)}</div>
-                      <div className="text-[length:var(--text-caption)] text-slate-500">{formatDuration(providerEntry.avgDuration)}</div>
+                      <CostTag value={providerEntry.totalCost} size="sm" />
+                      <div className="text-[length:var(--text-caption)] text-[var(--color-text-tertiary)]">{formatDuration(providerEntry.avgDuration)}</div>
                     </div>
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900/80">
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(var(--ch-bg-base),0.84)]">
                     <motion.div
-                      className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#45A29E,#66FCF1)]"
+                      className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,var(--color-accent-2),var(--color-accent))]"
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: Math.max(ratio, 4) / 100 }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -345,7 +375,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <EmptyState
+                title="No provider activity yet"
+                description="Allocation bands appear here once the collector receives instrumented traffic."
+                className="min-h-[320px]"
+              />
+            )}
           </div>
         </section>
       </div>
@@ -357,7 +393,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="hud-label">Search console</div>
-                <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+                <h2 className="page-section-title mt-1">
                   Trace dispatch queue
                 </h2>
               </div>
@@ -369,7 +405,7 @@ export default function Dashboard() {
                     updateParams({ q: undefined, provider: undefined, status: undefined, periodHours: undefined })
                   }
                   disabled={!hasActiveFilters}
-                  className="status-chip transition-all duration-[--duration-normal] hover:border-white/[0.14] hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="status-chip transition-all duration-[--duration-normal] hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-accent),0.06)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <X className="h-3.5 w-3.5" />
                   <span>Clear</span>
@@ -378,15 +414,11 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_repeat(3,minmax(0,0.7fr))]">
-              <label className="field-surface relative block rounded-2xl">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  value={searchTerm}
-                  onChange={(event) => updateParams({ q: event.target.value || undefined })}
-                  placeholder="Search traces, models, providers, errors"
-                  className="w-full rounded-2xl bg-transparent py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none"
-                />
-              </label>
+              <CommandBar
+                value={searchTerm}
+                onChange={(value) => updateParams({ q: value || undefined })}
+                placeholder="Search traces, models, providers, errors"
+              />
               <Select
                 value={provider || "__all__"}
                 onValueChange={(val) => updateParams({ provider: val === "__all__" ? undefined : val })}
@@ -439,74 +471,64 @@ export default function Dashboard() {
           </div>
 
           {tracesLoading ? (
-            <div className="empty-state h-[280px] text-slate-500">Loading trace queue...</div>
+            <EmptyState
+              title="Loading trace queue"
+              description="The latest calls are being assembled into the dispatch surface."
+              className="min-h-[280px]"
+            />
           ) : traces.length === 0 && !hasActiveFilters ? (
             <GettingStartedPanel />
           ) : traces.length === 0 ? (
-            <div className="empty-state h-[280px]">
-              <Activity className="h-8 w-8 text-slate-500" />
-              <div className="text-base font-medium text-white">No traces match these filters</div>
-            </div>
+            <EmptyState
+              title="No traces match these filters"
+              description="Try adjusting the search term, provider filter, or time window."
+              className="min-h-[280px]"
+            />
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full border-separate border-spacing-y-2 text-sm">
-                  <thead>
-                    <tr className="text-left text-[length:var(--text-hud)] uppercase tracking-[var(--tracking-hud)] text-slate-500">
-                      <th className="px-4 py-2">State</th>
-                      <th className="px-4 py-2">Trace</th>
-                      {([["spanCount", "Spans"], ["totalTokens", "Tokens"], ["totalCost", "Cost"], ["startTime", "When"]] as const).map(([key, label]) => (
-                        <th key={key} className="px-4 py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => toggleSort(key)}
-                            className="inline-flex items-center gap-1 transition-colors duration-[--duration-fast] hover:text-slate-300"
-                          >
-                            {label}
-                            {sortKey === key ? (
-                              sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ArrowUpDown className="h-3 w-3 opacity-30" />
-                            )}
-                          </button>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {traces.map((trace) => (
-                      <tr key={trace.traceId} className="table-row-surface rounded-2xl">
-                        <td className="rounded-l-2xl px-4 py-4">
-                          <StatusDot status={trace.status} />
-                        </td>
-                        <td className="px-4 py-4">
-                          <Link
-                            to={`/trace/${trace.traceId}`}
-                            className="group inline-flex max-w-[380px] flex-col gap-1 text-sm font-medium text-white transition-colors duration-[--duration-normal] hover:text-[#66FCF1]"
-                          >
-                            <span className="inline-flex items-center gap-2">
-                              <span className="truncate">{trace.name}</span>
-                              <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
-                            </span>
-                            <span className="font-mono text-[length:var(--text-hud)] uppercase tracking-[var(--tracking-hud)] text-slate-500">
-                              {trace.traceId.slice(0, 12)}
-                              {trace.totalDuration ? ` / ${formatDuration(trace.totalDuration)}` : ""}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{trace.spanCount}</td>
-                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{trace.totalTokens.toLocaleString()}</td>
-                        <td className="px-4 py-4 text-right font-mono text-[length:var(--text-caption)] text-slate-300">{formatCost(trace.totalCost)}</td>
-                        <td className="rounded-r-2xl px-4 py-4 text-right text-[length:var(--text-caption)] text-slate-500">{formatTimeAgo(trace.startTime)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-[auto_auto_minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(72px,0.5fr)_minmax(80px,0.7fr)_minmax(94px,0.6fr)_minmax(86px,0.6fr)_minmax(96px,0.7fr)] gap-3 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                  <span />
+                  <span>State</span>
+                  <span>Trace</span>
+                  <span>ID</span>
+                  <button type="button" onClick={() => toggleSort("spanCount")} className="justify-self-end">
+                    Spans
+                  </button>
+                  <button type="button" onClick={() => toggleSort("totalTokens")} className="justify-self-end">
+                    Tokens
+                  </button>
+                  <button type="button" onClick={() => toggleSort("totalCost")} className="justify-self-end">
+                    Cost
+                  </button>
+                  <span className="justify-self-end">Duration</span>
+                  <button type="button" onClick={() => toggleSort("startTime")} className="justify-self-end">
+                    When
+                  </button>
+                </div>
+                {traces.map((trace, index) => (
+                  <TraceRow
+                    key={trace.traceId}
+                    index={index}
+                    trace={{
+                      id: trace.traceId,
+                      name: trace.name,
+                      status: trace.status === "ok" ? "complete" : "error",
+                      spans: trace.spanCount,
+                      tokens: trace.totalTokens,
+                      cost: trace.totalCost,
+                      duration: trace.totalDuration ?? 0,
+                      when: formatTimeAgo(trace.startTime),
+                    }}
+                    href={`/trace/${trace.traceId}`}
+                    onClick={(id) => navigate(`/trace/${id}`)}
+                  />
+                ))}
               </div>
 
               <div className="mt-4 flex items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-3">
-                  <div className="text-[length:var(--text-caption)] text-slate-500">
+                  <div className="text-[length:var(--text-caption)] text-[var(--color-text-tertiary)]">
                     {totalMatches > 0 ? `Showing ${offset + 1}-${Math.min(offset + traces.length, totalMatches)} of ${totalMatches}` : "Awaiting traces"}
                   </div>
                   <Select
@@ -552,7 +574,7 @@ export default function Dashboard() {
         <section className={`${sectionShell} p-5`}>
           <div className="mb-5">
             <div className="hud-label">Intelligence layer</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+            <h2 className="page-section-title mt-1">
               Insights
             </h2>
           </div>
@@ -563,27 +585,27 @@ export default function Dashboard() {
                   key={insight.id}
                   className={`rounded-2xl border p-4 ${
                     insight.severity === "critical"
-                      ? "border-[#C5C6C7]/18 bg-[#C5C6C7]/8"
+                      ? "border-[var(--color-text-primary)]/18 bg-[var(--color-text-primary)]/8"
                       : insight.severity === "warning"
-                        ? "border-[#45A29E]/18 bg-[#45A29E]/8"
-                        : "border-white/[0.06] bg-white/[0.04]"
+                        ? "border-[var(--color-accent-2)]/18 bg-[var(--color-accent-2)]/8"
+                        : "border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)]"
                   }`}
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-white">
-                      {insight.type === "cost_anomaly" && <AlertTriangle className="h-4 w-4 text-[#45A29E]" />}
-                      {insight.type === "error_pattern" && <ShieldAlert className="h-4 w-4 text-[#C5C6C7]" />}
-                      {insight.type === "model_recommendation" && <Lightbulb className="h-4 w-4 text-[#66FCF1]" />}
-                      {insight.type === "token_waste" && <TrendingUp className="h-4 w-4 text-[#45A29E]" />}
+                    <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                      {insight.type === "cost_anomaly" && <AlertTriangle className="h-4 w-4 text-[var(--color-accent-2)]" />}
+                      {insight.type === "error_pattern" && <ShieldAlert className="h-4 w-4 text-[var(--color-text-primary)]" />}
+                      {insight.type === "model_recommendation" && <Lightbulb className="h-4 w-4 text-[var(--color-accent)]" />}
+                      {insight.type === "token_waste" && <TrendingUp className="h-4 w-4 text-[var(--color-accent-2)]" />}
                       {insight.title}
                     </div>
                     {insight.metric && (
-                      <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.05] px-2 py-0.5 font-mono text-[length:var(--text-hud)] text-slate-400">
+                      <span className="shrink-0 rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2 py-0.5 font-mono text-[length:var(--text-hud)] text-[var(--color-text-tertiary)]">
                         {insight.metric}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
                     {insight.description}
                   </p>
                 </div>
@@ -591,33 +613,33 @@ export default function Dashboard() {
             ) : (
               <>
                 <div className="surface-muted rounded-2xl p-4">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <Sparkles className="h-4 w-4 text-[#66FCF1]" />
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                    <Sparkles className="h-4 w-4 text-[var(--color-accent)]" />
                     Health read
                   </div>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
                     {(stats?.errorRate ?? 0) > 0.05
                       ? "Error rate is elevated. Start with the most recent failed trace and inspect provider or tool payloads."
                       : "Error pressure is currently low. Use this window to compare provider cost drift and latency patterns."}
                   </p>
                 </div>
                 <div className="surface-muted rounded-2xl p-4">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <TrendingUp className="h-4 w-4 text-[#45A29E]" />
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                    <TrendingUp className="h-4 w-4 text-[var(--color-accent-2)]" />
                     Spend insight
                   </div>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
                     {topProvider
                       ? `${topProvider.provider} currently leads cost share. If that is unexpected, inspect the filtered queue for bursty workflows.`
                       : "Provider concentration will appear here once traces land."}
                   </p>
                 </div>
                 <div className="surface-muted rounded-2xl p-4">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                    <AlertTriangle className="h-4 w-4 text-[#C5C6C7]" />
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-text-primary)]" />
                     Queue focus
                   </div>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
                     {latestTrace
                       ? `Latest traffic is "${latestTrace.name}". Open it to inspect hierarchy, timing, and payload shape.`
                       : "No active traces yet. Generate a request through an instrumented client to validate the pipeline."}
@@ -632,34 +654,34 @@ export default function Dashboard() {
       <section className={`${sectionShell} p-5 sm:p-6`}>
         <div className="mb-5">
           <div className="hud-label">Operator Briefing</div>
-          <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+          <h2 className="page-section-title mt-1">
             What this surface is telling you
           </h2>
         </div>
         <Accordion defaultValue={["queue-health"]} multiple>
-          <AccordionItem value="queue-health" className="border-white/8">
-            <AccordionTrigger className="text-base text-white hover:no-underline">
+          <AccordionItem value="queue-health" className="border-[var(--border-dim)]">
+            <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
               What should I check first when I open LLMTap?
             </AccordionTrigger>
-            <AccordionPanel className="leading-6 text-slate-400">
+            <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
               Start with the economic pulse, dominant provider, and latest trace. That combination tells you whether
               traffic is flowing, whether one provider is dominating spend, and which trace should be inspected first.
             </AccordionPanel>
           </AccordionItem>
-          <AccordionItem value="traces-vs-economics" className="border-white/8">
-            <AccordionTrigger className="text-base text-white hover:no-underline">
+          <AccordionItem value="traces-vs-economics" className="border-[var(--border-dim)]">
+            <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
               When do I move from Overview to Traces or Economics?
             </AccordionTrigger>
-            <AccordionPanel className="leading-6 text-slate-400">
+            <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
               Use Traces when something looks operationally wrong and you need the exact request timeline. Use Economics
               when behavior is healthy but budget concentration or model mix looks suspicious.
             </AccordionPanel>
           </AccordionItem>
-          <AccordionItem value="healthy-window" className="border-white/8">
-            <AccordionTrigger className="text-base text-white hover:no-underline">
+          <AccordionItem value="healthy-window" className="border-[var(--border-dim)]">
+            <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
               What does a healthy window look like?
             </AccordionTrigger>
-            <AccordionPanel className="leading-6 text-slate-400">
+            <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
               Healthy windows show steady cost movement, low risk surface, no sudden provider concentration shifts, and
               a queue of recent traces that stays readable instead of spiking with failures.
             </AccordionPanel>

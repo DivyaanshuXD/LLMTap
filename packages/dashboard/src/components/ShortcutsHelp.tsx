@@ -30,8 +30,8 @@ export function ShortcutsHelp({ open, onClose }: ShortcutsHelpProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/8 bg-white/5">
-              <Keyboard className="h-4.5 w-4.5 text-[#66FCF1]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)]">
+              <Keyboard className="h-4.5 w-4.5 text-[var(--color-accent)]" />
             </div>
             <div>
               <DialogTitle>Keyboard Shortcuts</DialogTitle>
@@ -44,16 +44,16 @@ export function ShortcutsHelp({ open, onClose }: ShortcutsHelpProps) {
           {shortcuts.map((s) => (
             <div
               key={s.description}
-              className="flex items-center justify-between rounded-xl px-3 py-2.5 transition-colors hover:bg-white/4"
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 transition-colors hover:bg-[rgba(var(--ch-bg-surface),0.72)]"
             >
-              <span className="text-sm text-slate-300">
+              <span className="text-sm text-[var(--color-text-secondary)]">
                 {s.description}
               </span>
               <div className="flex items-center gap-1.5">
                 {s.keys.map((key) => (
                   <kbd
                     key={key}
-                    className="inline-flex min-w-[28px] items-center justify-center rounded-lg border border-white/12 bg-white/6 px-2 py-1 font-mono text-xs text-slate-300"
+                    className="inline-flex min-w-[28px] items-center justify-center rounded-lg border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] px-2 py-1 font-mono text-xs text-[var(--color-text-secondary)]"
                   >
                     {key}
                   </kbd>
@@ -63,8 +63,8 @@ export function ShortcutsHelp({ open, onClose }: ShortcutsHelpProps) {
           ))}
         </div>
 
-        <div className="text-center text-xs text-slate-500">
-          Press <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-slate-400">?</kbd> anytime to toggle this help
+        <div className="text-center text-xs text-[var(--color-text-tertiary)]">
+          Press <kbd className="rounded border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] px-1.5 py-0.5 font-mono text-[var(--color-text-secondary)]">?</kbd> anytime to toggle this help
         </div>
       </DialogContent>
     </Dialog>

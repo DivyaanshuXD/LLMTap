@@ -39,7 +39,7 @@ export function DonutBreakdown({
             cy="90"
             r={radius}
             fill="none"
-            stroke="rgba(148,163,184,0.12)"
+            stroke="rgba(var(--ch-text-primary),0.12)"
             strokeWidth="18"
           />
           {segments.map((segment) => {
@@ -66,10 +66,10 @@ export function DonutBreakdown({
 
         <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full">
           <div className="hud-label">{totalLabel}</div>
-          <div className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">
+          <div className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
             {totalValue}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
             {segments.length} providers active
           </div>
         </div>
@@ -81,7 +81,7 @@ export function DonutBreakdown({
           return (
             <div
               key={segment.label}
-              className="rounded-[var(--radius-panel)] border border-white/6 bg-white/4 p-4"
+              className="rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.72),rgba(var(--ch-bg-base),0.9))] p-4"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -91,24 +91,24 @@ export function DonutBreakdown({
                     boxShadow: `0 0 12px ${segment.color}50`,
                   }}
                 />
-                <span className="flex-1 text-sm font-medium capitalize text-white">
+                <span className="flex-1 text-sm font-medium capitalize text-[var(--color-text-primary)]">
                   {segment.label}
                 </span>
-                <span className="font-mono text-xs text-slate-400">
+                <span className="font-mono text-xs text-[var(--color-text-tertiary)]">
                   {share.toFixed(0)}%
                 </span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-950/85">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(var(--ch-bg-base),0.84)]">
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${Math.max(share, 6)}%`,
-                    background: `linear-gradient(90deg, ${segment.color}, rgba(248,250,252,0.72))`,
+                    background: `linear-gradient(90deg, ${segment.color}, rgba(var(--ch-text-primary),0.72))`,
                   }}
                 />
               </div>
               {segment.detail ? (
-                <div className="mt-2 text-xs text-slate-500">{segment.detail}</div>
+                <div className="mt-2 text-xs text-[var(--color-text-tertiary)]">{segment.detail}</div>
               ) : null}
             </div>
           );

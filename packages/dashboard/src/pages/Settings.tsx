@@ -55,9 +55,9 @@ function formatBytes(bytes: number): string {
 
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-      <span className="text-sm text-slate-400">{label}</span>
-      <span className={`text-sm font-medium text-white ${mono ? "font-mono" : ""}`}>
+    <div className="flex items-center justify-between gap-4 rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] px-4 py-3">
+      <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
+      <span className={`text-sm font-medium text-[var(--color-text-primary)] ${mono ? "font-mono" : ""}`}>
         {value}
       </span>
     </div>
@@ -185,12 +185,12 @@ export default function Settings() {
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div className="rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
               <div className="hud-label">Database</div>
-              <div className="mt-2 text-lg font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 {dbInfo ? formatBytes(dbInfo.sizeBytes) : "..."}
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
                 {dbInfo?.spanCount ?? 0} spans stored
               </div>
             </div>
@@ -209,8 +209,8 @@ export default function Settings() {
             transition={{ duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Database className="h-4 w-4 text-[#66FCF1]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Database className="h-4 w-4 text-[var(--color-accent)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Database status
               </h2>
             </div>
@@ -227,20 +227,20 @@ export default function Settings() {
                     : "No data"
                 }
               />
-              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                <span className="text-sm text-slate-400">Storage path</span>
+              <div className="flex items-center justify-between gap-4 rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] px-4 py-3">
+                <span className="text-sm text-[var(--color-text-secondary)]">Storage path</span>
                 <div className="flex items-center gap-2">
-                  <span className="max-w-[220px] truncate font-mono text-xs text-slate-300">
+                  <span className="max-w-[220px] truncate font-mono text-xs text-[var(--color-text-secondary)]">
                     {dbInfo?.path ?? "-"}
                   </span>
                   {dbInfo?.path && (
                     <button
                       type="button"
                       onClick={() => copyToClipboard(dbInfo.path, "path")}
-                      className="rounded-2xl border border-white/8 bg-white/4 p-1.5 text-slate-400 transition-colors hover:text-white"
+                      className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] p-1.5 text-[var(--color-text-secondary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)]"
                     >
                       {copied === "path" ? (
-                        <Check className="h-3 w-3 text-[#66FCF1]" />
+                        <Check className="h-3 w-3 text-[var(--color-accent)]" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
@@ -259,54 +259,54 @@ export default function Settings() {
           >
             <div className="mb-5">
               <div className="hud-label">Settings FAQ</div>
-              <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+              <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Before you change the collector
               </h2>
             </div>
             <Accordion defaultValue={["local-data"]} multiple>
-              <AccordionItem value="local-data" className="border-white/8">
-                <AccordionTrigger className="text-base text-white hover:no-underline">
+              <AccordionItem value="local-data" className="border-[var(--border-dim)]">
+                <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
                   What stays local on this machine?
                 </AccordionTrigger>
-                <AccordionPanel className="leading-6 text-slate-400">
+                <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
                   The collector database, exports, retention operations, replay tools, and diagnostics stay local first.
                   LLMTap only sends traces outward when you explicitly export or forward them.
                 </AccordionPanel>
               </AccordionItem>
-              <AccordionItem value="retention" className="border-white/8">
-                <AccordionTrigger className="text-base text-white hover:no-underline">
+              <AccordionItem value="retention" className="border-[var(--border-dim)]">
+                <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
                   What happens when I apply retention?
                 </AccordionTrigger>
-                <AccordionPanel className="leading-6 text-slate-400">
+                <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
                   Retention deletes stored spans older than the selected window immediately. If you need a rollback
                   point, run a backup first and then apply retention.
                 </AccordionPanel>
               </AccordionItem>
-              <AccordionItem value="backup-restore" className="border-white/8">
-                <AccordionTrigger className="text-base text-white hover:no-underline">
+              <AccordionItem value="backup-restore" className="border-[var(--border-dim)]">
+                <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
                   When should I backup, export, or restore?
                 </AccordionTrigger>
-                <AccordionPanel className="leading-6 text-slate-400">
+                <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
                   Use export for analysis outside LLMTap, backup before aggressive cleanup or experiments, and restore
                   when you need to return the collector to a known-good local state quickly.
                 </AccordionPanel>
               </AccordionItem>
-              <AccordionItem value="otlp" className="border-white/8">
-                <AccordionTrigger className="text-base text-white hover:no-underline">
+              <AccordionItem value="otlp" className="border-[var(--border-dim)]">
+                <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
                   Does OTLP forwarding make LLMTap cloud-only?
                 </AccordionTrigger>
-                <AccordionPanel className="leading-6 text-slate-400">
+                <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
                   No. LLMTap still runs locally. OTLP forwarding is an explicit send step for traces you choose to push
                   into another backend like Tempo, Jaeger, Datadog, or Honeycomb.
                 </AccordionPanel>
               </AccordionItem>
-              <AccordionItem value="empty-dashboard" className="border-white/8">
-                <AccordionTrigger className="text-base text-white hover:no-underline">
+              <AccordionItem value="empty-dashboard" className="border-[var(--border-dim)]">
+                <AccordionTrigger className="text-base text-[var(--color-text-primary)] hover:no-underline">
                   What do I do if the dashboard is still empty?
                 </AccordionTrigger>
-                <AccordionPanel className="leading-6 text-slate-400">
+                <AccordionPanel className="leading-6 text-[var(--color-text-secondary)]">
                   Run one real model request from the app you wrapped, then refresh this page. If nothing appears, run
-                  <code className="mx-1 rounded-full bg-white/6 px-2 py-0.5 font-mono text-slate-300">
+                  <code className="mx-1 rounded-full bg-[rgba(var(--ch-bg-surface),0.78)] px-2 py-0.5 font-mono text-[var(--color-text-primary)]">
                     npx llmtap doctor
                   </code>
                   in the instrumented project to check the collector, SDK install, and local database path.
@@ -324,12 +324,12 @@ export default function Settings() {
             transition={{ delay: 0.1, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Download className="h-4 w-4 text-[#66FCF1]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Download className="h-4 w-4 text-[var(--color-accent)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Export data
               </h2>
             </div>
-            <p className="mb-4 text-sm text-slate-400">
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
               Download all trace data for offline analysis, backup, or migration.
             </p>
             <div className="flex gap-3">
@@ -337,7 +337,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => handleExport("json")}
                 disabled={exporting}
-                className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+                className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>{exporting ? "Exporting..." : "Export JSON"}</span>
@@ -346,7 +346,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => handleExport("csv")}
                 disabled={exporting}
-                className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+                className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>{exporting ? "Exporting..." : "Export CSV"}</span>
@@ -361,23 +361,23 @@ export default function Settings() {
             transition={{ delay: 0.15, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-[#C5C6C7]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Trash2 className="h-4 w-4 text-[var(--color-text-primary)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Reset data
               </h2>
             </div>
-            <p className="mb-4 text-sm text-slate-400">
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
               Permanently delete all stored traces and spans. This action cannot be undone.
             </p>
             <button
               type="button"
               onClick={() => setConfirmResetOpen(true)}
               disabled={resetting}
-              className="inline-flex items-center gap-2 rounded-full border border-[#C5C6C7]/20 bg-[#C5C6C7]/8 px-4 py-2.5 text-sm font-medium text-[#C5C6C7] transition-colors hover:border-[#C5C6C7]/30 hover:bg-[#C5C6C7]/14 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-error)]/24 bg-[var(--color-error)]/10 px-4 py-2.5 text-sm font-medium text-[var(--color-error)] transition-colors hover:border-[var(--color-error)]/36 hover:bg-[var(--color-error)]/16 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resetDone ? (
                 <>
-                  <Check className="h-4 w-4 text-[#66FCF1]" />
+                  <Check className="h-4 w-4 text-[var(--color-accent)]" />
                   <span>Data cleared</span>
                 </>
               ) : (
@@ -396,12 +396,12 @@ export default function Settings() {
             transition={{ delay: 0.2, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-[#45A29E]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <DollarSign className="h-4 w-4 text-[var(--color-accent-2)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Pricing override generator
               </h2>
             </div>
-            <p className="mb-4 text-sm text-slate-400">
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
               Build the SDK snippet for custom or private model pricing. These entries are not applied automatically
               inside the dashboard and they do not rewrite already captured trace costs.
             </p>
@@ -409,18 +409,18 @@ export default function Settings() {
             {pricingOverrides.length > 0 && (
               <div className="mb-4 space-y-2">
                 {pricingOverrides.map((entry, i) => (
-                  <div key={`${entry.provider}-${entry.model}`} className="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                  <div key={`${entry.provider}-${entry.model}`} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">{entry.provider}</span>
-                      <span className="font-mono text-sm text-white">{entry.model}</span>
+                      <span className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.32)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]">{entry.provider}</span>
+                      <span className="font-mono text-sm text-[var(--color-text-primary)]">{entry.model}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-slate-400">${entry.inputCostPer1M}/M in</span>
-                      <span className="font-mono text-xs text-slate-400">${entry.outputCostPer1M}/M out</span>
+                      <span className="font-mono text-xs text-[var(--color-text-secondary)]">${entry.inputCostPer1M}/M in</span>
+                      <span className="font-mono text-xs text-[var(--color-text-secondary)]">${entry.outputCostPer1M}/M out</span>
                       <button
                         type="button"
                         onClick={() => setPricingOverrides((prev) => prev.filter((_, j) => j !== i))}
-                        className="rounded-lg border border-white/8 bg-white/4 p-1.5 text-slate-500 transition-colors hover:text-[#C5C6C7]"
+                        className="rounded-lg border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.72)] p-1.5 text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-text-primary)]"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -431,19 +431,19 @@ export default function Settings() {
             )}
 
             {showAddPricing ? (
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <input
                     value={newPricing.provider}
                     onChange={(e) => setNewPricing((p) => ({ ...p, provider: e.target.value }))}
                     placeholder="Provider"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                   <input
                     value={newPricing.model}
                     onChange={(e) => setNewPricing((p) => ({ ...p, model: e.target.value }))}
                     placeholder="Model name"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                   <input
                     value={newPricing.inputCostPer1M}
@@ -451,7 +451,7 @@ export default function Settings() {
                     placeholder="Input $/M"
                     type="number"
                     step="0.01"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                   <input
                     value={newPricing.outputCostPer1M}
@@ -459,7 +459,7 @@ export default function Settings() {
                     placeholder="Output $/M"
                     type="number"
                     step="0.01"
-                    className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                 </div>
                 <div className="mt-3 flex items-center gap-2">
@@ -475,7 +475,7 @@ export default function Settings() {
                         setShowAddPricing(false);
                       }
                     }}
-                    className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+                    className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)]"
                   >
                     <Check className="h-3.5 w-3.5" />
                     <span>Add</span>
@@ -483,7 +483,7 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={() => { setShowAddPricing(false); setNewPricing({ provider: "", model: "", inputCostPer1M: "", outputCostPer1M: "" }); }}
-                    className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+                    className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)]"
                   >
                     <X className="h-3.5 w-3.5" />
                     <span>Cancel</span>
@@ -494,7 +494,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setShowAddPricing(true)}
-                className="status-chip transition-colors hover:border-white/16 hover:bg-white/8"
+                className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Add pricing snippet</span>
@@ -502,14 +502,14 @@ export default function Settings() {
             )}
 
             {pricingOverrides.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <div className="mt-4 rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   SDK code to paste into your app
                 </div>
-                <p className="mb-3 text-xs leading-relaxed text-slate-400">
+                <p className="mb-3 text-xs leading-relaxed text-[var(--color-text-secondary)]">
                   Put this next to your LLMTap initialization or provider setup so future traces use your custom prices.
                 </p>
-                <pre className="font-mono text-xs leading-relaxed text-slate-300">
+                <pre className="font-mono text-xs leading-relaxed text-[var(--color-text-primary)]">
 {`import { setPricing } from "@llmtap/sdk";
 ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inputCostPer1M}, ${e.outputCostPer1M});`).join("\n")}`}
                 </pre>
@@ -524,12 +524,12 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.25, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Timer className="h-4 w-4 text-[#45A29E]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Timer className="h-4 w-4 text-[var(--color-accent-2)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 Data retention
               </h2>
             </div>
-            <p className="mb-4 text-sm text-slate-400">
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
               Configure how long trace data is kept. Older traces will be automatically cleaned up.
             </p>
             <div className="flex items-center gap-3">
@@ -560,11 +560,11 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                   await executeRetention(days);
                 }}
                 disabled={retentionApplying}
-                className="status-chip transition-colors hover:border-white/16 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+                className="status-chip transition-colors hover:border-[var(--border-default)] hover:bg-[rgba(var(--ch-bg-surface),0.84)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {retentionSaved ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-[#66FCF1]" />
+                    <Check className="h-3.5 w-3.5 text-[var(--color-accent)]" />
                     <span>
                       {retentionDeleted !== null && retentionDeleted > 0
                         ? `Cleaned ${retentionDeleted} spans`
@@ -576,8 +576,8 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                 )}
               </button>
             </div>
-            <p className="mt-3 text-xs text-slate-500">
-              This immediately deletes spans older than the selected period. For automatic enforcement on every startup, use <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-400">llmtap start --retention {retentionDays}</code>.
+            <p className="mt-3 text-xs text-[var(--color-text-tertiary)]">
+              This immediately deletes spans older than the selected period. For automatic enforcement on every startup, use <code className="rounded bg-[rgba(var(--ch-bg-surface),0.72)] px-1.5 py-0.5 font-mono text-[var(--color-text-secondary)]">llmtap start --retention {retentionDays}</code>.
             </p>
           </motion.div>
 
@@ -588,12 +588,12 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.27, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Send className="h-4 w-4 text-[#66FCF1]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Send className="h-4 w-4 text-[var(--color-accent)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 OpenTelemetry Export
               </h2>
             </div>
-            <p className="mb-4 text-sm text-slate-400">
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
               Export spans in OTLP format for Datadog, Grafana Tempo, Jaeger, Honeycomb, or any OTLP-compatible backend.
             </p>
 
@@ -623,14 +623,14 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                     setOtlpExporting(false);
                   }
                 }}
-                className="flex items-center gap-2 rounded-2xl border border-[#66FCF1]/20 bg-[#66FCF1]/10 px-4 py-2.5 text-sm font-medium text-[#66FCF1] transition-colors hover:bg-[#66FCF1]/20"
+                className="flex items-center gap-2 rounded-2xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-4 py-2.5 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
               >
                 <Download className="h-3.5 w-3.5" />
                 {otlpExporting ? "Exporting..." : "Download OTLP JSON"}
               </button>
 
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   Forward to OTLP endpoint
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -639,14 +639,14 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                     value={otlpEndpoint}
                     onChange={(e) => { setOtlpEndpoint(e.target.value); setOtlpResult(null); }}
                     placeholder="http://localhost:4318/v1/traces"
-                    className="flex-1 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="flex-1 rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                   <input
                     type="text"
                     value={otlpService}
                     onChange={(e) => setOtlpService(e.target.value)}
                     placeholder="service name"
-                    className="w-32 rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-[#66FCF1]/30 focus:outline-none"
+                    className="w-32 rounded-xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-base),0.36)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--border-bright)] focus:outline-none"
                   />
                   <button
                     type="button"
@@ -669,20 +669,20 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
                         setOtlpForwarding(false);
                       }
                     }}
-                    className="rounded-xl border border-[#66FCF1]/20 bg-[#66FCF1]/10 px-4 py-2 text-sm font-medium text-[#66FCF1] transition-colors hover:bg-[#66FCF1]/20 disabled:opacity-40"
+                    className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20 disabled:opacity-40"
                   >
                     {otlpForwarding ? "Sending..." : "Send"}
                   </button>
                 </div>
                 {otlpResult && (
-                  <p className={`mt-2 text-xs ${otlpResult.startsWith("Error") ? "text-[#C5C6C7]" : "text-[#66FCF1]"}`}>
+                  <p className={`mt-2 text-xs ${otlpResult.startsWith("Error") ? "text-[var(--color-text-primary)]" : "text-[var(--color-accent)]"}`}>
                     {otlpResult}
                   </p>
                 )}
               </div>
 
-              <p className="text-xs text-slate-500">
-                CLI: <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-400">llmtap export --format otlp --endpoint http://localhost:4318/v1/traces</code>
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                CLI: <code className="rounded bg-[rgba(var(--ch-bg-surface),0.72)] px-1.5 py-0.5 font-mono text-[var(--color-text-secondary)]">llmtap export --format otlp --endpoint http://localhost:4318/v1/traces</code>
               </p>
             </div>
           </motion.div>
@@ -694,38 +694,38 @@ ${pricingOverrides.map((e) => `setPricing("${e.provider}", "${e.model}", ${e.inp
             transition={{ delay: 0.3, duration: 0.35 }}
           >
             <div className="mb-5 flex items-center gap-2">
-              <Info className="h-4 w-4 text-[#66FCF1]" />
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-white">
+              <Info className="h-4 w-4 text-[var(--color-accent)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-[var(--color-text-primary)]">
                 First-run help
               </h2>
             </div>
             <div className="space-y-4">
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  <SearchCheck className="h-3.5 w-3.5 text-[#45A29E]" />
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                  <SearchCheck className="h-3.5 w-3.5 text-[var(--color-accent-2)]" />
                   Where the wrap code belongs
                 </div>
-                <p className="text-xs leading-relaxed text-slate-400">
+                <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                   Edit the file in your app where you already create the provider client. That is usually a backend
                   route, agent runner, worker, or script. You do not change code inside this dashboard.
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   How to verify the setup
                 </div>
-                <p className="text-xs leading-relaxed text-slate-400">
+                <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                   After you make one real model call, a new trace should appear on the Overview or Traces page within a
                   few seconds. If nothing appears, run{" "}
-                  <code className="rounded bg-white/6 px-1.5 py-0.5 font-mono text-slate-300">npx llmtap doctor</code>{" "}
+                  <code className="rounded bg-[rgba(var(--ch-bg-surface),0.72)] px-1.5 py-0.5 font-mono text-[var(--color-text-primary)]">npx llmtap doctor</code>{" "}
                   from the app you are instrumenting.
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-2xl border border-[var(--border-dim)] bg-[rgba(var(--ch-bg-surface),0.74)] p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                   Useful local operations
                 </div>
-                <pre className="font-mono text-xs leading-relaxed text-slate-300">
+                <pre className="font-mono text-xs leading-relaxed text-[var(--color-text-primary)]">
 {`npx llmtap doctor
 npx llmtap backup
 npx llmtap import llmtap-export.json
@@ -752,7 +752,7 @@ npx llmtap restore llmtap-backup.db`}
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleReset()}
-              className="border-[#C5C6C7]/20 bg-[#C5C6C7] text-slate-950 hover:bg-[#C5C6C7]/90"
+              className="border-[var(--color-error)]/24 bg-[var(--color-error)] text-[var(--color-bg-base)] hover:bg-[var(--color-error)]/90"
             >
               Delete all data
             </AlertDialogAction>
@@ -773,7 +773,7 @@ npx llmtap restore llmtap-backup.db`}
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => executeRetention(parseInt(retentionDays, 10))}
-              className="border-[#C5C6C7]/20 bg-[#C5C6C7] text-slate-950 hover:bg-[#C5C6C7]/90"
+              className="border-[var(--color-warning)]/24 bg-[var(--color-warning)] text-[var(--color-bg-base)] hover:bg-[var(--color-warning)]/90"
             >
               Delete old data
             </AlertDialogAction>

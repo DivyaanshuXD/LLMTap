@@ -15,7 +15,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
-import useDebounce from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
 export interface Action {
@@ -86,7 +85,6 @@ function ActionSearchBar({
   const [isFocused, setIsFocused] = useState(defaultOpen);
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const debouncedQuery = useDebounce(query, 200);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [panelRect, setPanelRect] = useState<{ left: number; top: number; width: number } | null>(
@@ -94,15 +92,15 @@ function ActionSearchBar({
   );
 
   const filteredActions = useMemo(() => {
-    if (!debouncedQuery) return actions;
+    if (!query) return actions;
 
-    const normalizedQuery = debouncedQuery.toLowerCase().trim();
+    const normalizedQuery = query.toLowerCase().trim();
     return actions.filter((action) => {
       const searchableText =
         `${action.label} ${action.description || ""} ${action.end || ""}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [debouncedQuery, actions]);
+  }, [query, actions]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -194,6 +192,8 @@ function ActionSearchBar({
           e.preventDefault();
           if (activeIndex >= 0 && result.actions[activeIndex]) {
             commitAction(result.actions[activeIndex]);
+          } else if (result.actions[0]) {
+            commitAction(result.actions[0]);
           }
           break;
         case "Escape":
@@ -226,7 +226,7 @@ function ActionSearchBar({
   }, []);
 
   return (
-    <div className={cn("w-full max-w-[30rem]", className)}>
+    <div className={cn("w-full max-w-[44rem]", className)}>
       <div className="relative flex flex-col items-center justify-start">
         <div ref={rootRef} className="z-10 w-full bg-transparent">
           <div className="relative">
@@ -240,7 +240,7 @@ function ActionSearchBar({
               aria-autocomplete="list"
               aria-expanded={isFocused && !!result}
               autoComplete="off"
-              className="h-10 rounded-[18px] border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.92),rgba(11,12,16,0.98))] py-2 pr-10 pl-3.5 text-sm text-[#C5C6C7] shadow-[inset_0_1px_0_rgba(197,198,199,0.04),0_18px_40px_rgba(0,0,0,0.24)] placeholder:text-slate-500 focus-visible:border-[#66FCF1]/22 focus-visible:ring-[#66FCF1]/35"
+              className="h-12 rounded-[20px] border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.9),rgba(var(--ch-bg-base),0.98))] py-2 pr-11 pl-4 text-[15px] font-medium text-[var(--color-text-primary)] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.05),0_20px_44px_rgba(0,0,0,0.28)] placeholder:text-[var(--color-text-secondary)] focus-visible:border-[var(--border-bright)] focus-visible:ring-[var(--color-accent)]/30"
               id="command-search"
               onBlur={handleBlur}
               onChange={handleInputChange}
@@ -261,7 +261,7 @@ function ActionSearchBar({
                     exit={{ y: 14, opacity: 0 }}
                     transition={{ duration: 0.18 }}
                   >
-                    <Send className="h-4 w-4 text-[#66FCF1]/72" />
+                    <Send className="h-4 w-4 text-[var(--color-accent)]/72" />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -271,7 +271,7 @@ function ActionSearchBar({
                     exit={{ y: 14, opacity: 0 }}
                     transition={{ duration: 0.18 }}
                   >
-                    <Search className="h-4 w-4 text-slate-500" />
+                    <Search className="h-4 w-4 text-[var(--color-text-secondary)]" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -286,7 +286,7 @@ function ActionSearchBar({
                 <motion.div
                   animate="show"
                   aria-label="Search results"
-                  className="fixed z-[120] overflow-hidden rounded-[22px] border border-[#45A29E]/16 bg-[linear-gradient(180deg,rgba(31,40,51,0.98),rgba(11,12,16,0.99))] shadow-[0_28px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+                  className="fixed z-[120] overflow-hidden rounded-[22px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.98),rgba(var(--ch-bg-base),0.995))] shadow-[0_34px_96px_rgba(0,0,0,0.48),0_0_0_1px_rgba(var(--ch-violet),0.06)] backdrop-blur-xl"
                   exit="exit"
                   initial="hidden"
                   role="listbox"
@@ -308,23 +308,23 @@ function ActionSearchBar({
                         onClick={() => handleActionClick(action)}
                         className={cn(
                           "flex cursor-pointer items-center justify-between rounded-[18px] border border-transparent px-3 py-2.5 transition-colors",
-                          "hover:border-[#66FCF1]/16 hover:bg-[#66FCF1]/8",
+                          "hover:border-[var(--color-accent)]/16 hover:bg-[var(--color-accent)]/8",
                           activeIndex === index
-                            ? "border-[#45A29E]/16 bg-[linear-gradient(135deg,rgba(69,162,158,0.16),rgba(102,252,241,0.08))]"
+                            ? "border-[var(--border-default)] bg-[linear-gradient(135deg,rgba(var(--ch-accent),0.16),rgba(var(--ch-violet),0.08))]"
                             : ""
                         )}
                         variants={ANIMATION_VARIANTS.item}
                       >
                         <div className="flex items-center gap-3">
-                          <span aria-hidden="true" className="text-slate-400">
+                          <span aria-hidden="true" className="text-[var(--color-text-tertiary)]">
                             {action.icon}
                           </span>
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate font-medium text-sm text-[#C5C6C7]">
+                            <span className="truncate font-medium text-sm text-[var(--color-text-primary)]">
                               {action.label}
                             </span>
                             {action.description ? (
-                              <span className="truncate text-xs text-slate-500">
+                              <span className="truncate text-xs text-[var(--color-text-tertiary)]">
                                 {action.description}
                               </span>
                             ) : null}
@@ -334,13 +334,13 @@ function ActionSearchBar({
                           {action.short ? (
                             <span
                               aria-label={`Keyboard shortcut: ${action.short}`}
-                              className="rounded-full border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] text-slate-400"
+                              className="rounded-full border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.04)] px-2 py-0.5 text-[10px] text-[var(--color-text-tertiary)]"
                             >
                               {action.short}
                             </span>
                           ) : null}
                           {action.end ? (
-                            <span className="text-right text-[11px] text-slate-500">
+                            <span className="text-right text-[11px] text-[var(--color-text-tertiary)]">
                               {action.end}
                             </span>
                           ) : null}
@@ -348,8 +348,8 @@ function ActionSearchBar({
                       </motion.li>
                     ))}
                   </motion.ul>
-                  <div className="border-t border-white/6 px-3 py-2">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="border-t border-[var(--border-dim)] px-3 py-2">
+                    <div className="flex items-center justify-between text-[11px] text-[var(--color-text-tertiary)]">
                       <span>Press Ctrl+K to open commands</span>
                       <span>ESC to cancel</span>
                     </div>

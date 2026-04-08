@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLMTap — See Every LLM Call Your Agent Makes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="./design-system.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:       var(--color-ink);
+  --deep:      var(--color-deep);
+  --panel:     var(--color-panel);
+  --surface:   var(--color-surface);
+  --card:      var(--color-card);
+  --lift:      var(--color-lift);
+  --dusk:      var(--color-dusk);
+
+  --teal:      var(--color-accent);
+  --teal2:     var(--color-accent-2);
+  --teal3:     var(--color-accent-3);
+  --teal-max:  var(--color-accent-max);
+  --teal-dim:  var(--color-accent-dim);
+  --teal-glow: var(--color-accent-glow);
+  --teal-hard: var(--color-accent-hard);
+  --violet:    var(--color-violet);
+  --violet2:   var(--color-violet-mid);
+  --violet-dim: rgba(var(--rgb-violet),0.08);
+
+  --amber:     var(--color-warning);
+  --amber2:    var(--color-warning-2);
+  --amber-dim: rgba(var(--rgb-warning),0.08);
+
+  --text:      var(--color-text-primary);
+  --text2:     var(--color-text-secondary);
+  --text3:     var(--color-text-tertiary);
+  --ice:       var(--color-text-primary);
+  --frost:     var(--color-text-frost);
+  --chrome:    var(--color-text-chrome);
+  --mist:      var(--color-text-mist);
+
+  --border:    var(--border-default);
+  --border2:   var(--border-dim);
+  --border3:   var(--border-bright);
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-weight:400;
+  overflow-x:hidden;
+  cursor:crosshair;
+}
+
+/* custom cursor */
+.cursor{
+  position:fixed;width:8px;height:8px;
+  background:var(--teal);border-radius:50%;
+  pointer-events:none;z-index:99999;
+  transform:translate(-50%,-50%);
+  transition:transform 0.08s,opacity 0.2s;
+  box-shadow:0 0 12px var(--teal),0 0 30px rgba(var(--rgb-accent),0.3);
+  mix-blend-mode:screen;
+}
+.cursor-ring{
+  position:fixed;width:32px;height:32px;
+  border:1px solid rgba(var(--rgb-accent),0.3);
+  border-radius:50%;pointer-events:none;z-index:99998;
+  transform:translate(-50%,-50%);
+  transition:transform 0.18s cubic-bezier(.23,1,.32,1),width 0.2s,height 0.2s,border-color 0.2s;
+}
+body:has(a:hover) .cursor-ring,body:has(button:hover) .cursor-ring{
+  width:48px;height:48px;border-color:rgba(var(--rgb-accent),0.5);
+}
+
+/* scanline overlay */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,transparent 2px,
+    rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px
+  );
+  pointer-events:none;z-index:9998;
+}
+
+/* grain */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.04;pointer-events:none;z-index:9997;mix-blend-mode:overlay;
+}
+
+/* ═══ NAV ═══════════════════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 52px;height:56px;
+  background:rgba(5,7,9,0.75);
+  backdrop-filter:blur(28px) saturate(200%);
+  border-bottom:1px solid var(--border2);
+}
+
+nav::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,var(--teal) 30%,var(--teal2) 70%,transparent 100%);
+  opacity:0.25;
+}
+
+.logo{
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;
+}
+
+.logo-gem{
+  position:relative;
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--teal) 0%,var(--teal3) 100%);
+  display:grid;place-items:center;
+  font-family:var(--font-heading);font-weight:700;
+  font-size:14px;color:var(--ink);letter-spacing:0.05em;
+}
+.logo-gem::after{
+  content:'';position:absolute;inset:-4px;border-radius:11px;
+  background:radial-gradient(circle,rgba(var(--rgb-accent),0.28) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+.logo-text{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:20px;letter-spacing:0.08em;
+  color:var(--text);
+}
+
+.nav-center{
+  display:flex;align-items:center;gap:36px;
+  position:absolute;left:50%;transform:translateX(-50%);
+}
+
+.nav-link{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text2);text-decoration:none;
+  transition:color 0.2s;
+}
+.nav-link:hover{color:var(--teal);}
+
+.nav-right{display:flex;align-items:center;gap:14px;}
+
+.nav-status{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font-mono);
+  font-size:11px;color:var(--text2);
+}
+.nav-status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 8px var(--teal);
+  animation:breathe 3s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{box-shadow:0 0 6px var(--teal),0 0 12px rgba(var(--rgb-accent),0.3);}
+  50%{box-shadow:0 0 14px var(--teal),0 0 28px rgba(var(--rgb-accent),0.5);}
+}
+
+.nav-btn{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:0.06em;
+  background:var(--teal);color:var(--ink);
+  border:none;padding:7px 18px;border-radius:5px;
+  cursor:pointer;font-weight:500;
+  box-shadow:0 0 20px rgba(var(--rgb-accent),0.25);
+  transition:all 0.2s;text-decoration:none;
+}
+.nav-btn:hover{
+  box-shadow:0 0 36px rgba(var(--rgb-accent),0.5),0 4px 20px rgba(0,0,0,0.4);
+  transform:translateY(-1px);
+}
+
+/* ═══ HERO ═══════════════════════════════════════════════════════ */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:80px 40px 60px;
+  overflow:hidden;
+}
+
+#hero-canvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+}
+
+/* horizontal rule lines */
+.hero-rule{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;
+}
+.hero-rule::before{
+  content:'';
+  position:absolute;top:50%;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.04),transparent);
+  transform:translateY(-120px);
+}
+.hero-rule::after{
+  content:'';
+  position:absolute;top:50%;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.04),transparent);
+  transform:translateY(120px);
+}
+
+.hero-content{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;align-items:center;
+}
+
+/* ── eyebrow ── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--teal2);
+  border:1px solid rgba(var(--rgb-accent),0.15);
+  background:rgba(var(--rgb-accent),0.04);
+  padding:6px 16px;border-radius:2px;
+  margin-bottom:52px;
+  opacity:0;animation:slideUp 0.8s 0.1s ease forwards;
+}
+.eyebrow-line{
+  width:24px;height:1px;background:var(--teal);
+  box-shadow:0 0 6px var(--teal);
+}
+
+/* ── HEADLINE — two-weight split ── */
+.hero-h1{
+  font-size:clamp(52px,7.5vw,108px);
+  line-height:0.92;
+  letter-spacing:-0.04em;
+  max-width:920px;
+  margin-bottom:32px;
+  opacity:0;animation:slideUp 0.8s 0.2s ease forwards;
+}
+
+.h1-light{
+  font-family:var(--font-body);
+  font-weight:400;
+  color:var(--text2);
+  display:block;
+  font-style:normal;
+}
+.h1-heavy{
+  font-family:var(--font-heading);font-weight:700;
+  color:var(--text);
+  display:block;
+  letter-spacing:-0.05em;
+  line-height:0.88;
+}
+.h1-accent{
+  font-family:var(--font-heading);font-weight:700;
+  background:linear-gradient(95deg,var(--teal) 0%,var(--teal-max) 40%,var(--teal2) 80%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 40px rgba(var(--rgb-accent),0.5));
+  display:inline;
+}
+
+.hero-sub{
+  font-size:17px;line-height:1.72;
+  color:var(--text2);max-width:480px;
+  margin-bottom:56px;font-weight:500;
+  opacity:0;animation:slideUp 0.8s 0.3s ease forwards;
+}
+.hero-sub em{
+  font-style:normal;color:var(--text);font-weight:400;
+}
+
+/* ── CTA cluster ── */
+.cta-cluster{
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+  opacity:0;animation:slideUp 0.8s 0.4s ease forwards;
+}
+
+.cta-row{display:flex;align-items:center;gap:12px;}
+
+/* terminal chip — main CTA */
+.terminal-chip{
+  position:relative;
+  display:flex;align-items:center;gap:14px;
+  font-family:var(--font-mono);font-size:15px;
+  background:transparent;
+  border:1px solid var(--border3);
+  border-radius:4px;
+  padding:14px 24px;
+  color:var(--teal);cursor:pointer;
+  overflow:hidden;transition:all 0.3s;
+}
+.terminal-chip::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(var(--rgb-accent),0.08) 0%,rgba(var(--rgb-accent),0.02) 100%);
+  opacity:1;
+}
+.terminal-chip::after{
+  content:'';
+  position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.12),transparent);
+  transition:left 0.5s;
+}
+.terminal-chip:hover::after{left:100%;}
+.terminal-chip:hover{
+  border-color:var(--teal);
+  box-shadow:0 0 40px rgba(var(--rgb-accent),0.2),0 0 80px rgba(var(--rgb-accent),0.06),inset 0 0 40px rgba(var(--rgb-accent),0.03);
+  transform:translateY(-2px);
+}
+.t-prompt{color:var(--text3);}
+.t-cmd{position:relative;z-index:1;}
+.t-icon{width:14px;height:14px;color:var(--text2);position:relative;z-index:1;transition:color 0.2s;}
+.terminal-chip:hover .t-icon{color:var(--teal);}
+
+.ghost-btn{
+  font-family:var(--font-mono);font-size:12px;
+  color:var(--text2);
+  background:transparent;
+  border:1px solid var(--border2);
+  border-radius:4px;
+  padding:14px 20px;
+  text-decoration:none;
+  transition:all 0.2s;letter-spacing:0.04em;
+}
+.ghost-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.1);}
+
+/* data pills row */
+.data-pills{
+  display:flex;gap:0;
+  border:1px solid var(--border2);
+  border-radius:4px;
+  overflow:hidden;
+}
+.data-pill{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.08em;
+  color:var(--text3);
+  padding:6px 14px;
+  border-right:1px solid var(--border2);
+  display:flex;align-items:center;gap:6px;
+  white-space:nowrap;
+}
+.data-pill:last-child{border-right:none;}
+.dp-val{color:var(--teal2);font-weight:500;}
+
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(28px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ═══ DIVIDER ════════════════════════════════════════════════════ */
+.divider{
+  display:flex;align-items:center;gap:16px;
+  padding:0 52px;
+  margin:0;
+}
+.div-line{flex:1;height:1px;background:var(--border2);}
+.div-label{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--text3);white-space:nowrap;
+}
+
+/* ═══ LIVE DASHBOARD PREVIEW ════════════════════════════════════ */
+.preview-outer{
+  padding:60px 52px 80px;
+  position:relative;
+}
+
+.preview-glow-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 60%,rgba(var(--rgb-accent),0.055) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 30% at 20% 80%,rgba(69,162,158,0.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+.browser-shell{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  background:var(--deep);
+  box-shadow:
+    0 0 0 1px rgba(var(--rgb-accent),0.03),
+    0 40px 120px rgba(0,0,0,0.8),
+    0 0 100px rgba(var(--rgb-accent),0.04);
+}
+
+.browser-shell::before{
+  content:'';
+  position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),var(--teal2),transparent);
+  opacity:0.5;z-index:10;
+}
+
+.bbar{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;
+  background:rgba(5,7,9,0.6);
+  border-bottom:1px solid var(--border2);
+}
+
+.bdots{display:flex;gap:5px;}
+.bdots span{width:10px;height:10px;border-radius:50%;}
+.bdots span:nth-child(1){background:#ff5f57;}
+.bdots span:nth-child(2){background:#ffbd2e;}
+.bdots span:nth-child(3){background:#28c840;}
+
+.burl{
+  flex:1;background:var(--panel);
+  border:1px solid var(--border2);
+  border-radius:4px;padding:4px 12px;
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--text3);text-align:center;
+}
+
+.bstatus{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:10px;color:var(--teal2);
+}
+.bstatus-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);}
+
+/* mock dashboard layout */
+.mdash{
+  display:grid;grid-template-columns:196px 1fr;
+  min-height:480px;
+  background:var(--ink);
+}
+
+/* sidebar */
+.mside{
+  background:#090d12;
+  border-right:1px solid var(--border2);
+  padding:16px 10px;
+  display:flex;flex-direction:column;gap:2px;
+}
+
+.mside-logo{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 8px 20px;
+}
+.mside-gem{
+  width:22px;height:22px;border-radius:6px;
+  background:linear-gradient(135deg,var(--teal),var(--teal3));
+  box-shadow:0 0 14px rgba(var(--rgb-accent),0.4);flex-shrink:0;
+}
+.mside-name{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:15px;letter-spacing:0.08em;color:var(--text);
+}
+.mside-sub{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text3);padding:10px 8px 4px;
+}
+.mside-item{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 8px;border-radius:5px;
+  font-family:var(--font-mono);
+  font-size:11px;color:var(--text2);
+}
+.mside-item.on{
+  background:rgba(var(--rgb-accent),0.06);
+  border:1px solid rgba(var(--rgb-accent),0.12);
+  color:var(--teal);
+}
+.mside-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:currentColor;opacity:0.5;flex-shrink:0;
+}
+.mside-item.on .mside-dot{opacity:1;box-shadow:0 0 5px var(--teal);}
+
+.mside-runtime{
+  margin-top:auto;
+  background:rgba(var(--rgb-accent),0.03);
+  border:1px solid rgba(var(--rgb-accent),0.08);
+  border-radius:6px;padding:10px;
+}
+.mrt-label{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:5px;
+}
+.mrt-row{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);font-size:10px;color:var(--teal);
+}
+.mrt-pulse{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--teal);box-shadow:0 0 7px var(--teal);
+  animation:breathe 2s ease-in-out infinite;
+}
+
+/* main area */
+.mmain{
+  display:flex;flex-direction:column;gap:10px;
+  padding:16px;background:var(--ink);
+}
+
+.mmain-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2px;
+}
+.mmain-title{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text3);
+}
+.mmain-live{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);font-size:9px;color:var(--teal);
+}
+.live-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--teal);box-shadow:0 0 6px var(--teal);
+  animation:breathe 2s ease-in-out infinite;
+}
+
+/* hero banner inside mock */
+.mbanner{
+  background:linear-gradient(135deg,#0b1820 0%,#09121a 60%,#0c1020 100%);
+  border:1px solid rgba(var(--rgb-accent),0.1);
+  border-radius:8px;
+  padding:18px 20px;
+  position:relative;overflow:hidden;
+  flex-shrink:0;
+}
+.mbanner::before{
+  content:'';
+  position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(var(--rgb-accent),0.08) 0%,transparent 60%);
+}
+.mbanner::after{
+  content:'';
+  position:absolute;bottom:-20px;left:30%;
+  width:120px;height:60px;
+  background:radial-gradient(ellipse,rgba(69,162,158,0.06) 0%,transparent 70%);
+}
+.mbanner-tag{
+  font-family:var(--font-mono);font-size:8px;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text3);
+  display:flex;align-items:center;gap:5px;margin-bottom:8px;
+}
+.mbanner-tagdot{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--teal);box-shadow:0 0 4px var(--teal);
+}
+.mbanner-h{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:20px;letter-spacing:0.04em;
+  color:var(--text);line-height:1.1;
+  max-width:360px;
+}
+
+/* animated stat cards */
+.mcards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+
+.mcard{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:7px;padding:12px;
+  position:relative;overflow:hidden;
+}
+.mcard:nth-child(1){border-color:rgba(var(--rgb-accent),0.14);}
+.mcard:nth-child(1)::after{
+  content:'';
+  position:absolute;top:-12px;right:-12px;
+  width:60px;height:60px;
+  background:radial-gradient(circle,rgba(var(--rgb-accent),0.1) 0%,transparent 65%);
+}
+.mcard-k{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:6px;
+}
+.mcard-v{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:26px;letter-spacing:0.02em;color:var(--text);
+}
+.mcard-v.glow{
+  color:var(--teal);
+  text-shadow:0 0 24px rgba(var(--rgb-accent),0.5);
+}
+.mcard-s{
+  font-family:var(--font-mono);
+  font-size:8px;color:var(--text3);margin-top:3px;
+}
+
+/* pulse line canvas */
+.mpulse{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:7px;
+  padding:12px;
+  position:relative;
+}
+.mpulse-head{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:8px;
+  display:flex;justify-content:space-between;
+}
+.mpulse-head span{color:var(--teal);}
+#pulse-canvas{width:100%;height:60px;display:block;}
+
+/* ═══ STATS TICKER ═══════════════════════════════════════════════ */
+.ticker{
+  background:var(--panel);
+  border-top:1px solid var(--border2);
+  border-bottom:1px solid var(--border2);
+  padding:18px 52px;
+  display:flex;align-items:stretch;
+  gap:0;
+  overflow:hidden;
+}
+.tick-item{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;
+  gap:4px;
+  padding:0 20px;
+  border-right:1px solid var(--border2);
+}
+.tick-item:last-child{border-right:none;}
+.tick-n{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:32px;letter-spacing:0.04em;
+  color:var(--teal);
+  text-shadow:0 0 30px rgba(var(--rgb-accent),0.4);
+  line-height:1;
+}
+.tick-l{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--text3);
+}
+
+/* ═══ MARQUEE FEATURE STRIP ══════════════════════════════════════ */
+.marquee-wrap{
+  overflow:hidden;
+  border-top:1px solid var(--border2);
+  border-bottom:1px solid var(--border2);
+  padding:16px 0;
+  background:var(--deep);
+}
+.marquee-track{
+  display:flex;gap:0;
+  animation:marquee 28s linear infinite;
+  width:max-content;
+}
+.marquee-item{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:0.06em;
+  color:var(--text2);
+  padding:0 32px;
+  border-right:1px solid var(--border2);
+  white-space:nowrap;
+}
+.marquee-item svg{width:13px;height:13px;color:var(--teal);flex-shrink:0;}
+
+@keyframes marquee{
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-50%);}
+}
+
+/* ═══ FEATURES — ASYMMETRIC GRID ════════════════════════════════ */
+.feat-section{
+  max-width:1200px;margin:0 auto;
+  padding:100px 52px;
+}
+.feat-eyebrow{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--teal2);margin-bottom:16px;
+}
+.feat-h2{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:clamp(36px,5vw,64px);
+  letter-spacing:0.02em;line-height:0.92;
+  color:var(--text);margin-bottom:64px;
+}
+.feat-h2 span{color:var(--teal);}
+
+/* asymmetric: 2 tall left + 1 wide right top + 2 small right bottom */
+.feat-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto auto;
+  gap:1px;
+  background:var(--border2);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.feat{
+  background:var(--panel);
+  padding:36px 32px;
+  position:relative;overflow:hidden;
+  transition:background 0.35s;
+}
+.feat:hover{background:var(--surface);}
+
+/* glow line on top edge on hover */
+.feat::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),transparent);
+  opacity:0;transition:opacity 0.3s;
+}
+.feat:hover::before{opacity:0.6;}
+
+/* ambient bloom on hover */
+.feat::after{
+  content:'';
+  position:absolute;top:-60px;left:-60px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,rgba(var(--rgb-accent),0.07) 0%,transparent 70%);
+  opacity:0;transition:opacity 0.35s;pointer-events:none;
+}
+.feat:hover::after{opacity:1;}
+
+.feat-span2{grid-column:span 2;}
+
+.feat-icon{
+  width:42px;height:42px;
+  background:rgba(var(--rgb-accent),0.05);
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:grid;place-items:center;
+  font-size:18px;margin-bottom:20px;
+  position:relative;z-index:1;
+}
+.feat-title{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:20px;letter-spacing:0.04em;
+  color:var(--text);margin-bottom:10px;
+  position:relative;z-index:1;
+}
+.feat-desc{
+  font-size:14px;line-height:1.72;
+  font-weight:500;
+  color:var(--text2);
+  position:relative;z-index:1;
+}
+.feat-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.08em;
+  color:var(--teal);
+  background:var(--teal-dim);
+  border:1px solid var(--border);
+  padding:3px 10px;border-radius:3px;
+  margin-top:14px;position:relative;z-index:1;
+}
+
+/* ═══ CODE PANEL ════════════════════════════════════════════════ */
+.code-section{
+  max-width:1200px;margin:0 auto;
+  padding:0 52px 100px;
+}
+
+.code-pair{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1px;background:var(--border2);
+  border:1px solid var(--border2);
+  border-radius:12px;overflow:hidden;
+}
+
+.cpanel{background:var(--panel);padding:30px;}
+.cpanel.after{background:#0a1818;}
+
+.cpanel-head{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.cpanel-head::after{content:'';flex:1;height:1px;background:var(--border2);}
+.cpanel.after .cpanel-head{color:var(--teal);}
+
+.cblock{
+  background:rgba(0,0,0,0.4);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  padding:18px;
+  font-family:var(--font-mono);
+  font-size:12.5px;line-height:1.9;
+}
+.cpanel.after .cblock{border-color:rgba(var(--rgb-accent),0.1);}
+.ck{color:#7dd3c0;}.cf{color:#f0c070;}.cs{color:#90d070;}
+.cc{color:var(--mist);}.ca{color:var(--teal);}.cx{color:var(--text);}
+.cp{color:var(--text3);}
+
+/* ═══ PROVIDERS ═════════════════════════════════════════════════ */
+.prov-section{
+  max-width:1200px;margin:0 auto;
+  padding:0 52px 100px;text-align:center;
+}
+.prov-label{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:24px;
+}
+.prov-chips{
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+}
+.pchip{
+  font-family:var(--font-mono);
+  font-size:11px;color:var(--text2);
+  background:var(--panel);
+  border:1px solid var(--border2);
+  padding:7px 16px;border-radius:3px;
+  transition:all 0.2s;cursor:default;
+}
+.pchip:hover{
+  color:var(--teal);border-color:var(--border);
+  background:var(--teal-dim);
+  box-shadow:0 0 12px rgba(var(--rgb-accent),0.07);
+}
+
+/* ═══ COMPARE TABLE ══════════════════════════════════════════════ */
+.compare-section{
+  max-width:1200px;margin:0 auto;
+  padding:0 52px 100px;
+}
+table{
+  width:100%;border-collapse:collapse;
+  border:1px solid var(--border2);
+  border-radius:12px;overflow:hidden;
+}
+th{
+  background:var(--panel);
+  padding:14px 20px;text-align:left;
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:400;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text3);
+  border-bottom:1px solid var(--border2);
+}
+th.hl{color:var(--teal);background:rgba(var(--rgb-accent),0.03);}
+td{
+  padding:12px 20px;font-size:12.5px;
+  color:var(--text2);
+  border-bottom:1px solid var(--border2);
+  font-family:var(--font-mono);
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.008);}
+td:first-child{font-family:var(--font-body);font-size:13px;color:var(--text);font-weight:400;}
+td.hl{color:var(--teal);background:rgba(var(--rgb-accent),0.025);}
+.tick{color:var(--teal);text-shadow:0 0 10px rgba(var(--rgb-accent),0.6);}
+.cross{color:var(--text3);}
+
+/* ═══ CTA ════════════════════════════════════════════════════════ */
+.cta-wrap{
+  padding:0 52px 120px;
+  display:flex;justify-content:center;
+}
+.cta-box{
+  position:relative;
+  max-width:720px;width:100%;
+  background:linear-gradient(135deg,#0c1e1e 0%,#0a1220 50%,#0e1018 100%);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:70px 56px;
+  text-align:center;overflow:hidden;
+}
+.cta-box::before{
+  content:'';
+  position:absolute;top:-80px;left:50%;transform:translateX(-50%);
+  width:500px;height:260px;
+  background:radial-gradient(ellipse,rgba(var(--rgb-accent),0.1) 0%,transparent 65%);
+  pointer-events:none;
+}
+.cta-box::after{
+  content:'';
+  position:absolute;top:0;left:20%;right:20%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),var(--teal2),transparent);
+  opacity:0.5;
+}
+.cta-h2{
+  font-family:var(--font-heading);font-weight:700;
+  font-size:52px;letter-spacing:0.04em;line-height:0.95;
+  color:var(--text);margin-bottom:16px;
+  position:relative;
+}
+.cta-sub{
+  font-size:15px;color:var(--text2);
+  line-height:1.7;margin-bottom:40px;
+  position:relative;font-weight:300;
+}
+.cta-cmd{
+  display:inline-flex;align-items:center;gap:16px;
+  font-family:var(--font-mono);font-size:16px;
+  color:var(--teal);
+  background:rgba(var(--rgb-accent),0.05);
+  border:1px solid var(--border3);
+  padding:16px 30px;border-radius:4px;
+  cursor:pointer;position:relative;
+  overflow:hidden;transition:all 0.3s;
+}
+.cta-cmd::after{
+  content:'';
+  position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.08),transparent);
+  transition:left 0.5s;
+}
+.cta-cmd:hover::after{left:100%;}
+.cta-cmd:hover{
+  border-color:var(--teal);
+  box-shadow:0 0 60px rgba(var(--rgb-accent),0.18),0 16px 40px rgba(0,0,0,0.4);
+  transform:translateY(-3px);
+}
+.cta-p{color:var(--text3);}
+
+/* ═══ FOOTER ════════════════════════════════════════════════════ */
+footer{
+  border-top:1px solid var(--border2);
+  padding:28px 52px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--font-mono);
+  font-size:10px;color:var(--text3);
+}
+.foot-links{display:flex;gap:24px;}
+.foot-links a{color:var(--text3);text-decoration:none;letter-spacing:0.06em;transition:color 0.2s;}
+.foot-links a:hover{color:var(--teal);}
+
+/* ═══ REVEAL ════════════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.reveal.on{opacity:1;transform:translateY(0);}
+
+/* ═══ TOAST ══════════════════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:9999;
+  background:var(--surface);
+  border:1px solid var(--border3);
+  color:var(--teal);
+  font-family:var(--font-mono);font-size:11px;
+  padding:10px 18px;border-radius:4px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 24px rgba(var(--rgb-accent),0.12);
+  opacity:0;transform:translateY(8px);
+  transition:all 0.22s;pointer-events:none;
+}
+.toast.on{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cur"></div>
+<div class="cursor-ring" id="curR"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-gem">LT</div>
+    <span class="logo-text">LLMTap</span>
+  </a>
+  <div class="nav-center">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#compare" class="nav-link">Compare</a>
+    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" class="nav-link">GitHub</a>
+    <a href="#" class="nav-link">Docs</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-status">
+      <span class="nav-status-dot"></span>
+      v0.1.0 live
+    </div>
+    <a href="#" class="nav-btn" onclick="doCopy(event)">$ npx llmtap</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-rule"></div>
+  <div class="hero-content">
+
+    <div class="eyebrow">
+      <span class="eyebrow-line"></span>
+      Local-first LLM observability
+      <span class="eyebrow-line"></span>
+    </div>
+
+    <h1 class="hero-h1">
+      <span class="h1-light">the ops center for</span>
+      <span class="h1-heavy"><span class="h1-accent">every LLM call</span><br>your agent makes</span>
+    </h1>
+
+    <p class="hero-sub">
+      <em>Trace. Debug. Optimize.</em> A real-time dashboard that runs entirely on your machine — no cloud, no sign-up, no proxy. Two lines of code.
+    </p>
+
+    <div class="cta-cluster">
+      <div class="cta-row">
+        <div class="terminal-chip" onclick="doCopy(event)">
+          <span class="t-prompt">$</span>
+          <span class="t-cmd">npx llmtap</span>
+          <svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </div>
+        <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" class="ghost-btn">View Source →</a>
+      </div>
+      <div class="data-pills">
+        <div class="data-pill">setup <span class="dp-val">~30s</span></div>
+        <div class="data-pill">cloud required <span class="dp-val">none</span></div>
+        <div class="data-pill">models priced <span class="dp-val">50+</span></div>
+        <div class="data-pill">license <span class="dp-val">MIT</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PREVIEW -->
+<div class="preview-outer reveal">
+  <div class="preview-glow-bg"></div>
+  <div class="browser-shell">
+    <div class="bbar">
+      <div class="bdots"><span></span><span></span><span></span></div>
+      <div class="burl">localhost:4781 — LLMTap · Control Deck</div>
+      <div class="bstatus"><span class="bstatus-dot"></span>Live feed connected</div>
+    </div>
+    <div class="mdash">
+      <div class="mside">
+        <div class="mside-logo">
+          <div class="mside-gem"></div>
+          <span class="mside-name">LLMTap</span>
+        </div>
+        <div class="mside-sub">Control Deck</div>
+        <div class="mside-item on"><span class="mside-dot"></span>Overview</div>
+        <div class="mside-item"><span class="mside-dot"></span>Traces</div>
+        <div class="mside-item"><span class="mside-dot"></span>Economics</div>
+        <div class="mside-item"><span class="mside-dot"></span>Models</div>
+        <div class="mside-sub">Config</div>
+        <div class="mside-item"><span class="mside-dot"></span>Sessions</div>
+        <div class="mside-item"><span class="mside-dot"></span>Settings</div>
+        <div class="mside-runtime">
+          <div class="mrt-label">Runtime</div>
+          <div class="mrt-row"><span class="mrt-pulse"></span>Local collector active</div>
+        </div>
+      </div>
+      <div class="mmain">
+        <div class="mmain-header">
+          <span class="mmain-title">Operator Surface · Flight Deck</span>
+          <span class="mmain-live"><span class="live-dot"></span>Streaming</span>
+        </div>
+        <div class="mbanner">
+          <div class="mbanner-tag"><span class="mbanner-tagdot"></span>Live Operator Surface</div>
+          <div class="mbanner-h">Read the behavior of every model call like a live system.</div>
+        </div>
+        <div class="mcards">
+          <div class="mcard">
+            <div class="mcard-k">Trace Volume</div>
+            <div class="mcard-v glow" id="mc1">0</div>
+            <div class="mcard-s" id="mc1s">awaiting traffic</div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-k">Token Throughput</div>
+            <div class="mcard-v" id="mc2">0</div>
+            <div class="mcard-s">tokens in window</div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-k">Spend Velocity</div>
+            <div class="mcard-v" id="mc3">$0.0000</div>
+            <div class="mcard-s">avg per call</div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-k">Risk Surface</div>
+            <div class="mcard-v glow" id="mc4">0%</div>
+            <div class="mcard-s">0 failing calls</div>
+          </div>
+        </div>
+        <div class="mpulse">
+          <div class="mpulse-head">
+            Token throughput
+            <span id="pulse-val">84.2k / min</span>
+          </div>
+          <canvas id="pulse-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="ticker reveal">
+  <div class="tick-item"><span class="tick-n" data-target="12">0</span><span class="tick-l">Providers</span></div>
+  <div class="tick-item"><span class="tick-n" data-target="50">0</span><span class="tick-l">Models priced</span></div>
+  <div class="tick-item"><span class="tick-n">30s</span><span class="tick-l">Setup time</span></div>
+  <div class="tick-item"><span class="tick-n">0</span><span class="tick-l">Cloud accounts needed</span></div>
+  <div class="tick-item"><span class="tick-n">MIT</span><span class="tick-l">License</span></div>
+</div>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="mtrack"></div>
+</div>
+
+<!-- FEATURES -->
+<section class="feat-section reveal" id="features">
+  <div class="feat-eyebrow">// core capabilities</div>
+  <div class="feat-h2">Built for engineers<br>who ship <span>AI agents.</span></div>
+  <div class="feat-grid">
+    <div class="feat feat-span2">
+      <div class="feat-icon">🔍</div>
+      <div class="feat-title">Transparent ES Proxy instrumentation</div>
+      <div class="feat-desc">Wraps any LLM client — OpenAI, Anthropic, Gemini — with a single function call. Your client behaves 100% identically. Streaming, tool calls, multi-turn conversations, function calling. All traced automatically, zero behavior changes, zero refactoring.</div>
+      <div class="feat-tag">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        wrap(client) — that's it
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Real-time SSE dashboard</div>
+      <div class="feat-desc">Traces stream into the browser via Server-Sent Events the instant they complete. Token counts, latency, full message content — all live.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💰</div>
+      <div class="feat-title">Per-call cost intelligence</div>
+      <div class="feat-desc">Built-in pricing for 50+ models. See exactly which pipeline step burned $0.40, not just the monthly aggregate.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🗺️</div>
+      <div class="feat-title">Agent trace grouping</div>
+      <div class="feat-desc">Group multi-step pipelines into a single trace with startTrace(). Total cost and token budget at a glance.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">Privacy by default</div>
+      <div class="feat-desc">SQLite on your machine. Your prompts never leave localhost. OTLP export to Datadog, Grafana, or Jaeger when you need it.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📡</div>
+      <div class="feat-title">OpenTelemetry native</div>
+      <div class="feat-desc">Follows GenAI Semantic Conventions. Drop-in OTLP forwarding to any production observability backend.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CODE -->
+<section class="code-section reveal">
+  <div class="code-pair">
+    <div class="cpanel">
+      <div class="cpanel-head">Before LLMTap</div>
+      <div class="cblock">
+<span class="ck">import</span> <span class="cx">OpenAI</span> <span class="ck">from</span> <span class="cs">"openai"</span><span class="cx">;</span><br><br>
+<span class="ck">const</span> <span class="cx">client</span> <span class="cp">=</span> <span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">();</span><br><br>
+<span class="cc">// which call cost $0.40?</span><br>
+<span class="cc">// what did step 3 actually say?</span><br>
+<span class="cc">// why did the agent loop?</span><br>
+<span class="cc">// ¯\_(ツ)_/¯</span><br><br>
+<span class="ck">const</span> <span class="cx">res</span> <span class="cp">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp">.</span><span class="cx">chat</span><br>
+<span class="cp">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp">.</span><span class="cf">create</span><span class="cx">({...});</span>
+      </div>
+    </div>
+    <div class="cpanel after">
+      <div class="cpanel-head">After — 2 lines changed</div>
+      <div class="cblock">
+<span class="ck">import</span> <span class="cx">OpenAI</span> <span class="ck">from</span> <span class="cs">"openai"</span><span class="cx">;</span><br>
+<span class="ca"><span class="ck">import</span> <span class="cx">{ wrap }</span> <span class="ck">from</span> <span class="cs">"@llmtap/sdk"</span><span class="cx">;</span></span><br><br>
+<span class="ck">const</span> <span class="cx">client</span> <span class="cp">=</span> <span class="ca"><span class="cf">wrap</span><span class="cx">(</span></span><span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">()</span><span class="ca"><span class="cx">)</span></span><span class="cx">;</span><br><br>
+<span class="cc">// open localhost:4781</span><br>
+<span class="cc">// every call traced in real time</span><br>
+<span class="cc">// costs · latency · full content</span><br>
+<span class="cc">// your agent is now readable</span><br><br>
+<span class="ck">const</span> <span class="cx">res</span> <span class="cp">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp">.</span><span class="cx">chat</span><br>
+<span class="cp">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp">.</span><span class="cf">create</span><span class="cx">({...});</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROVIDERS -->
+<section class="prov-section reveal">
+  <div class="prov-label">Works with every major provider</div>
+  <div class="prov-chips">
+    <div class="pchip">OpenAI</div><div class="pchip">Anthropic</div>
+    <div class="pchip">Google Gemini</div><div class="pchip">DeepSeek</div>
+    <div class="pchip">Groq</div><div class="pchip">Together AI</div>
+    <div class="pchip">Fireworks</div><div class="pchip">OpenRouter</div>
+    <div class="pchip">xAI (Grok)</div><div class="pchip">Ollama</div>
+    <div class="pchip">Vercel AI SDK</div><div class="pchip">Any OpenAI-compatible</div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="compare-section reveal" id="compare">
+  <div class="feat-eyebrow">// comparison</div>
+  <div class="feat-h2" style="margin-bottom:36px">Why not <span>LangSmith?</span></div>
+  <table>
+    <thead>
+      <tr>
+        <th></th><th class="hl">LLMTap</th>
+        <th>LangSmith</th><th>Helicone</th><th>Langfuse</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Setup</td><td class="hl">npx + 2 lines</td><td>SDK + account</td><td>Proxy + cloud</td><td>SDK + self-host</td></tr>
+      <tr><td>Data location</td><td class="hl">Your machine</td><td>Their cloud</td><td>Their cloud</td><td>Your infra</td></tr>
+      <tr><td>Cost</td><td class="hl">Free, no limits</td><td>$39/seat/mo</td><td>$79/mo</td><td>Free (self-host)</td></tr>
+      <tr><td>Sign-up required</td><td class="hl"><span class="tick">✗ No</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td></tr>
+      <tr><td>Prompts leave machine</td><td class="hl"><span class="tick">✗ Never</span></td><td><span class="cross">✓ Always</span></td><td><span class="cross">✓ Always</span></td><td>Depends</td></tr>
+      <tr><td>OTLP export</td><td class="hl"><span class="tick">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="tick">✓</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- CTA -->
+<div class="cta-wrap reveal">
+  <div class="cta-box">
+    <h2 class="cta-h2">Start in 30 seconds.</h2>
+    <p class="cta-sub">No accounts. No API keys. No proxies.<br>Run one command. Open your browser.</p>
+    <div class="cta-cmd" onclick="doCopy(event)">
+      <span class="cta-p">$</span>
+      npx llmtap
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo-gem" style="width:22px;height:22px;font-size:10px">LT</div>
+    <span style="font-family:var(--font-heading);font-weight:700;font-size:16px;letter-spacing:0.08em;color:var(--text)">LLMTap</span>
+  </div>
+  <div class="foot-links">
+    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank">GitHub</a>
+    <a href="#">Docs</a>
+    <a href="#">npm</a>
+    <span>MIT License</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast">✓ Copied — npx llmtap</div>
+
+<script>
+/* ── custom cursor ── */
+const cur=document.getElementById('cur'),curR=document.getElementById('curR');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+});
+(function ringLoop(){
+  rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+  curR.style.left=rx+'px';curR.style.top=ry+'px';
+  requestAnimationFrame(ringLoop);
+})();
+
+/* ── hero particle canvas ── */
+const hc=document.getElementById('hero-canvas');
+const hctx=hc.getContext('2d');
+let W,H,particles=[];
+
+function resizeHC(){
+  W=hc.width=hc.offsetWidth;
+  H=hc.height=hc.offsetHeight;
+}
+
+class Particle{
+  constructor(){this.reset(true);}
+  reset(init){
+    this.x=Math.random()*W;
+    this.y=init?Math.random()*H:H+10;
+    this.vy=-(0.15+Math.random()*0.5);
+    this.vx=(Math.random()-0.5)*0.2;
+    this.alpha=0;
+    this.maxAlpha=0.1+Math.random()*0.3;
+    this.r=0.5+Math.random()*1.5;
+    this.life=0;
+    this.maxLife=120+Math.random()*200;
+    this.color=Math.random()>0.7?'#45A29E':'#66FCF1';
+  }
+  update(){
+    this.life++;
+    const t=this.life/this.maxLife;
+    this.alpha=t<0.2?this.maxAlpha*(t/0.2):this.maxAlpha*(1-(t-0.2)/0.8);
+    this.x+=this.vx;this.y+=this.vy;
+    if(this.life>=this.maxLife||this.y<-10)this.reset(false);
+  }
+  draw(){
+    hctx.beginPath();
+    hctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    hctx.fillStyle=this.color;
+    hctx.globalAlpha=this.alpha;
+    hctx.fill();
+  }
+}
+
+function initParticles(){
+  particles=[];
+  for(let i=0;i<80;i++)particles.push(new Particle());
+}
+
+/* connection lines between nearby particles */
+function drawLines(){
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x;
+      const dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<90){
+        hctx.beginPath();
+        hctx.moveTo(particles[i].x,particles[i].y);
+        hctx.lineTo(particles[j].x,particles[j].y);
+        hctx.strokeStyle='#66FCF1';
+        hctx.globalAlpha=(1-d/90)*0.04;
+        hctx.lineWidth=0.5;
+        hctx.stroke();
+      }
+    }
+  }
+}
+
+function animHero(){
+  hctx.clearRect(0,0,W,H);
+  drawLines();
+  particles.forEach(p=>{p.update();p.draw();});
+  hctx.globalAlpha=1;
+  requestAnimationFrame(animHero);
+}
+
+window.addEventListener('resize',()=>{resizeHC();});
+resizeHC();initParticles();animHero();
+
+/* ── pulse line canvas ── */
+const pc=document.getElementById('pulse-canvas');
+const pctx=pc.getContext('2d');
+let pulseData=[];
+let pulseFrame=0;
+
+function resizePC(){
+  pc.width=pc.offsetWidth*window.devicePixelRatio||pc.offsetWidth;
+  pc.height=pc.offsetHeight*window.devicePixelRatio||pc.offsetHeight;
+  pctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
+}
+
+function genPulseVal(){
+  const base=40+Math.sin(pulseFrame*0.05)*15;
+  const spike=Math.random()>0.92?Math.random()*50:0;
+  return base+spike+Math.random()*8;
+}
+
+function animPulse(){
+  pulseFrame++;
+  pulseData.push(genPulseVal());
+  const W2=pc.offsetWidth,H2=pc.offsetHeight;
+  const maxPoints=W2;
+  if(pulseData.length>maxPoints)pulseData.shift();
+
+  pctx.clearRect(0,0,W2,H2);
+
+  if(pulseData.length<2){requestAnimationFrame(animPulse);return;}
+
+  const max=Math.max(...pulseData,100);
+  const pts=pulseData.map((v,i)=>({
+    x:(i/(pulseData.length-1))*W2,
+    y:H2-(v/max)*(H2-8)-4
+  }));
+
+  // fill
+  const grad=pctx.createLinearGradient(0,0,0,H2);
+  grad.addColorStop(0,'rgba(var(--rgb-accent),0.15)');
+  grad.addColorStop(1,'rgba(var(--rgb-accent),0)');
+  pctx.beginPath();
+  pctx.moveTo(pts[0].x,H2);
+  pts.forEach(p=>pctx.lineTo(p.x,p.y));
+  pctx.lineTo(pts[pts.length-1].x,H2);
+  pctx.closePath();
+  pctx.fillStyle=grad;
+  pctx.fill();
+
+  // line
+  pctx.beginPath();
+  pts.forEach((p,i)=>i===0?pctx.moveTo(p.x,p.y):pctx.lineTo(p.x,p.y));
+  pctx.strokeStyle='#66FCF1';
+  pctx.lineWidth=1.5;
+  pctx.shadowColor='rgba(var(--rgb-accent),0.6)';
+  pctx.shadowBlur=6;
+  pctx.stroke();
+  pctx.shadowBlur=0;
+
+  // dot at end
+  const last=pts[pts.length-1];
+  pctx.beginPath();
+  pctx.arc(last.x,last.y,3,0,Math.PI*2);
+  pctx.fillStyle='#66FCF1';
+  pctx.shadowColor='rgba(var(--rgb-accent),0.8)';
+  pctx.shadowBlur=10;
+  pctx.fill();
+  pctx.shadowBlur=0;
+
+  requestAnimationFrame(animPulse);
+}
+resizePC();animPulse();
+
+/* ── mock card counter animation ── */
+function animCount(el,target,prefix,suffix,decimals,duration){
+  let start=null;
+  const step=ts=>{
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/duration,1);
+    const ease=1-Math.pow(1-p,3);
+    const v=target*ease;
+    el.textContent=prefix+(decimals?v.toFixed(decimals):Math.floor(v))+suffix;
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* trigger when preview enters viewport */
+const prevObs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    setTimeout(()=>animCount(document.getElementById('mc1'),247,'','',0,2000),200);
+    setTimeout(()=>animCount(document.getElementById('mc2'),84200,'','',0,2200),400);
+    setTimeout(()=>animCount(document.getElementById('mc3'),0.0042,'$','',4,1800),600);
+    document.getElementById('mc1s').textContent='↑ 12 in last 5m';
+    prevObs.disconnect();
+  }
+},{threshold:0.3});
+prevObs.observe(document.querySelector('.preview-outer'));
+
+/* ── stat counters ── */
+const statObs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    document.querySelectorAll('.tick-n[data-target]').forEach(el=>{
+      const t=parseInt(el.dataset.target);
+      animCount(el,t,'','',0,1200);
+    });
+    statObs.disconnect();
+  }
+},{threshold:0.5});
+statObs.observe(document.querySelector('.ticker'));
+
+/* ── marquee ── */
+const features=[
+  {icon:'⚡',t:'Real-time SSE traces'},
+  {icon:'💰',t:'Per-call cost tracking'},
+  {icon:'🔍',t:'ES Proxy instrumentation'},
+  {icon:'🗺️',t:'Agent trace grouping'},
+  {icon:'🔒',t:'Local-first privacy'},
+  {icon:'📡',t:'OpenTelemetry export'},
+  {icon:'🧪',t:'50+ models priced'},
+  {icon:'⚙️',t:'Zero config setup'},
+  {icon:'📊',t:'SQLite storage'},
+  {icon:'🔄',t:'Streaming support'},
+];
+
+const track=document.getElementById('mtrack');
+// duplicate for seamless loop
+[...features,...features].forEach(f=>{
+  const d=document.createElement('div');
+  d.className='marquee-item';
+  d.innerHTML=`<span>${f.icon}</span>${f.t}`;
+  track.appendChild(d);
+});
+
+/* ── scroll reveal ── */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target);}});
+},{threshold:0.06});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ── copy ── */
+function doCopy(e){
+  e.preventDefault();
+  navigator.clipboard.writeText('npx llmtap').then(()=>{
+    const t=document.getElementById('toast');
+    t.classList.add('on');
+    setTimeout(()=>t.classList.remove('on'),2400);
+  });
+}
+</script>
+</body>
+</html>
+

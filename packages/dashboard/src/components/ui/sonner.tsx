@@ -8,19 +8,19 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-slate-900/95 group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-slate-200 group-[.toaster]:border-white/10 group-[.toaster]:shadow-[0_16px_40px_rgba(0,0,0,0.4)] group-[.toaster]:rounded-2xl",
-          description: "group-[.toast]:text-slate-400",
+            "group toast group-[.toaster]:bg-[rgba(var(--ch-bg-panel),0.95)] group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-[var(--color-text-primary)] group-[.toaster]:border-[var(--border-default)] group-[.toaster]:shadow-[0_16px_40px_rgba(0,0,0,0.4)] group-[.toaster]:rounded-2xl",
+          description: "group-[.toast]:text-[var(--color-text-secondary)]",
           actionButton:
-            "group-[.toast]:bg-[#66FCF1] group-[.toast]:text-slate-950",
+            "group-[.toast]:bg-[var(--color-accent)] group-[.toast]:text-[var(--color-bg-base)]",
           cancelButton:
-            "group-[.toast]:bg-white/6 group-[.toast]:text-slate-400",
+            "group-[.toast]:bg-[rgba(var(--ch-bg-surface),0.72)] group-[.toast]:text-[var(--color-text-secondary)]",
           success:
-            "group-[.toaster]:border-[#45A29E]/25 group-[.toaster]:text-[#66FCF1]",
+            "group-[.toaster]:border-[var(--color-accent-2)]/25 group-[.toaster]:text-[var(--color-accent)]",
           error:
-            "group-[.toaster]:border-[#C5C6C7]/20 group-[.toaster]:text-[#C5C6C7]",
+            "group-[.toaster]:border-[var(--color-error)]/28 group-[.toaster]:text-[var(--color-error)]",
           warning:
-            "group-[.toaster]:border-[#45A29E]/25 group-[.toaster]:text-[#45A29E]",
-          info: "group-[.toaster]:border-[#66FCF1]/20 group-[.toaster]:text-[#66FCF1]",
+            "group-[.toaster]:border-[var(--color-warning)]/25 group-[.toaster]:text-[var(--color-warning)]",
+          info: "group-[.toaster]:border-[var(--color-accent)]/20 group-[.toaster]:text-[var(--color-accent)]",
         },
       }}
       {...props}

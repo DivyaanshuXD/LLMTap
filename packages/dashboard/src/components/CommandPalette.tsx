@@ -21,7 +21,7 @@ export function CommandPalette() {
       {
         id: "overview",
         label: "Overview",
-        icon: <PlaneTakeoff className="h-4 w-4 text-[#66FCF1]" />,
+        icon: <PlaneTakeoff className="h-4 w-4 text-[var(--color-accent)]" />,
         description: "operator surface",
         short: "G O",
         end: "Page",
@@ -29,7 +29,7 @@ export function CommandPalette() {
       {
         id: "traces",
         label: "Traces",
-        icon: <LayoutGrid className="h-4 w-4 text-[#45A29E]" />,
+        icon: <LayoutGrid className="h-4 w-4 text-[var(--color-accent-2)]" />,
         description: "trace explorer",
         short: "G T",
         end: "Page",
@@ -37,7 +37,7 @@ export function CommandPalette() {
       {
         id: "economics",
         label: "Economics",
-        icon: <BarChart2 className="h-4 w-4 text-[#66FCF1]" />,
+        icon: <BarChart2 className="h-4 w-4 text-[var(--color-accent)]" />,
         description: "cost intelligence",
         short: "G C",
         end: "Page",
@@ -45,7 +45,7 @@ export function CommandPalette() {
       {
         id: "models",
         label: "Models",
-        icon: <Video className="h-4 w-4 text-[#C5C6C7]" />,
+        icon: <Video className="h-4 w-4 text-[var(--color-text-primary)]" />,
         description: "model breakdown",
         short: "G M",
         end: "Page",
@@ -53,7 +53,7 @@ export function CommandPalette() {
       {
         id: "sessions",
         label: "Sessions",
-        icon: <AudioLines className="h-4 w-4 text-[#45A29E]" />,
+        icon: <AudioLines className="h-4 w-4 text-[var(--color-accent-2)]" />,
         description: "grouped journeys",
         short: "G S",
         end: "Page",
@@ -61,7 +61,7 @@ export function CommandPalette() {
       {
         id: "settings",
         label: "Settings",
-        icon: <LayoutGrid className="h-4 w-4 text-[#C5C6C7]" />,
+        icon: <LayoutGrid className="h-4 w-4 text-[var(--color-text-primary)]" />,
         description: "collector controls",
         short: "G X",
         end: "Page",
@@ -74,7 +74,7 @@ export function CommandPalette() {
     <ActionSearchBar
       actions={actions}
       placeholder="Type a command or search..."
-      className="max-w-[28rem]"
+      className="max-w-[44rem]"
       onAction={(action) => {
         switch (action.id) {
           case "overview":

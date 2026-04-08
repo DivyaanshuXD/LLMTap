@@ -29,6 +29,12 @@ If your app can already talk to OpenAI, Anthropic, Gemini, or an OpenAI-compatib
 
 ---
 
+## Related Docs
+
+- `PROJECT_STRUCTURE.md` — monorepo and package-level structure
+- `UI_FILES.md` — dashboard UI file inventory and ownership map
+- `UI_PLAN.md` — UI roadmap and implementation status
+
 ## Quick Start
 
 You should be able to go from zero to the first visible trace in under a minute.

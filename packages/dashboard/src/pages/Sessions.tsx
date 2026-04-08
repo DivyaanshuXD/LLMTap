@@ -15,6 +15,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "../components/DataTable.tsx";
 import { PageFrame } from "../components/PageFrame.tsx";
 import { LivePulse } from "../components/LivePulse.tsx";
+import { EmptyState } from "../components/system/EmptyState.tsx";
 import { NumberTicker } from "../components/magicui/number-ticker.tsx";
 import {
   formatCompactNumber,
@@ -48,16 +49,16 @@ export default function Sessions() {
             to={`/traces?q=${encodeURIComponent(row.original.sessionId)}`}
             className="group inline-flex min-w-0 items-center gap-3"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-panel)] border border-white/10 bg-white/5 text-[#66FCF1] transition-colors hover:border-[#45A29E]/20 hover:text-[#66FCF1]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] text-[var(--color-accent)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-accent)]">
               <MessageSquareMore className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-mono text-sm font-semibold text-slate-100 transition-colors hover:text-[#66FCF1]">
+              <span className="block truncate font-mono text-sm font-semibold text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent)]">
                 {row.original.sessionId.length > 28
                   ? `${row.original.sessionId.slice(0, 26)}...`
                   : row.original.sessionId}
               </span>
-              <span className="mt-1 block text-xs text-slate-400">
+              <span className="mt-1 block text-xs text-[var(--color-text-secondary)]">
                 Last active {formatTimeAgo(row.original.lastSeen)}
               </span>
             </span>
@@ -68,7 +69,7 @@ export default function Sessions() {
         accessorKey: "traceCount",
         header: "Traces",
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-300">{row.original.traceCount}</span>
+          <span className="font-mono text-sm text-[var(--color-text-secondary)]">{row.original.traceCount}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -76,7 +77,7 @@ export default function Sessions() {
         accessorKey: "spanCount",
         header: "Spans",
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-300">{row.original.spanCount}</span>
+          <span className="font-mono text-sm text-[var(--color-text-secondary)]">{row.original.spanCount}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -84,7 +85,7 @@ export default function Sessions() {
         accessorKey: "totalTokens",
         header: "Tokens",
         cell: ({ row }) => (
-          <span className="font-mono text-sm text-slate-300">
+          <span className="font-mono text-sm text-[var(--color-text-secondary)]">
             {formatCompactNumber(row.original.totalTokens)}
           </span>
         ),
@@ -94,7 +95,7 @@ export default function Sessions() {
         accessorKey: "totalCost",
         header: "Cost",
         cell: ({ row }) => (
-          <span className="font-mono text-sm font-semibold text-white">
+          <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)]">
             {formatCost(row.original.totalCost)}
           </span>
         ),
@@ -105,12 +106,12 @@ export default function Sessions() {
         header: "Errors",
         cell: ({ row }) =>
           row.original.errorCount > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[#C5C6C7]/20 bg-[#C5C6C7]/10 px-2 py-0.5 text-xs font-bold text-[#C5C6C7]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-text-primary)]/20 bg-[var(--color-text-primary)]/10 px-2 py-0.5 text-xs font-bold text-[var(--color-text-primary)]">
               <AlertTriangle className="h-3 w-3" />
               {row.original.errorCount}
             </span>
           ) : (
-            <span className="font-mono text-sm text-slate-500">0</span>
+            <span className="font-mono text-sm text-[var(--color-text-tertiary)]">0</span>
           ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -118,7 +119,7 @@ export default function Sessions() {
         accessorKey: "firstSeen",
         header: "First Seen",
         cell: ({ row }) => (
-          <span className="text-sm text-slate-400">{formatTimeAgo(row.original.firstSeen)}</span>
+          <span className="text-sm text-[var(--color-text-secondary)]">{formatTimeAgo(row.original.firstSeen)}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -126,7 +127,7 @@ export default function Sessions() {
         accessorKey: "lastSeen",
         header: "Last Active",
         cell: ({ row }) => (
-          <span className="text-sm text-slate-400">{formatTimeAgo(row.original.lastSeen)}</span>
+          <span className="text-sm text-[var(--color-text-secondary)]">{formatTimeAgo(row.original.lastSeen)}</span>
         ),
         meta: { className: "text-right", cellClassName: "text-right" },
       },
@@ -136,7 +137,7 @@ export default function Sessions() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1500px] space-y-8">
+      <div className="mx-auto max-w-[1760px] space-y-8">
         <div className="skeleton-panel h-44 rounded-[28px]" />
         <div className="skeleton-panel h-80 rounded-[24px]" />
       </div>
@@ -152,21 +153,21 @@ export default function Sessions() {
         <div className="insight-panel">
           <LivePulse />
           <div className="mt-5 space-y-4">
-            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
+            <div className="deck-card deck-card--accent">
               <div className="hud-label">Active sessions</div>
-              <div className="mt-2 text-lg font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 <NumberTicker value={totalSessions} />
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 {totalTraces} traces across all sessions
               </div>
             </div>
-            <div className="rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5">
+            <div className="deck-card">
               <div className="hud-label">Session spend</div>
-              <div className="mt-2 text-base font-medium text-white">
+              <div className="mt-2 text-lg font-medium text-[var(--color-text-primary)]">
                 {formatCost(totalCost)}
               </div>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 Combined cost across visible sessions
               </div>
             </div>
@@ -174,6 +175,21 @@ export default function Sessions() {
         </div>
       }
     >
+      <div className="pill-strip w-fit max-w-full overflow-x-auto">
+        <span className="pill-item">
+          window <strong>168h</strong>
+        </span>
+        <span className="pill-item">
+          sessions <strong>{totalSessions}</strong>
+        </span>
+        <span className="pill-item">
+          traces <strong>{totalTraces}</strong>
+        </span>
+        <span className="pill-item">
+          spend <strong>{formatCost(totalCost)}</strong>
+        </span>
+      </div>
+
       {sessions.length > 0 ? (
         <motion.div
           className={`${sectionShell} overflow-hidden p-5`}
@@ -184,12 +200,12 @@ export default function Sessions() {
           <div className="mb-4 flex items-center justify-between gap-3 px-1">
             <div>
               <div className="hud-label">Session registry</div>
-              <h2 className="mt-1 text-xl font-semibold tracking-[-0.04em] text-white">
+              <h2 className="page-section-title mt-1">
                 Tracked sessions
               </h2>
             </div>
             <span className="status-chip">
-              <Users className="h-3.5 w-3.5 text-[#66FCF1]" />
+              <Users className="h-3.5 w-3.5 text-[var(--color-accent)]" />
               <span>{totalSessions} sessions</span>
             </span>
           </div>
@@ -197,14 +213,12 @@ export default function Sessions() {
         </motion.div>
       ) : (
         <div className={`${sectionShell} p-16`}>
-          <div className="empty-state">
-            <MessageSquareMore className="h-8 w-8 text-slate-500" />
-            <div className="text-base font-medium text-white">No sessions tracked yet</div>
-            <div className="max-w-md text-center text-sm text-slate-400">
-              Sessions appear when you pass a <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[#66FCF1]">sessionId</code> to
-              the SDK. This groups related traces into logical conversations or workflows.
-            </div>
-            <pre className="mt-5 max-w-lg rounded-[var(--radius-panel)] border border-white/10 bg-white/5 p-5 text-left font-mono text-sm text-slate-300">
+          <div className="space-y-6">
+            <EmptyState
+              title="No sessions tracked yet"
+              description='Sessions appear when you pass a `sessionId` to the SDK. This groups related traces into logical conversations or workflows.'
+            />
+            <pre className="mx-auto mt-5 max-w-lg rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] p-5 text-left font-mono text-sm text-[var(--color-text-secondary)]">
 {`import { init } from "@llmtap/sdk";
 
 init({ sessionId: "user-session-123" });`}
