@@ -7,6 +7,7 @@ import { CommandPalette } from "./components/CommandPalette.tsx";
 import { ConnectionToast } from "./components/ConnectionToast.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { LivePulse } from "./components/LivePulse.tsx";
+import { QuickConnectWidget } from "./components/QuickConnectWidget.tsx";
 import { ShortcutsHelp } from "./components/ShortcutsHelp.tsx";
 import { AppSidebar } from "./components/shadcn-space/blocks/sidebar-01/app-sidebar.tsx";
 import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar.tsx";
@@ -180,6 +181,8 @@ function App() {
               </div>
             </footer>
           </div>
+
+          <QuickConnectWidget />
         </SidebarProvider>
       </div>
     </TooltipProvider>
