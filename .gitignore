@@ -55,9 +55,19 @@ skills-lock.json
 .planning/
 get-shit-done/
 PHASE_COMPLETION.md
+Files_Status.md
+GEM.md
+MASTERPLAN.md
+PROJECT_STRUCTURE.md
+UI_FILES.md
+UI_PLAN.md
+UI_REQ.md
+UI_STATE_ANALYSIS.md
+packages/dashboard/_ui_staging/
 
 # AI agent instructions
 .github/instructions/
+.github/prompts/
 design-system/
 rules.md
 
