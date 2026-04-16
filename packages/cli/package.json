@@ -1,6 +1,6 @@
 {
   "name": "llmtap",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "DevTools for AI Agents - See every LLM call, trace agent workflows, track costs",
   "type": "module",
   "bin": {
