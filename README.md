@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/llmtap-og.png" alt="LLMTap logo" width="128" />
+  <img src="./assets/llmtap-og.png" width="256" />
 </p>
 
 <h1 align="center">LLMTap</h1>
