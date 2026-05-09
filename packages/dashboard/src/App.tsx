@@ -1,8 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
-import { Command, Sparkles, TowerControl } from "lucide-react";
+import { ExternalLink, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AnimatedGridPattern } from "./components/magicui/animated-grid-pattern.tsx";
+import { BootSequence } from "./components/BootSequence.tsx";
+import { BrandMark } from "./components/BrandMark.tsx";
 import { CommandPalette } from "./components/CommandPalette.tsx";
 import { ConnectionToast } from "./components/ConnectionToast.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
@@ -22,6 +24,7 @@ const Costs = lazy(() => import("./pages/Costs.tsx"));
 const Models = lazy(() => import("./pages/Models.tsx"));
 const Sessions = lazy(() => import("./pages/Sessions.tsx"));
 const SettingsPage = lazy(() => import("./pages/Settings.tsx"));
+const PROJECT_SITE_URL = "https://llmtap.vercel.app";
 
 function RouteSkeleton() {
   return (
@@ -77,6 +80,7 @@ function App() {
   return (
     <TooltipProvider delayDuration={250}>
       <div className="min-h-screen bg-obsidian text-[var(--color-text-primary)]">
+        <BootSequence />
         <ConnectionToast />
         <Toaster />
         <ShortcutsHelp open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
@@ -101,13 +105,11 @@ function App() {
 
           <div className="flex min-h-screen flex-1 flex-col">
             <header className="sticky top-3 z-30 px-4 pt-3 sm:px-6 lg:px-8">
-              <div className="dashboard-shell mx-auto grid max-w-[1760px] items-center gap-3 rounded-[32px] px-4 py-3 sm:px-5 lg:grid-cols-[auto_minmax(440px,1fr)_auto]">
+              <div className="dashboard-shell mx-auto grid max-w-[1760px] items-center gap-3 rounded-[32px] px-4 py-3 sm:px-5 lg:grid-cols-[auto_minmax(260px,29rem)_auto]">
                 <div className="flex min-w-0 items-center gap-3">
-                  <SidebarTrigger className="h-11 w-11 rounded-[var(--radius-panel)]" />
+                  <SidebarTrigger className="h-[56px] w-[56px] rounded-[calc(var(--radius-panel)+5px)] border-[var(--border-default)] bg-[linear-gradient(180deg,rgba(var(--ch-accent),0.12),rgba(var(--ch-bg-surface),0.9)_42%,rgba(var(--ch-bg-base),0.98))] text-[var(--color-accent-max)] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.06),0_0_28px_rgba(var(--ch-accent),0.10),0_18px_38px_rgba(var(--ch-bg-base),0.22)] hover:border-[var(--border-bright)] hover:bg-[linear-gradient(180deg,rgba(var(--ch-accent),0.18),rgba(var(--ch-bg-surface),0.94)_44%,rgba(var(--ch-bg-base),0.98))] hover:text-[var(--color-accent-max)] hover:shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.08),0_0_38px_rgba(var(--ch-accent),0.16),0_20px_44px_rgba(var(--ch-bg-base),0.26)] [&_svg]:!h-[18px] [&_svg]:!w-[18px]" />
                   <div className="flex min-w-0 items-center gap-3 rounded-[calc(var(--radius-panel)+6px)] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.88),rgba(var(--ch-bg-panel),0.96))] px-4 py-3 shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.04),0_20px_48px_rgba(0,0,0,0.24)]">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] border border-[var(--border-default)] bg-[linear-gradient(145deg,var(--color-accent-max),var(--color-accent-2))] text-[var(--color-bg-base)] shadow-[0_14px_28px_rgba(var(--ch-accent),0.22)]">
-                      <TowerControl className="h-4.5 w-4.5" />
-                    </div>
+                    <BrandMark size="md" />
                     <div className="min-w-0">
                       <div className="hud-label text-[var(--color-text-secondary)]">Operator Surface</div>
                       <div className="mt-0.5 flex min-w-0 items-center gap-2.5">
@@ -130,10 +132,19 @@ function App() {
                     </div>
                   </div>
                 </div>
-                <div className="min-w-0 lg:px-2">
+                <div className="min-w-0 justify-self-center lg:w-full lg:px-2">
                   <CommandPalette />
                 </div>
                 <div className="flex items-center justify-end gap-2.5">
+                  <a
+                    className="hidden h-11 items-center gap-2 rounded-[var(--radius-panel)] border border-[var(--border-default)] bg-[linear-gradient(135deg,rgba(var(--ch-accent),0.18),rgba(var(--ch-bg-surface),0.84)_48%,rgba(var(--ch-bg-base),0.94))] px-3.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-accent-max)] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.06),0_0_26px_rgba(var(--ch-accent),0.12)] transition-all duration-200 ease-out hover:border-[var(--border-bright)] hover:bg-[linear-gradient(135deg,rgba(var(--ch-accent),0.24),rgba(var(--ch-bg-lift),0.86)_52%,rgba(var(--ch-bg-base),0.94))] hover:text-[var(--color-accent-max)] hover:shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.08),0_0_42px_rgba(var(--ch-accent),0.22)] xl:inline-flex"
+                    href={PROJECT_SITE_URL}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>Project Site</span>
+                  </a>
                   <div className="status-chip hidden 2xl:flex">
                     <Sparkles className="h-3.5 w-3.5 text-[var(--color-accent)]" />
                     <span>Streaming observability</span>

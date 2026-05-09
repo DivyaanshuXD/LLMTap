@@ -3,1104 +3,1035 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LLMTap — See Every LLM Call Your Agent Makes</title>
+<title>LLMTap - Neural Observer | Every LLM Call. Visible.</title>
+<link rel="icon" type="image/png" href="./assets/llmtap-logo.png">
+<meta property="og:title" content="LLMTap - Local-first LLM observability">
+<meta property="og:description" content="Trace every LLM call, inspect agent workflows, and watch cost/latency move locally.">
+<meta property="og:image" content="https://llmtap.vercel.app/assets/llmtap-og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://llmtap.vercel.app/assets/llmtap-og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="./design-system.css">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Oxanium:wght@200;300;400;600&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  NEURAL OS DESIGN SYSTEM — LLMTap v2                        ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+:root {
+  --void:#020407; --abyss:#050812; --deep:#080e1a; --mid:#0d1526;
+  --slate:#121d35; --storm:#182540; --dusk:#1e2f50;
 
-:root{
-  --ink:       var(--color-ink);
-  --deep:      var(--color-deep);
-  --panel:     var(--color-panel);
-  --surface:   var(--color-surface);
-  --card:      var(--color-card);
-  --lift:      var(--color-lift);
-  --dusk:      var(--color-dusk);
+  --teal:#00e5c0; --teal-max:#00ffd9; --teal-mid:#00bfa5;
+  --teal-dk:#007a6b; --teal-dimx:rgba(0,229,192,.08);
+  --teal-glow:rgba(0,229,192,.3); --teal-hard:rgba(0,229,192,.5);
 
-  --teal:      var(--color-accent);
-  --teal2:     var(--color-accent-2);
-  --teal3:     var(--color-accent-3);
-  --teal-max:  var(--color-accent-max);
-  --teal-dim:  var(--color-accent-dim);
-  --teal-glow: var(--color-accent-glow);
-  --teal-hard: var(--color-accent-hard);
-  --violet:    var(--color-violet);
-  --violet2:   var(--color-violet-mid);
-  --violet-dim: rgba(var(--rgb-violet),0.08);
+  --vio:#b060ff; --vio-max:#d090ff; --vio-mid:#8840e0;
+  --vio-dim:rgba(176,96,255,.08); --vio-glow:rgba(176,96,255,.28);
 
-  --amber:     var(--color-warning);
-  --amber2:    var(--color-warning-2);
-  --amber-dim: rgba(var(--rgb-warning),0.08);
+  --amb:#ffbe00; --amb-mid:#e0a000; --amb-dim:rgba(255,190,0,.09);
+  --hot:#ff3a6e;
 
-  --text:      var(--color-text-primary);
-  --text2:     var(--color-text-secondary);
-  --text3:     var(--color-text-tertiary);
-  --ice:       var(--color-text-primary);
-  --frost:     var(--color-text-frost);
-  --chrome:    var(--color-text-chrome);
-  --mist:      var(--color-text-mist);
+  --t1:#eef2ff; --t2:#8090b0; --t3:#3a4a6a; --t4:#1e2840;
 
-  --border:    var(--border-default);
-  --border2:   var(--border-dim);
-  --border3:   var(--border-bright);
+  --b0:rgba(255,255,255,.025); --b1:rgba(255,255,255,.06);
+  --b2:rgba(255,255,255,.1); --b3:rgba(0,229,192,.2);
+
+  --fd:'Bebas Neue',sans-serif;
+  --fb:'Oxanium',sans-serif;
+  --fm:'DM Mono',monospace;
 }
 
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  background:var(--ink);
-  color:var(--text);
-  font-family:var(--font-body);
-  font-weight:400;
-  overflow-x:hidden;
-  cursor:crosshair;
+  background:var(--void);color:var(--t1);
+  font-family:var(--fb);font-weight:300;
+  overflow-x:hidden;cursor:none;
 }
 
-/* custom cursor */
-.cursor{
-  position:fixed;width:8px;height:8px;
-  background:var(--teal);border-radius:50%;
-  pointer-events:none;z-index:99999;
+/* ── CURSOR ─────────────────────────────────────────────────── */
+#cur{
+  position:fixed;width:6px;height:6px;border-radius:50%;
+  background:var(--teal);pointer-events:none;z-index:99999;
   transform:translate(-50%,-50%);
-  transition:transform 0.08s,opacity 0.2s;
-  box-shadow:0 0 12px var(--teal),0 0 30px rgba(var(--rgb-accent),0.3);
-  mix-blend-mode:screen;
+  box-shadow:0 0 8px var(--teal),0 0 20px var(--teal-glow);
+  mix-blend-mode:screen;transition:transform .08s;
 }
-.cursor-ring{
-  position:fixed;width:32px;height:32px;
-  border:1px solid rgba(var(--rgb-accent),0.3);
-  border-radius:50%;pointer-events:none;z-index:99998;
+#curR{
+  position:fixed;width:28px;height:28px;border-radius:50%;
+  border:1px solid rgba(0,229,192,.3);pointer-events:none;z-index:99998;
   transform:translate(-50%,-50%);
-  transition:transform 0.18s cubic-bezier(.23,1,.32,1),width 0.2s,height 0.2s,border-color 0.2s;
+  transition:width .2s,height .2s,border-color .2s,background .2s;
 }
-body:has(a:hover) .cursor-ring,body:has(button:hover) .cursor-ring{
-  width:48px;height:48px;border-color:rgba(var(--rgb-accent),0.5);
-}
-
-/* scanline overlay */
-body::before{
-  content:'';
-  position:fixed;inset:0;
-  background:repeating-linear-gradient(
-    0deg,
-    transparent,transparent 2px,
-    rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px
-  );
-  pointer-events:none;z-index:9998;
+body:has(a:hover) #curR,body:has(button:hover) #curR,body:has([onclick]:hover) #curR{
+  width:48px;height:48px;
+  border-color:rgba(0,229,192,.6);
+  background:rgba(0,229,192,.04);
 }
 
-/* grain */
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity:0.04;pointer-events:none;z-index:9997;mix-blend-mode:overlay;
+/* ── OVERLAYS ───────────────────────────────────────────────── */
+#scanlines{
+  position:fixed;inset:0;pointer-events:none;z-index:9996;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,
+    rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
+}
+#grain{
+  position:fixed;inset:0;pointer-events:none;z-index:9995;
+  opacity:.028;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ═══ NAV ═══════════════════════════════════════════════════════ */
+/* ── BOOT SEQUENCE ───────────────────────────────────────────── */
+#boot{
+  position:fixed;inset:0;z-index:9000;
+  background:var(--void);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .6s,visibility .6s;
+}
+#boot.done{opacity:0;visibility:hidden;pointer-events:none;}
+#boot-canvas{position:absolute;inset:0;opacity:.15;}
+.boot-terminal{
+  width:min(600px,90vw);
+  background:rgba(5,8,18,.9);
+  border:1px solid rgba(0,229,192,.18);
+  border-radius:8px;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,229,192,.08),0 0 120px rgba(0,0,0,.8);
+  position:relative;z-index:1;
+}
+.boot-bar{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:rgba(0,0,0,.5);border-bottom:1px solid rgba(0,229,192,.1);
+}
+.boot-bar-dot{width:9px;height:9px;border-radius:50%;}
+.boot-lines{
+  padding:18px 20px;
+  font-family:var(--fm);font-size:12px;color:var(--t2);
+  min-height:200px;
+}
+.boot-line{display:block;margin-bottom:4px;opacity:0;transform:translateX(-6px);transition:opacity .15s,transform .15s;}
+.boot-line.show{opacity:1;transform:translateX(0);}
+.boot-line.teal{color:var(--teal);}
+.boot-line.vio{color:var(--vio-max);}
+.boot-line.amb{color:var(--amb);}
+.boot-line.dim{color:var(--t3);}
+.boot-line.ok::before{content:'[  OK  ] ';color:var(--teal);}
+.boot-bar-fill{
+  height:2px;background:linear-gradient(90deg,var(--teal),var(--vio));
+  width:0;transition:width 2s linear;
+  box-shadow:0 0 8px var(--teal-glow);
+}
+.boot-hint{
+  font-family:var(--fm);font-size:10px;color:var(--t3);
+  text-align:center;margin-top:14px;letter-spacing:.1em;
+}
+
+/* ── NAV ────────────────────────────────────────────────────── */
 nav{
   position:fixed;top:0;left:0;right:0;z-index:500;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 52px;height:56px;
-  background:rgba(5,7,9,0.75);
-  backdrop-filter:blur(28px) saturate(200%);
-  border-bottom:1px solid var(--border2);
+  background:rgba(2,4,7,0);
+  backdrop-filter:blur(0px) saturate(100%);
+  border-bottom:1px solid transparent;
+  transition:background .4s,backdrop-filter .4s,border-color .4s;
 }
-
+nav.scrolled{
+  background:rgba(2,4,7,.88);
+  backdrop-filter:blur(28px) saturate(180%);
+  border-color:var(--b1);
+}
 nav::after{
-  content:'';
-  position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent 0%,var(--teal) 30%,var(--teal2) 70%,transparent 100%);
-  opacity:0.25;
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal) 20%,var(--vio) 80%,transparent);
+  opacity:0;transition:opacity .4s;
 }
+nav.scrolled::after{opacity:.3;}
 
-.logo{
-  display:flex;align-items:center;gap:10px;
-  text-decoration:none;
-}
-
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
 .logo-gem{
-  position:relative;
-  width:30px;height:30px;border-radius:8px;
-  background:linear-gradient(135deg,var(--teal) 0%,var(--teal3) 100%);
+  width:30px;height:30px;border-radius:9px;
+  background:
+    radial-gradient(circle at 50% 22%,rgba(0,229,192,.18),transparent 45%),
+    radial-gradient(circle at 50% 78%,rgba(176,96,255,.2),transparent 48%),
+    linear-gradient(180deg,rgba(18,29,53,.84),rgba(2,4,7,.98));
   display:grid;place-items:center;
-  font-family:var(--font-heading);font-weight:700;
-  font-size:14px;color:var(--ink);letter-spacing:0.05em;
+  font-size:0;color:transparent;
+  border:1px solid rgba(0,229,192,.22);
+  box-shadow:inset 0 1px 0 rgba(238,242,255,.08),0 0 20px var(--teal-glow),0 0 36px rgba(176,96,255,.12);
+  flex-shrink:0;position:relative;
+  overflow:hidden;
+}
+.logo-gem::before{
+  content:'';position:absolute;inset:2px;
+  background:url("./assets/llmtap-logo.png") center 56%/178% no-repeat;
+  filter:drop-shadow(0 0 8px rgba(0,229,192,.38));
+  z-index:1;
 }
 .logo-gem::after{
-  content:'';position:absolute;inset:-4px;border-radius:11px;
-  background:radial-gradient(circle,rgba(var(--rgb-accent),0.28) 0%,transparent 70%);
-  pointer-events:none;
+  content:'';position:absolute;inset:-3px;border-radius:10px;
+  background:radial-gradient(circle,rgba(0,229,192,.18) 0%,transparent 70%);
+  z-index:0;
 }
-
-.logo-text{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:20px;letter-spacing:0.08em;
-  color:var(--text);
-}
+.logo-text{font-family:var(--fd);font-size:20px;letter-spacing:.08em;}
 
 .nav-center{
   display:flex;align-items:center;gap:36px;
   position:absolute;left:50%;transform:translateX(-50%);
 }
-
 .nav-link{
-  font-family:var(--font-mono);
-  font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--text2);text-decoration:none;
-  transition:color 0.2s;
+  font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t3);text-decoration:none;transition:color .2s;
 }
 .nav-link:hover{color:var(--teal);}
 
-.nav-right{display:flex;align-items:center;gap:14px;}
+.nav-right{display:flex;align-items:center;gap:16px;}
+.nav-sys{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--fm);font-size:10px;color:var(--t3);
+}
+.nav-sys-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--teal);
+  box-shadow:0 0 8px var(--teal);animation:pulse-dot 3s ease-in-out infinite;
+}
+#nav-clock{font-variant-numeric:tabular-nums;}
+.nav-cta{
+  font-family:var(--fm);font-size:11px;letter-spacing:.05em;
+  background:linear-gradient(135deg,var(--teal),var(--teal-mid));
+  color:var(--void);border:none;padding:7px 18px;border-radius:4px;
+  cursor:pointer;font-weight:500;text-decoration:none;
+  box-shadow:0 0 24px var(--teal-glow);
+  transition:all .22s;position:relative;overflow:hidden;
+}
+.nav-cta::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+  transform:translateX(-100%);transition:transform .4s;
+}
+.nav-cta:hover::after{transform:translateX(100%);}
+.nav-cta:hover{box-shadow:0 0 40px var(--teal-hard),0 4px 20px rgba(0,0,0,.4);transform:translateY(-1px);}
 
-.nav-status{
-  display:flex;align-items:center;gap:7px;
-  font-family:var(--font-mono);
-  font-size:11px;color:var(--text2);
+.nav-ham{
+  display:none;flex-direction:column;gap:4px;
+  background:none;border:none;cursor:pointer;padding:4px;
 }
-.nav-status-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--teal);
-  box-shadow:0 0 8px var(--teal);
-  animation:breathe 3s ease-in-out infinite;
+.nav-ham span{width:18px;height:1px;background:var(--t2);display:block;transition:.2s;}
+.nav-drawer{
+  display:none;position:fixed;top:56px;left:0;right:0;z-index:499;
+  background:rgba(2,4,7,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);
+  flex-direction:column;padding:20px 24px;gap:16px;
 }
-@keyframes breathe{
-  0%,100%{box-shadow:0 0 6px var(--teal),0 0 12px rgba(var(--rgb-accent),0.3);}
-  50%{box-shadow:0 0 14px var(--teal),0 0 28px rgba(var(--rgb-accent),0.5);}
+.nav-drawer.open{display:flex;}
+.nav-drawer .nav-link{color:var(--t2);font-size:13px;padding:6px 0;}
+
+@keyframes pulse-dot{
+  0%,100%{box-shadow:0 0 6px var(--teal);}
+  50%{box-shadow:0 0 14px var(--teal),0 0 28px var(--teal-glow);}
 }
 
-.nav-btn{
-  font-family:var(--font-mono);
-  font-size:11px;letter-spacing:0.06em;
-  background:var(--teal);color:var(--ink);
-  border:none;padding:7px 18px;border-radius:5px;
-  cursor:pointer;font-weight:500;
-  box-shadow:0 0 20px rgba(var(--rgb-accent),0.25);
-  transition:all 0.2s;text-decoration:none;
-}
-.nav-btn:hover{
-  box-shadow:0 0 36px rgba(var(--rgb-accent),0.5),0 4px 20px rgba(0,0,0,0.4);
-  transform:translateY(-1px);
-}
-
-/* ═══ HERO ═══════════════════════════════════════════════════════ */
+/* ── HERO ───────────────────────────────────────────────────── */
 .hero{
-  position:relative;
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;
-  padding:80px 40px 60px;
-  overflow:hidden;
+  position:relative;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:80px 40px 60px;overflow:hidden;
+}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+.hero-ambient{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-55%);width:900px;height:600px;
+  background:radial-gradient(ellipse at center,
+    rgba(0,229,192,.06) 0%,rgba(176,96,255,.04) 40%,transparent 70%);
+  pointer-events:none;animation:ambient-breathe 8s ease-in-out infinite;
+}
+@keyframes ambient-breathe{
+  0%,100%{transform:translate(-50%,-55%) scale(1);}
+  50%{transform:translate(-50%,-55%) scale(1.08);}
 }
 
-#hero-canvas{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  pointer-events:none;
+.hero-coords{
+  position:absolute;top:90px;left:52px;
+  font-family:var(--fm);font-size:9px;color:var(--t4);letter-spacing:.1em;
+  text-align:left;line-height:2;
+}
+.hero-jp{
+  position:absolute;right:52px;top:50%;transform:translateY(-50%);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-family:var(--fm);font-size:11px;letter-spacing:.3em;
+  color:var(--t4);line-height:1;
 }
 
-/* horizontal rule lines */
-.hero-rule{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  pointer-events:none;
-}
-.hero-rule::before{
-  content:'';
-  position:absolute;top:50%;left:0;right:0;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.04),transparent);
-  transform:translateY(-120px);
-}
-.hero-rule::after{
-  content:'';
-  position:absolute;top:50%;left:0;right:0;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.04),transparent);
-  transform:translateY(120px);
-}
+.hero-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;}
 
-.hero-content{
-  position:relative;z-index:10;
-  display:flex;flex-direction:column;align-items:center;
-}
-
-/* ── eyebrow ── */
 .eyebrow{
-  display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--font-mono);
-  font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--teal2);
-  border:1px solid rgba(var(--rgb-accent),0.15);
-  background:rgba(var(--rgb-accent),0.04);
-  padding:6px 16px;border-radius:2px;
-  margin-bottom:52px;
-  opacity:0;animation:slideUp 0.8s 0.1s ease forwards;
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--teal-mid);
+  border:1px solid rgba(0,229,192,.18);background:rgba(0,229,192,.04);
+  padding:6px 18px;border-radius:2px;margin-bottom:50px;
+  opacity:0;animation:fadeUp .8s .1s ease forwards;
 }
-.eyebrow-line{
-  width:24px;height:1px;background:var(--teal);
-  box-shadow:0 0 6px var(--teal);
-}
+.eyebrow-bar{width:20px;height:1px;background:var(--teal);box-shadow:0 0 6px var(--teal);}
 
-/* ── HEADLINE — two-weight split ── */
+/* GLITCH HEADLINE */
 .hero-h1{
-  font-size:clamp(52px,7.5vw,108px);
-  line-height:0.92;
-  letter-spacing:-0.04em;
-  max-width:920px;
-  margin-bottom:32px;
-  opacity:0;animation:slideUp 0.8s 0.2s ease forwards;
+  font-size:clamp(60px,9.5vw,130px);
+  line-height:.86;letter-spacing:-.02em;max-width:1040px;
+  margin-bottom:32px;position:relative;
+  opacity:0;animation:fadeUp .8s .2s ease forwards;
+}
+.h1-light{
+  font-family:var(--fb);font-weight:200;font-style:italic;
+  color:var(--t3);display:block;font-size:.48em;
+  letter-spacing:.02em;margin-bottom:6px;
+}
+.h1-heavy{font-family:var(--fd);color:var(--t1);display:block;position:relative;}
+.h1-teal{
+  background:linear-gradient(95deg,var(--teal) 0%,var(--teal-max) 50%,var(--teal-mid) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 60px var(--teal-glow));
+}
+.h1-vio{
+  background:linear-gradient(95deg,var(--vio-mid) 0%,var(--vio-max) 60%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 40px var(--vio-glow));
 }
 
-.h1-light{
-  font-family:var(--font-body);
-  font-weight:400;
-  color:var(--text2);
-  display:block;
-  font-style:normal;
+/* Glitch layers */
+.glitch-wrap{position:relative;display:inline-block;}
+.glitch-wrap::before,
+.glitch-wrap::after{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  font-family:var(--fd);
 }
-.h1-heavy{
-  font-family:var(--font-heading);font-weight:700;
-  color:var(--text);
-  display:block;
-  letter-spacing:-0.05em;
-  line-height:0.88;
+.glitch-wrap::before{
+  color:var(--teal);
+  background:linear-gradient(95deg,var(--teal),var(--teal-max),var(--teal-mid));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glitch-teal 8s infinite;opacity:0;
+  left:2px;
 }
-.h1-accent{
-  font-family:var(--font-heading);font-weight:700;
-  background:linear-gradient(95deg,var(--teal) 0%,var(--teal-max) 40%,var(--teal2) 80%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  filter:drop-shadow(0 0 40px rgba(var(--rgb-accent),0.5));
-  display:inline;
+.glitch-wrap::after{
+  color:var(--vio-max);
+  background:linear-gradient(95deg,var(--vio-mid),var(--vio-max));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glitch-vio 8s infinite;opacity:0;
+  left:-2px;
+}
+@keyframes glitch-teal{
+  0%,87%,100%{opacity:0;clip-path:inset(100% 0 0 0);}
+  88%{opacity:.7;clip-path:inset(0 0 72% 0);transform:translate(3px,0);}
+  89%{opacity:0;}
+  90%{opacity:.5;clip-path:inset(40% 0 30% 0);transform:translate(-2px,0);}
+  91%{opacity:0;}
+  92%{opacity:.6;clip-path:inset(70% 0 10% 0);transform:translate(4px,0);}
+  93%{opacity:0;}
+}
+@keyframes glitch-vio{
+  0%,87%,100%{opacity:0;clip-path:inset(100% 0 0 0);}
+  88.5%{opacity:.5;clip-path:inset(20% 0 60% 0);transform:translate(-3px,0);}
+  89.5%{opacity:0;}
+  91.5%{opacity:.4;clip-path:inset(55% 0 25% 0);transform:translate(2px,0);}
+  92.5%{opacity:0;}
 }
 
 .hero-sub{
-  font-size:17px;line-height:1.72;
-  color:var(--text2);max-width:480px;
-  margin-bottom:56px;font-weight:500;
-  opacity:0;animation:slideUp 0.8s 0.3s ease forwards;
+  font-size:16px;line-height:1.8;color:var(--t2);max-width:480px;
+  margin-bottom:56px;font-weight:300;
+  opacity:0;animation:fadeUp .8s .3s ease forwards;
 }
-.hero-sub em{
-  font-style:normal;color:var(--text);font-weight:400;
-}
+.hero-sub em{font-style:normal;color:var(--t1);font-weight:400;}
 
-/* ── CTA cluster ── */
 .cta-cluster{
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-  opacity:0;animation:slideUp 0.8s 0.4s ease forwards;
+  display:flex;flex-direction:column;align-items:center;gap:22px;
+  opacity:0;animation:fadeUp .8s .4s ease forwards;
 }
+.cta-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;}
 
-.cta-row{display:flex;align-items:center;gap:12px;}
-
-/* terminal chip — main CTA */
 .terminal-chip{
-  position:relative;
-  display:flex;align-items:center;gap:14px;
-  font-family:var(--font-mono);font-size:15px;
-  background:transparent;
-  border:1px solid var(--border3);
-  border-radius:4px;
-  padding:14px 24px;
-  color:var(--teal);cursor:pointer;
-  overflow:hidden;transition:all 0.3s;
+  position:relative;display:flex;align-items:center;gap:14px;
+  font-family:var(--fm);font-size:15px;
+  background:transparent;border:1px solid var(--b3);
+  border-radius:4px;padding:14px 26px;color:var(--teal);
+  cursor:pointer;overflow:hidden;transition:all .3s;
 }
 .terminal-chip::before{
-  content:'';
-  position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(var(--rgb-accent),0.08) 0%,rgba(var(--rgb-accent),0.02) 100%);
-  opacity:1;
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,229,192,.07),rgba(0,229,192,.02));
 }
-.terminal-chip::after{
-  content:'';
-  position:absolute;top:0;left:-100%;
-  width:100%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.12),transparent);
-  transition:left 0.5s;
+.terminal-chip .sweep{
+  position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,229,192,.13),transparent);
+  transition:left .5s;
 }
-.terminal-chip:hover::after{left:100%;}
+.terminal-chip:hover .sweep{left:100%;}
 .terminal-chip:hover{
   border-color:var(--teal);
-  box-shadow:0 0 40px rgba(var(--rgb-accent),0.2),0 0 80px rgba(var(--rgb-accent),0.06),inset 0 0 40px rgba(var(--rgb-accent),0.03);
+  box-shadow:0 0 50px rgba(0,229,192,.2),0 0 100px rgba(0,229,192,.07),
+             inset 0 0 30px rgba(0,229,192,.03);
   transform:translateY(-2px);
 }
-.t-prompt{color:var(--text3);}
-.t-cmd{position:relative;z-index:1;}
-.t-icon{width:14px;height:14px;color:var(--text2);position:relative;z-index:1;transition:color 0.2s;}
-.terminal-chip:hover .t-icon{color:var(--teal);}
+.t-prompt{color:var(--t3);}
 
 .ghost-btn{
-  font-family:var(--font-mono);font-size:12px;
-  color:var(--text2);
-  background:transparent;
-  border:1px solid var(--border2);
-  border-radius:4px;
-  padding:14px 20px;
-  text-decoration:none;
-  transition:all 0.2s;letter-spacing:0.04em;
+  font-family:var(--fm);font-size:12px;color:var(--t2);
+  background:transparent;border:1px solid var(--b1);
+  border-radius:4px;padding:14px 20px;text-decoration:none;
+  transition:all .2s;letter-spacing:.04em;
 }
-.ghost-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.1);}
+.ghost-btn:hover{color:var(--t1);border-color:var(--b2);background:rgba(255,255,255,.03);}
 
-/* data pills row */
 .data-pills{
-  display:flex;gap:0;
-  border:1px solid var(--border2);
-  border-radius:4px;
-  overflow:hidden;
+  display:flex;flex-wrap:wrap;justify-content:center;
+  border:1px solid var(--b1);border-radius:4px;overflow:hidden;
 }
-.data-pill{
-  font-family:var(--font-mono);
-  font-size:10px;letter-spacing:0.08em;
-  color:var(--text3);
-  padding:6px 14px;
-  border-right:1px solid var(--border2);
-  display:flex;align-items:center;gap:6px;
-  white-space:nowrap;
+.dp{
+  font-family:var(--fm);font-size:10px;letter-spacing:.07em;color:var(--t3);
+  padding:6px 14px;border-right:1px solid var(--b1);
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
 }
-.data-pill:last-child{border-right:none;}
-.dp-val{color:var(--teal2);font-weight:500;}
+.dp:last-child{border-right:none;}
+.dp b{color:var(--teal-mid);font-weight:500;}
 
-@keyframes slideUp{
-  from{opacity:0;transform:translateY(28px);}
-  to{opacity:1;transform:translateY(0);}
+.scroll-hint{
+  position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-family:var(--fm);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--t4);
 }
+.scroll-line{
+  width:1px;height:40px;
+  background:linear-gradient(180deg,var(--teal),transparent);
+  animation:scroll-drop 2s ease-in-out infinite;
+}
+@keyframes scroll-drop{0%{opacity:0;transform:scaleY(0);}50%{opacity:1;}100%{opacity:0;transform:scaleY(1) translateY(10px);}}
 
-/* ═══ DIVIDER ════════════════════════════════════════════════════ */
-.divider{
-  display:flex;align-items:center;gap:16px;
-  padding:0 52px;
-  margin:0;
-}
-.div-line{flex:1;height:1px;background:var(--border2);}
-.div-label{
-  font-family:var(--font-mono);
-  font-size:10px;letter-spacing:0.16em;text-transform:uppercase;
-  color:var(--text3);white-space:nowrap;
-}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
 
-/* ═══ LIVE DASHBOARD PREVIEW ════════════════════════════════════ */
-.preview-outer{
-  padding:60px 52px 80px;
+/* ── DASHBOARD PREVIEW ──────────────────────────────────────── */
+.preview-wrap{
+  padding:0 52px 80px;
   position:relative;
 }
-
-.preview-glow-bg{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 60%,rgba(var(--rgb-accent),0.055) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 30% at 20% 80%,rgba(69,162,158,0.04) 0%,transparent 60%);
-  pointer-events:none;
+.preview-glow{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 65% 55% at 50% 65%,rgba(0,229,192,.055) 0%,rgba(176,96,255,.03) 50%,transparent 70%);
 }
-
-.browser-shell{
-  position:relative;
-  border:1px solid var(--border);
-  border-radius:12px;
-  overflow:hidden;
-  background:var(--deep);
-  box-shadow:
-    0 0 0 1px rgba(var(--rgb-accent),0.03),
-    0 40px 120px rgba(0,0,0,0.8),
-    0 0 100px rgba(var(--rgb-accent),0.04);
+.browser{
+  position:relative;border:1px solid var(--b1);border-radius:14px;
+  overflow:hidden;background:var(--deep);
+  box-shadow:0 0 0 1px rgba(0,229,192,.03),0 60px 140px rgba(0,0,0,.9),
+             0 0 80px rgba(0,229,192,.04),0 0 160px rgba(176,96,255,.03);
 }
-
-.browser-shell::before{
-  content:'';
-  position:absolute;top:0;left:10%;right:10%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--teal),var(--teal2),transparent);
-  opacity:0.5;z-index:10;
+.browser::before{
+  content:'';position:absolute;top:0;left:6%;right:6%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),var(--vio),transparent);
+  opacity:.45;z-index:20;
 }
+/* floating glow orbs outside the browser */
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:-1;
+}
+.orb-teal{width:400px;height:300px;background:rgba(0,229,192,.07);top:20%;left:-100px;}
+.orb-vio{width:300px;height:250px;background:rgba(176,96,255,.06);top:30%;right:-80px;}
 
 .bbar{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 16px;
-  background:rgba(5,7,9,0.6);
-  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:rgba(2,4,7,.7);border-bottom:1px solid var(--b1);
 }
-
 .bdots{display:flex;gap:5px;}
 .bdots span{width:10px;height:10px;border-radius:50%;}
 .bdots span:nth-child(1){background:#ff5f57;}
 .bdots span:nth-child(2){background:#ffbd2e;}
 .bdots span:nth-child(3){background:#28c840;}
-
 .burl{
-  flex:1;background:var(--panel);
-  border:1px solid var(--border2);
-  border-radius:4px;padding:4px 12px;
-  font-family:var(--font-mono);font-size:11px;
-  color:var(--text3);text-align:center;
+  flex:1;background:var(--mid);border:1px solid var(--b1);border-radius:4px;
+  padding:4px 12px;font-family:var(--fm);font-size:11px;color:var(--t3);text-align:center;
 }
+.bstat{display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;color:var(--teal-mid);}
+.bstat-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);animation:pulse-dot 2s infinite;}
 
-.bstatus{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--font-mono);font-size:10px;color:var(--teal2);
-}
-.bstatus-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);}
+/* Dashboard layout */
+.dash{display:grid;grid-template-columns:190px 1fr;min-height:520px;background:var(--void);}
 
-/* mock dashboard layout */
-.mdash{
-  display:grid;grid-template-columns:196px 1fr;
-  min-height:480px;
-  background:var(--ink);
+/* Sidebar */
+.dside{
+  background:#040811;border-right:1px solid var(--b1);
+  padding:16px 10px;display:flex;flex-direction:column;gap:2px;
 }
+.ds-logo{display:flex;align-items:center;gap:8px;padding:8px 8px 20px;}
+.ds-gem{
+  width:24px;height:24px;border-radius:8px;flex-shrink:0;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 22%,rgba(0,229,192,.18),transparent 45%),
+    radial-gradient(circle at 50% 78%,rgba(176,96,255,.2),transparent 48%),
+    linear-gradient(180deg,rgba(18,29,53,.84),rgba(2,4,7,.98));
+  border:1px solid rgba(0,229,192,.2);
+  box-shadow:inset 0 1px 0 rgba(238,242,255,.08),0 0 14px rgba(0,229,192,.35);
+}
+.ds-gem::before{
+  content:'';position:absolute;inset:2px;
+  background:url("./assets/llmtap-logo.png") center 56%/178% no-repeat;
+  filter:drop-shadow(0 0 7px rgba(0,229,192,.35));
+}
+.ds-name{font-family:var(--fd);font-size:15px;letter-spacing:.08em;}
+.ds-section{
+  font-family:var(--fm);font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--t4);padding:10px 8px 4px;
+}
+.ds-item{
+  display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:5px;
+  font-family:var(--fm);font-size:11px;color:var(--t3);
+  border:1px solid transparent;cursor:pointer;transition:all .2s;
+}
+.ds-item:hover{color:var(--t2);background:rgba(255,255,255,.02);}
+.ds-item.on{background:var(--teal-dimx);border-color:rgba(0,229,192,.14);color:var(--teal);}
+.ds-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0;}
+.ds-item.on .ds-dot{opacity:1;box-shadow:0 0 5px var(--teal);}
+.ds-rt{
+  margin-top:auto;background:rgba(0,229,192,.04);
+  border:1px solid rgba(0,229,192,.09);border-radius:6px;padding:10px;
+}
+.ds-rt-label{font-family:var(--fm);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:5px;}
+.ds-rt-row{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--teal);}
+.ds-pulse{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);animation:pulse-dot 2s infinite;}
 
-/* sidebar */
-.mside{
-  background:#090d12;
-  border-right:1px solid var(--border2);
-  padding:16px 10px;
-  display:flex;flex-direction:column;gap:2px;
-}
+/* Main panel */
+.dmain{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--void);}
+.dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.dhead-title{font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);}
+.dhead-live{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;color:var(--teal);}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);animation:pulse-dot 2s infinite;}
 
-.mside-logo{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 8px 20px;
+/* Banner */
+.dbanner{
+  background:linear-gradient(135deg,#0a1820,#090c1e,#0c0a20);
+  border:1px solid rgba(0,229,192,.09);border-radius:8px;
+  padding:18px 20px;position:relative;overflow:hidden;flex-shrink:0;
 }
-.mside-gem{
-  width:22px;height:22px;border-radius:6px;
-  background:linear-gradient(135deg,var(--teal),var(--teal3));
-  box-shadow:0 0 14px rgba(var(--rgb-accent),0.4);flex-shrink:0;
-}
-.mside-name{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:15px;letter-spacing:0.08em;color:var(--text);
-}
-.mside-sub{
-  font-family:var(--font-mono);
-  font-size:8px;letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);padding:10px 8px 4px;
-}
-.mside-item{
-  display:flex;align-items:center;gap:7px;
-  padding:7px 8px;border-radius:5px;
-  font-family:var(--font-mono);
-  font-size:11px;color:var(--text2);
-}
-.mside-item.on{
-  background:rgba(var(--rgb-accent),0.06);
-  border:1px solid rgba(var(--rgb-accent),0.12);
-  color:var(--teal);
-}
-.mside-dot{
-  width:5px;height:5px;border-radius:50%;
-  background:currentColor;opacity:0.5;flex-shrink:0;
-}
-.mside-item.on .mside-dot{opacity:1;box-shadow:0 0 5px var(--teal);}
+.dbanner::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,229,192,.1) 0%,transparent 60%);}
+.dbanner::after{content:'';position:absolute;bottom:-20px;left:30%;width:120px;height:60px;background:radial-gradient(ellipse,rgba(176,96,255,.08) 0%,transparent 70%);}
+.dbanner-tag{font-family:var(--fm);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:5px;margin-bottom:8px;}
+.dbanner-tagdot{width:4px;height:4px;border-radius:50%;background:var(--teal);box-shadow:0 0 4px var(--teal);}
+.dbanner-h{font-family:var(--fd);font-size:18px;letter-spacing:.04em;line-height:1.1;}
 
-.mside-runtime{
-  margin-top:auto;
-  background:rgba(var(--rgb-accent),0.03);
-  border:1px solid rgba(var(--rgb-accent),0.08);
-  border-radius:6px;padding:10px;
+/* Stat cards */
+.dcards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.dcard{
+  background:var(--deep);border:1px solid var(--b1);border-radius:7px;padding:12px;
+  position:relative;overflow:hidden;transition:border-color .2s,transform .2s;
 }
-.mrt-label{
-  font-family:var(--font-mono);
-  font-size:8px;letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);margin-bottom:5px;
-}
-.mrt-row{
-  display:flex;align-items:center;gap:5px;
-  font-family:var(--font-mono);font-size:10px;color:var(--teal);
-}
-.mrt-pulse{
-  width:5px;height:5px;border-radius:50%;
-  background:var(--teal);box-shadow:0 0 7px var(--teal);
-  animation:breathe 2s ease-in-out infinite;
-}
+.dcard:hover{transform:translateY(-2px);}
+.dcard:nth-child(1){border-color:rgba(0,229,192,.15);}
+.dcard:nth-child(2){border-color:rgba(176,96,255,.13);}
+.dcard:nth-child(3){border-color:rgba(255,190,0,.12);}
+.dcard::after{content:'';position:absolute;top:-15px;right:-15px;width:60px;height:60px;border-radius:50%;opacity:.7;}
+.dcard:nth-child(1)::after{background:radial-gradient(circle,rgba(0,229,192,.12) 0%,transparent 65%);}
+.dcard:nth-child(2)::after{background:radial-gradient(circle,rgba(176,96,255,.12) 0%,transparent 65%);}
+.dcard:nth-child(3)::after{background:radial-gradient(circle,rgba(255,190,0,.1) 0%,transparent 65%);}
+.dc-k{font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;}
+.dc-v{font-family:var(--fd);font-size:26px;letter-spacing:.02em;}
+.dc-v.teal{color:var(--teal);text-shadow:0 0 24px rgba(0,229,192,.5);}
+.dc-v.vio{color:var(--vio-max);text-shadow:0 0 24px rgba(176,96,255,.45);}
+.dc-v.amb{color:var(--amb);text-shadow:0 0 20px rgba(255,190,0,.4);}
+.dc-s{font-family:var(--fm);font-size:8px;color:var(--t3);margin-top:3px;}
 
-/* main area */
-.mmain{
-  display:flex;flex-direction:column;gap:10px;
-  padding:16px;background:var(--ink);
+/* Multi-track pulse */
+.dpulse{background:var(--deep);border:1px solid var(--b1);border-radius:7px;padding:12px;}
+.dpulse-h{
+  font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:8px;display:flex;justify-content:space-between;
 }
+.dpulse-h span{color:var(--teal);}
+#pulse-canvas{width:100%;height:64px;display:block;}
 
-.mmain-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:2px;
-}
-.mmain-title{
-  font-family:var(--font-mono);
-  font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);
-}
-.mmain-live{
-  display:flex;align-items:center;gap:5px;
-  font-family:var(--font-mono);font-size:9px;color:var(--teal);
-}
-.live-dot{
-  width:5px;height:5px;border-radius:50%;
-  background:var(--teal);box-shadow:0 0 6px var(--teal);
-  animation:breathe 2s ease-in-out infinite;
-}
-
-/* hero banner inside mock */
-.mbanner{
-  background:linear-gradient(135deg,#0b1820 0%,#09121a 60%,#0c1020 100%);
-  border:1px solid rgba(var(--rgb-accent),0.1);
-  border-radius:8px;
-  padding:18px 20px;
-  position:relative;overflow:hidden;
-  flex-shrink:0;
-}
-.mbanner::before{
-  content:'';
-  position:absolute;top:-40px;right:-40px;
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(var(--rgb-accent),0.08) 0%,transparent 60%);
-}
-.mbanner::after{
-  content:'';
-  position:absolute;bottom:-20px;left:30%;
-  width:120px;height:60px;
-  background:radial-gradient(ellipse,rgba(69,162,158,0.06) 0%,transparent 70%);
-}
-.mbanner-tag{
-  font-family:var(--font-mono);font-size:8px;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);
-  display:flex;align-items:center;gap:5px;margin-bottom:8px;
-}
-.mbanner-tagdot{
-  width:4px;height:4px;border-radius:50%;
-  background:var(--teal);box-shadow:0 0 4px var(--teal);
-}
-.mbanner-h{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:20px;letter-spacing:0.04em;
-  color:var(--text);line-height:1.1;
-  max-width:360px;
-}
-
-/* animated stat cards */
-.mcards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-
-.mcard{
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:7px;padding:12px;
-  position:relative;overflow:hidden;
-}
-.mcard:nth-child(1){border-color:rgba(var(--rgb-accent),0.14);}
-.mcard:nth-child(1)::after{
-  content:'';
-  position:absolute;top:-12px;right:-12px;
-  width:60px;height:60px;
-  background:radial-gradient(circle,rgba(var(--rgb-accent),0.1) 0%,transparent 65%);
-}
-.mcard-k{
-  font-family:var(--font-mono);
-  font-size:8px;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--text3);margin-bottom:6px;
-}
-.mcard-v{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:26px;letter-spacing:0.02em;color:var(--text);
-}
-.mcard-v.glow{
-  color:var(--teal);
-  text-shadow:0 0 24px rgba(var(--rgb-accent),0.5);
-}
-.mcard-s{
-  font-family:var(--font-mono);
-  font-size:8px;color:var(--text3);margin-top:3px;
-}
-
-/* pulse line canvas */
-.mpulse{
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:7px;
-  padding:12px;
-  position:relative;
-}
-.mpulse-head{
-  font-family:var(--font-mono);
-  font-size:8px;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--text3);margin-bottom:8px;
-  display:flex;justify-content:space-between;
-}
-.mpulse-head span{color:var(--teal);}
-#pulse-canvas{width:100%;height:60px;display:block;}
-
-/* ═══ STATS TICKER ═══════════════════════════════════════════════ */
+/* ── TICKER ──────────────────────────────────────────────────── */
 .ticker{
-  background:var(--panel);
-  border-top:1px solid var(--border2);
-  border-bottom:1px solid var(--border2);
-  padding:18px 52px;
-  display:flex;align-items:stretch;
-  gap:0;
-  overflow:hidden;
+  background:var(--abyss);border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);
+  padding:20px 52px;display:flex;gap:0;overflow:hidden;
 }
-.tick-item{
-  flex:1;
-  display:flex;flex-direction:column;align-items:center;
-  gap:4px;
-  padding:0 20px;
-  border-right:1px solid var(--border2);
+.ti{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:0 20px;border-right:1px solid var(--b1);
 }
-.tick-item:last-child{border-right:none;}
-.tick-n{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:32px;letter-spacing:0.04em;
-  color:var(--teal);
-  text-shadow:0 0 30px rgba(var(--rgb-accent),0.4);
-  line-height:1;
+.ti:last-child{border-right:none;}
+.ti-n{
+  font-family:var(--fd);font-size:34px;letter-spacing:.04em;
+  color:var(--teal);text-shadow:0 0 30px rgba(0,229,192,.4);line-height:1;
 }
-.tick-l{
-  font-family:var(--font-mono);
-  font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
-  color:var(--text3);
-}
+.ti-n.v{color:var(--vio-max);text-shadow:0 0 30px rgba(176,96,255,.4);}
+.ti-l{font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);}
 
-/* ═══ MARQUEE FEATURE STRIP ══════════════════════════════════════ */
-.marquee-wrap{
-  overflow:hidden;
-  border-top:1px solid var(--border2);
-  border-bottom:1px solid var(--border2);
-  padding:16px 0;
-  background:var(--deep);
+/* ── MARQUEE ─────────────────────────────────────────────────── */
+.mq-wrap{
+  overflow:hidden;border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);
+  padding:14px 0;background:var(--deep);
 }
-.marquee-track{
-  display:flex;gap:0;
-  animation:marquee 28s linear infinite;
-  width:max-content;
-}
-.marquee-item{
+.mq-track{display:flex;animation:mq 30s linear infinite;width:max-content;}
+.mq-item{
   display:flex;align-items:center;gap:10px;
-  font-family:var(--font-mono);
-  font-size:11px;letter-spacing:0.06em;
-  color:var(--text2);
-  padding:0 32px;
-  border-right:1px solid var(--border2);
-  white-space:nowrap;
-}
-.marquee-item svg{width:13px;height:13px;color:var(--teal);flex-shrink:0;}
-
-@keyframes marquee{
-  0%{transform:translateX(0);}
-  100%{transform:translateX(-50%);}
+  font-family:var(--fm);font-size:11px;letter-spacing:.05em;
+  color:var(--t2);padding:0 28px;border-right:1px solid var(--b1);white-space:nowrap;
 }
 
-/* ═══ FEATURES — ASYMMETRIC GRID ════════════════════════════════ */
-.feat-section{
-  max-width:1200px;margin:0 auto;
-  padding:100px 52px;
+@keyframes mq{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* ── FEATURES — HOLO CARDS ───────────────────────────────────── */
+.feat-section{max-width:1200px;margin:0 auto;padding:100px 52px;}
+.section-eyebrow{
+  font-family:var(--fm);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--teal-mid);margin-bottom:12px;display:flex;align-items:center;gap:10px;
 }
-.feat-eyebrow{
-  font-family:var(--font-mono);
-  font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--teal2);margin-bottom:16px;
-}
+.section-eyebrow::before{content:'//';color:var(--t4);}
+.section-eyebrow.v{color:var(--vio-max);}
+.section-eyebrow.v::before{color:var(--t4);}
 .feat-h2{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:clamp(36px,5vw,64px);
-  letter-spacing:0.02em;line-height:0.92;
-  color:var(--text);margin-bottom:64px;
+  font-family:var(--fd);font-size:clamp(40px,5.5vw,70px);
+  letter-spacing:.02em;line-height:.9;margin-bottom:64px;
 }
-.feat-h2 span{color:var(--teal);}
+.feat-h2 .c-t{color:var(--teal);}
+.feat-h2 .c-v{color:var(--vio-max);}
 
-/* asymmetric: 2 tall left + 1 wide right top + 2 small right bottom */
 .feat-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  grid-template-rows:auto auto;
-  gap:1px;
-  background:var(--border2);
-  border:1px solid var(--border2);
-  border-radius:12px;
-  overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto auto;gap:1px;
+  background:var(--b1);border:1px solid var(--b1);border-radius:14px;overflow:hidden;
 }
-
 .feat{
-  background:var(--panel);
-  padding:36px 32px;
+  background:var(--abyss);padding:36px 32px;
   position:relative;overflow:hidden;
-  transition:background 0.35s;
+  transition:background .3s,transform .15s;
+  transform-style:preserve-3d;
+  cursor:default;
 }
-.feat:hover{background:var(--surface);}
+.feat:hover{background:var(--deep);}
 
-/* glow line on top edge on hover */
+/* Holo sheen — radial light that follows mouse */
 .feat::before{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--teal),transparent);
-  opacity:0;transition:opacity 0.3s;
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(
+    500px circle at var(--mx,50%) var(--my,50%),
+    rgba(0,229,192,.07),rgba(176,96,255,.04),transparent 50%
+  );
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:1;
 }
-.feat:hover::before{opacity:0.6;}
+.feat:hover::before{opacity:1;}
 
-/* ambient bloom on hover */
+/* Top edge glow on hover */
 .feat::after{
-  content:'';
-  position:absolute;top:-60px;left:-60px;
-  width:180px;height:180px;
-  background:radial-gradient(circle,rgba(var(--rgb-accent),0.07) 0%,transparent 70%);
-  opacity:0;transition:opacity 0.35s;pointer-events:none;
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),transparent);
+  opacity:0;transition:opacity .3s;
 }
-.feat:hover::after{opacity:1;}
+.feat:hover::after{opacity:.6;}
+.feat.v-hover::after{background:linear-gradient(90deg,transparent,var(--vio),transparent);}
 
 .feat-span2{grid-column:span 2;}
 
+/* span-2 inner layout */
+.fs2{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
+
 .feat-icon{
-  width:42px;height:42px;
-  background:rgba(var(--rgb-accent),0.05);
-  border:1px solid var(--border);
-  border-radius:8px;
-  display:grid;place-items:center;
-  font-size:18px;margin-bottom:20px;
-  position:relative;z-index:1;
+  width:42px;height:42px;background:rgba(0,229,192,.06);
+  border:1px solid var(--b1);border-radius:8px;
+  display:grid;place-items:center;font-size:16px;
+  margin-bottom:16px;position:relative;z-index:2;transition:box-shadow .3s;
 }
+.feat:hover .feat-icon{box-shadow:0 0 20px rgba(0,229,192,.1);}
+.feat-icon.v{background:var(--vio-dim);border-color:rgba(176,96,255,.15);}
+.feat:hover .feat-icon.v{box-shadow:0 0 20px rgba(176,96,255,.12);}
+
 .feat-title{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:20px;letter-spacing:0.04em;
-  color:var(--text);margin-bottom:10px;
-  position:relative;z-index:1;
+  font-family:var(--fd);font-size:20px;letter-spacing:.04em;
+  margin-bottom:10px;position:relative;z-index:2;
 }
 .feat-desc{
-  font-size:14px;line-height:1.72;
-  font-weight:500;
-  color:var(--text2);
-  position:relative;z-index:1;
+  font-size:13px;line-height:1.8;color:var(--t2);position:relative;z-index:2;
 }
 .feat-tag{
   display:inline-flex;align-items:center;gap:5px;
-  font-family:var(--font-mono);
-  font-size:10px;letter-spacing:0.08em;
-  color:var(--teal);
-  background:var(--teal-dim);
-  border:1px solid var(--border);
-  padding:3px 10px;border-radius:3px;
-  margin-top:14px;position:relative;z-index:1;
+  font-family:var(--fm);font-size:10px;letter-spacing:.07em;
+  color:var(--teal);background:var(--teal-dimx);border:1px solid rgba(0,229,192,.15);
+  padding:3px 10px;border-radius:3px;margin-top:14px;position:relative;z-index:2;
 }
+.feat-tag.v{color:var(--vio-max);background:var(--vio-dim);border-color:rgba(176,96,255,.18);}
 
-/* ═══ CODE PANEL ════════════════════════════════════════════════ */
-.code-section{
-  max-width:1200px;margin:0 auto;
-  padding:0 52px 100px;
+/* Mini live trace in span-2 */
+.trace-demo{
+  background:rgba(0,0,0,.4);border:1px solid var(--b1);border-radius:7px;
+  padding:12px;position:relative;z-index:2;
 }
+.td-hd{
+  font-family:var(--fm);font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+}
+.td-live{display:flex;align-items:center;gap:4px;color:var(--teal);}
+.td-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 0;border-bottom:1px solid var(--b0);
+  font-family:var(--fm);font-size:10px;color:var(--t2);
+}
+.td-row:last-child{border-bottom:none;}
+.td-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.td-model{flex:1;font-size:9px;color:var(--t3);}
+.td-cost{color:var(--amb);font-size:10px;}
+.td-badge{
+  font-size:8px;padding:1px 6px;border-radius:2px;
+  background:var(--teal-dimx);border:1px solid rgba(0,229,192,.18);color:var(--teal);
+}
+.td-badge.v{background:var(--vio-dim);border-color:rgba(176,96,255,.2);color:var(--vio-max);}
+.td-badge.slow{background:rgba(255,190,0,.09);border-color:rgba(255,190,0,.2);color:var(--amb);}
 
+/* ── CODE SECTION ───────────────────────────────────────────── */
+.code-section{max-width:1200px;margin:0 auto;padding:0 52px 100px;}
 .code-pair{
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:1px;background:var(--border2);
-  border:1px solid var(--border2);
-  border-radius:12px;overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  background:var(--b1);border:1px solid var(--b1);border-radius:12px;overflow:hidden;
 }
-
-.cpanel{background:var(--panel);padding:30px;}
-.cpanel.after{background:#0a1818;}
-
-.cpanel-head{
-  font-family:var(--font-mono);
-  font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
-  color:var(--text3);
-  margin-bottom:16px;
-  display:flex;align-items:center;gap:10px;
+.cp{background:var(--abyss);padding:32px;}
+.cp.after{background:#040c0e;}
+.cp-head{
+  font-family:var(--fm);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:16px;display:flex;align-items:center;gap:10px;
 }
-.cpanel-head::after{content:'';flex:1;height:1px;background:var(--border2);}
-.cpanel.after .cpanel-head{color:var(--teal);}
-
+.cp-head::after{content:'';flex:1;height:1px;background:var(--b1);}
+.cp.after .cp-head{color:var(--teal);}
 .cblock{
-  background:rgba(0,0,0,0.4);
-  border:1px solid var(--border2);
-  border-radius:6px;
-  padding:18px;
-  font-family:var(--font-mono);
-  font-size:12.5px;line-height:1.9;
+  background:rgba(0,0,0,.42);border:1px solid var(--b1);border-radius:6px;
+  padding:20px;font-family:var(--fm);font-size:12.5px;line-height:2;
 }
-.cpanel.after .cblock{border-color:rgba(var(--rgb-accent),0.1);}
+.cp.after .cblock{border-color:rgba(0,229,192,.1);}
 .ck{color:#7dd3c0;}.cf{color:#f0c070;}.cs{color:#90d070;}
-.cc{color:var(--mist);}.ca{color:var(--teal);}.cx{color:var(--text);}
-.cp{color:var(--text3);}
+.cc{color:var(--t4);}.ca{color:var(--teal);}.cx{color:var(--t1);}
+.cp2{color:var(--t3);}
 
-/* ═══ PROVIDERS ═════════════════════════════════════════════════ */
-.prov-section{
-  max-width:1200px;margin:0 auto;
-  padding:0 52px 100px;text-align:center;
-}
-.prov-label{
-  font-family:var(--font-mono);
-  font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--text3);margin-bottom:24px;
-}
-.prov-chips{
-  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
-}
+/* ── PROVIDERS ───────────────────────────────────────────────── */
+.prov-section{max-width:1200px;margin:0 auto;padding:0 52px 100px;text-align:center;}
+.prov-label{font-family:var(--fm);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--t3);margin-bottom:24px;}
+.prov-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
 .pchip{
-  font-family:var(--font-mono);
-  font-size:11px;color:var(--text2);
-  background:var(--panel);
-  border:1px solid var(--border2);
-  padding:7px 16px;border-radius:3px;
-  transition:all 0.2s;cursor:default;
+  font-family:var(--fm);font-size:11px;color:var(--t2);
+  background:var(--abyss);border:1px solid var(--b1);
+  padding:7px 16px;border-radius:3px;transition:all .2s;cursor:default;
 }
-.pchip:hover{
-  color:var(--teal);border-color:var(--border);
-  background:var(--teal-dim);
-  box-shadow:0 0 12px rgba(var(--rgb-accent),0.07);
-}
+.pchip:hover{color:var(--teal);border-color:rgba(0,229,192,.25);background:var(--teal-dimx);}
 
-/* ═══ COMPARE TABLE ══════════════════════════════════════════════ */
-.compare-section{
-  max-width:1200px;margin:0 auto;
-  padding:0 52px 100px;
-}
-table{
-  width:100%;border-collapse:collapse;
-  border:1px solid var(--border2);
-  border-radius:12px;overflow:hidden;
-}
+/* ── COMPARE ─────────────────────────────────────────────────── */
+.compare-section{max-width:1200px;margin:0 auto;padding:0 52px 100px;}
+.table-wrap{border:1px solid var(--b1);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
 th{
-  background:var(--panel);
-  padding:14px 20px;text-align:left;
-  font-family:var(--font-mono);
-  font-size:10px;font-weight:400;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);
-  border-bottom:1px solid var(--border2);
+  background:var(--abyss);padding:14px 20px;text-align:left;
+  font-family:var(--fm);font-size:10px;font-weight:400;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--t3);
+  border-bottom:1px solid var(--b1);
 }
-th.hl{color:var(--teal);background:rgba(var(--rgb-accent),0.03);}
+th.hl{color:var(--teal);background:rgba(0,229,192,.03);}
 td{
-  padding:12px 20px;font-size:12.5px;
-  color:var(--text2);
-  border-bottom:1px solid var(--border2);
-  font-family:var(--font-mono);
+  padding:12px 20px;font-size:12.5px;color:var(--t2);
+  border-bottom:1px solid var(--b0);font-family:var(--fm);
 }
 tr:last-child td{border-bottom:none;}
-tr:hover td{background:rgba(255,255,255,0.008);}
-td:first-child{font-family:var(--font-body);font-size:13px;color:var(--text);font-weight:400;}
-td.hl{color:var(--teal);background:rgba(var(--rgb-accent),0.025);}
-.tick{color:var(--teal);text-shadow:0 0 10px rgba(var(--rgb-accent),0.6);}
-.cross{color:var(--text3);}
+tr:hover td{background:rgba(255,255,255,.008);}
+td:first-child{font-family:var(--fb);font-size:13px;color:var(--t1);font-weight:400;}
+td.hl{color:var(--teal);background:rgba(0,229,192,.025);}
+.tick{color:var(--teal);text-shadow:0 0 10px rgba(0,229,192,.6);}
+.cross{color:var(--t4);}
 
-/* ═══ CTA ════════════════════════════════════════════════════════ */
-.cta-wrap{
-  padding:0 52px 120px;
-  display:flex;justify-content:center;
-}
+/* ── CTA ─────────────────────────────────────────────────────── */
+.cta-wrap{padding:0 52px 120px;display:flex;justify-content:center;}
 .cta-box{
-  position:relative;
-  max-width:720px;width:100%;
-  background:linear-gradient(135deg,#0c1e1e 0%,#0a1220 50%,#0e1018 100%);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:70px 56px;
-  text-align:center;overflow:hidden;
+  position:relative;max-width:760px;width:100%;
+  background:linear-gradient(135deg,#050d0e,#080815,#06040e);
+  border:1px solid var(--b1);border-radius:14px;
+  padding:80px 60px;text-align:center;overflow:hidden;
 }
 .cta-box::before{
-  content:'';
-  position:absolute;top:-80px;left:50%;transform:translateX(-50%);
-  width:500px;height:260px;
-  background:radial-gradient(ellipse,rgba(var(--rgb-accent),0.1) 0%,transparent 65%);
-  pointer-events:none;
+  content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);
+  width:700px;height:360px;
+  background:radial-gradient(ellipse,rgba(0,229,192,.08) 0%,rgba(176,96,255,.06) 40%,transparent 65%);
+  pointer-events:none;animation:ambient-breathe 6s ease-in-out infinite;
 }
 .cta-box::after{
-  content:'';
-  position:absolute;top:0;left:20%;right:20%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--teal),var(--teal2),transparent);
-  opacity:0.5;
+  content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal),var(--vio),transparent);opacity:.5;
 }
 .cta-h2{
-  font-family:var(--font-heading);font-weight:700;
-  font-size:52px;letter-spacing:0.04em;line-height:0.95;
-  color:var(--text);margin-bottom:16px;
-  position:relative;
+  font-family:var(--fd);font-size:60px;letter-spacing:.04em;line-height:.92;
+  margin-bottom:18px;position:relative;
 }
-.cta-sub{
-  font-size:15px;color:var(--text2);
-  line-height:1.7;margin-bottom:40px;
-  position:relative;font-weight:300;
-}
+.cta-sub{font-size:15px;color:var(--t2);line-height:1.75;margin-bottom:44px;font-weight:300;}
 .cta-cmd{
   display:inline-flex;align-items:center;gap:16px;
-  font-family:var(--font-mono);font-size:16px;
-  color:var(--teal);
-  background:rgba(var(--rgb-accent),0.05);
-  border:1px solid var(--border3);
-  padding:16px 30px;border-radius:4px;
-  cursor:pointer;position:relative;
-  overflow:hidden;transition:all 0.3s;
+  font-family:var(--fm);font-size:16px;color:var(--teal);
+  background:rgba(0,229,192,.05);border:1px solid var(--b3);
+  padding:16px 32px;border-radius:4px;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;
 }
-.cta-cmd::after{
-  content:'';
-  position:absolute;top:0;left:-100%;
-  width:100%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(var(--rgb-accent),0.08),transparent);
-  transition:left 0.5s;
+.cta-cmd .sweep{
+  position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,229,192,.1),transparent);transition:left .5s;
 }
-.cta-cmd:hover::after{left:100%;}
-.cta-cmd:hover{
-  border-color:var(--teal);
-  box-shadow:0 0 60px rgba(var(--rgb-accent),0.18),0 16px 40px rgba(0,0,0,0.4);
-  transform:translateY(-3px);
-}
-.cta-p{color:var(--text3);}
+.cta-cmd:hover .sweep{left:100%;}
+.cta-cmd:hover{border-color:var(--teal);box-shadow:0 0 60px rgba(0,229,192,.22),0 16px 40px rgba(0,0,0,.4);transform:translateY(-3px);}
+.cta-p{color:var(--t3);}
 
-/* ═══ FOOTER ════════════════════════════════════════════════════ */
+/* ── FOOTER ──────────────────────────────────────────────────── */
 footer{
-  border-top:1px solid var(--border2);
-  padding:28px 52px;
+  border-top:1px solid var(--b1);padding:28px 52px;
   display:flex;align-items:center;justify-content:space-between;
-  font-family:var(--font-mono);
-  font-size:10px;color:var(--text3);
+  font-family:var(--fm);font-size:10px;color:var(--t3);
 }
 .foot-links{display:flex;gap:24px;}
-.foot-links a{color:var(--text3);text-decoration:none;letter-spacing:0.06em;transition:color 0.2s;}
+.foot-links a{color:var(--t3);text-decoration:none;letter-spacing:.06em;transition:color .2s;}
 .foot-links a:hover{color:var(--teal);}
 
-/* ═══ REVEAL ════════════════════════════════════════════════════ */
-.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.65s ease,transform 0.65s ease;}
+/* ── SCROLL REVEAL ───────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
 .reveal.on{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:.1s;}
+.reveal-delay-2{transition-delay:.2s;}
+.reveal-delay-3{transition-delay:.3s;}
 
-/* ═══ TOAST ══════════════════════════════════════════════════════ */
+/* ── TOAST ───────────────────────────────────────────────────── */
 .toast{
   position:fixed;bottom:28px;right:28px;z-index:9999;
-  background:var(--surface);
-  border:1px solid var(--border3);
-  color:var(--teal);
-  font-family:var(--font-mono);font-size:11px;
-  padding:10px 18px;border-radius:4px;
-  box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 24px rgba(var(--rgb-accent),0.12);
-  opacity:0;transform:translateY(8px);
-  transition:all 0.22s;pointer-events:none;
+  background:var(--deep);border:1px solid rgba(0,229,192,.32);color:var(--teal);
+  font-family:var(--fm);font-size:11px;padding:10px 18px;border-radius:4px;
+  box-shadow:0 4px 24px rgba(0,0,0,.5),0 0 24px rgba(0,229,192,.12);
+  opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;
 }
 .toast.on{opacity:1;transform:translateY(0);}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:900px){
+  nav{padding:0 20px;}
+  .nav-center{display:none;}
+  .nav-ham{display:flex;}
+  .hero{padding:80px 24px 48px;}
+  .hero-coords,.hero-jp{display:none;}
+  .preview-wrap{padding:0 20px 60px;}
+  .dash{grid-template-columns:1fr;}
+  .dside{display:none;}
+  .dcards{grid-template-columns:repeat(2,1fr);}
+  .ticker{padding:16px 20px;overflow-x:auto;}
+  .feat-section,.code-section,.prov-section,.compare-section,.cta-wrap{padding-left:20px;padding-right:20px;}
+  .feat-grid{grid-template-columns:1fr;}
+  .feat-span2{grid-column:span 1;}
+  .fs2{grid-template-columns:1fr;gap:20px;}
+  .code-pair{grid-template-columns:1fr;}
+  .cta-box{padding:40px 24px;}
+  .cta-h2{font-size:40px;}
+  footer{flex-direction:column;gap:16px;text-align:center;padding:24px 20px;}
+  .foot-links{flex-wrap:wrap;justify-content:center;}
+  .data-pills{border:none;flex-wrap:wrap;gap:6px;}
+  .dp{border:1px solid var(--b1);border-radius:4px;}
+}
+@media(max-width:540px){
+  .hero-h1{font-size:52px;}
+  .dcards{grid-template-columns:1fr 1fr;}
+}
 </style>
 </head>
-<body>
+<body id="top">
 
-<div class="cursor" id="cur"></div>
-<div class="cursor-ring" id="curR"></div>
+<!-- OVERLAYS -->
+<div id="scanlines"></div>
+<div id="grain"></div>
 
-<!-- NAV -->
-<nav>
-  <a href="#" class="logo">
-    <div class="logo-gem">LT</div>
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="curR"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     BOOT SEQUENCE
+══════════════════════════════════════════════════════════════ -->
+<div id="boot">
+  <canvas id="boot-canvas"></canvas>
+  <div class="boot-terminal">
+    <div class="boot-bar">
+      <div class="boot-bar-dot" style="background:var(--hot)"></div>
+      <div class="boot-bar-dot" style="background:var(--amb)"></div>
+      <div class="boot-bar-dot" style="background:var(--teal)"></div>
+      <span style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-left:8px;letter-spacing:.1em">NEURAL OS - LLMTap Observer v2.0</span>
+    </div>
+    <div class="boot-lines" id="boot-lines">
+      <span class="boot-line dim" data-delay="0">BIOS v4.1.2 - Initializing neural substrate...</span>
+      <span class="boot-line ok"  data-delay="180">Memory subsystem online - 32GB heap allocated</span>
+      <span class="boot-line ok"  data-delay="320">SSE event bus initialized - port 4781</span>
+      <span class="boot-line ok"  data-delay="460">SQLite observer loaded - 0 existing traces</span>
+      <span class="boot-line teal" data-delay="600">&gt; Loading LLMTap intercept module...</span>
+      <span class="boot-line ok"  data-delay="780">ES Proxy wrappers armed - 12 providers detected</span>
+      <span class="boot-line ok"  data-delay="900">OpenTelemetry exporter standing by</span>
+      <span class="boot-line vio" data-delay="1050">&gt; Spawning local collector on localhost:4781</span>
+      <span class="boot-line ok"  data-delay="1200">Pricing engine loaded - 50 models indexed</span>
+      <span class="boot-line amb" data-delay="1380">SYSTEM READY - Awaiting first LLM call...</span>
+    </div>
+    <div class="boot-bar-fill" id="boot-fill"></div>
+  </div>
+  <div class="boot-hint">PRESS ANY KEY OR CLICK TO SKIP</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════════════════ -->
+<nav id="nav">
+  <a href="#top" class="logo" aria-label="LLMTap home">
+    <div class="logo-gem" aria-hidden="true"></div>
     <span class="logo-text">LLMTap</span>
   </a>
   <div class="nav-center">
     <a href="#features" class="nav-link">Features</a>
     <a href="#compare" class="nav-link">Compare</a>
-    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" class="nav-link">GitHub</a>
-    <a href="#" class="nav-link">Docs</a>
+    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" rel="noreferrer" class="nav-link">GitHub</a>
+    <a href="https://github.com/DivyaanshuXD/LLMTap#quick-start" target="_blank" rel="noreferrer" class="nav-link">Docs</a>
   </div>
   <div class="nav-right">
-    <div class="nav-status">
-      <span class="nav-status-dot"></span>
-      v0.1.0 live
+    <div class="nav-sys">
+      <span class="nav-sys-dot"></span>
+      <span id="nav-clock">00:00:00</span>
     </div>
-    <a href="#" class="nav-btn" onclick="doCopy(event)">$ npx llmtap</a>
+    <button class="nav-cta" onclick="doCopy(event)" type="button">
+      $ npx llmtap
+    </button>
+    <button class="nav-ham" id="ham" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+<div class="nav-drawer" id="drawer">
+  <a href="#features" class="nav-link" onclick="closeDrawer()">Features</a>
+  <a href="#compare"  class="nav-link" onclick="closeDrawer()">Compare</a>
+  <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" rel="noreferrer" class="nav-link" onclick="closeDrawer()">GitHub</a>
+  <a href="https://github.com/DivyaanshuXD/LLMTap#quick-start" target="_blank" rel="noreferrer" class="nav-link" onclick="closeDrawer()">Docs</a>
+</div>
 
-<!-- HERO -->
+<!-- ══════════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════ -->
 <section class="hero">
   <canvas id="hero-canvas"></canvas>
-  <div class="hero-rule"></div>
-  <div class="hero-content">
+  <div class="hero-ambient"></div>
 
+  <div class="hero-coords">
+    35.6762° N, 139.6503° E<br>
+    TKY / SHIBUYA-KU / NODE_01<br>
+    <span id="hero-clock" style="color:var(--teal)">--:--:--</span>
+  </div>
+  <div class="hero-jp">東京神経観測 · NEURAL OBSERVER · LLMTap</div>
+
+  <div class="hero-content" id="hero-content">
     <div class="eyebrow">
-      <span class="eyebrow-line"></span>
+      <span class="eyebrow-bar"></span>
       Local-first LLM observability
-      <span class="eyebrow-line"></span>
+      <span class="eyebrow-bar"></span>
     </div>
 
     <h1 class="hero-h1">
       <span class="h1-light">the ops center for</span>
-      <span class="h1-heavy"><span class="h1-accent">every LLM call</span><br>your agent makes</span>
+      <span class="h1-heavy">
+        <span class="glitch-wrap h1-teal" data-text="every LLM call">every LLM call</span><br>
+        your <span class="glitch-wrap h1-vio" data-text="agent">agent</span> makes
+      </span>
     </h1>
 
     <p class="hero-sub">
-      <em>Trace. Debug. Optimize.</em> A real-time dashboard that runs entirely on your machine — no cloud, no sign-up, no proxy. Two lines of code.
+      <em>Trace. Debug. Optimize.</em> A real-time dashboard running entirely on your machine.
+      No cloud. No sign-up. No proxy. <em>Two lines of code.</em>
     </p>
 
     <div class="cta-cluster">
       <div class="cta-row">
         <div class="terminal-chip" onclick="doCopy(event)">
           <span class="t-prompt">$</span>
-          <span class="t-cmd">npx llmtap</span>
-          <svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <span>npx llmtap</span>
+          <div class="sweep"></div>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.55">
             <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
           </svg>
         </div>
         <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" class="ghost-btn">View Source →</a>
       </div>
       <div class="data-pills">
-        <div class="data-pill">setup <span class="dp-val">~30s</span></div>
-        <div class="data-pill">cloud required <span class="dp-val">none</span></div>
-        <div class="data-pill">models priced <span class="dp-val">50+</span></div>
-        <div class="data-pill">license <span class="dp-val">MIT</span></div>
+        <div class="dp">setup <b>~30s</b></div>
+        <div class="dp">cloud required <b>none</b></div>
+        <div class="dp">models priced <b>50+</b></div>
+        <div class="dp">license <b>MIT</b></div>
       </div>
     </div>
+  </div>
 
+  <div class="scroll-hint">
+    <span>scroll</span>
+    <div class="scroll-line"></div>
   </div>
 </section>
 
-<!-- PREVIEW -->
-<div class="preview-outer reveal">
-  <div class="preview-glow-bg"></div>
-  <div class="browser-shell">
+<!-- ══════════════════════════════════════════════════════════════
+     DASHBOARD PREVIEW
+══════════════════════════════════════════════════════════════ -->
+<div class="preview-wrap reveal">
+  <div class="preview-glow"></div>
+  <div class="orb orb-teal"></div>
+  <div class="orb orb-vio"></div>
+
+  <div class="browser">
     <div class="bbar">
       <div class="bdots"><span></span><span></span><span></span></div>
       <div class="burl">localhost:4781 — LLMTap · Control Deck</div>
-      <div class="bstatus"><span class="bstatus-dot"></span>Live feed connected</div>
+      <div class="bstat"><span class="bstat-dot"></span>Live feed connected</div>
     </div>
-    <div class="mdash">
-      <div class="mside">
-        <div class="mside-logo">
-          <div class="mside-gem"></div>
-          <span class="mside-name">LLMTap</span>
+    <div class="dash">
+      <div class="dside">
+        <div class="ds-logo">
+          <div class="ds-gem"></div>
+          <span class="ds-name">LLMTap</span>
         </div>
-        <div class="mside-sub">Control Deck</div>
-        <div class="mside-item on"><span class="mside-dot"></span>Overview</div>
-        <div class="mside-item"><span class="mside-dot"></span>Traces</div>
-        <div class="mside-item"><span class="mside-dot"></span>Economics</div>
-        <div class="mside-item"><span class="mside-dot"></span>Models</div>
-        <div class="mside-sub">Config</div>
-        <div class="mside-item"><span class="mside-dot"></span>Sessions</div>
-        <div class="mside-item"><span class="mside-dot"></span>Settings</div>
-        <div class="mside-runtime">
-          <div class="mrt-label">Runtime</div>
-          <div class="mrt-row"><span class="mrt-pulse"></span>Local collector active</div>
+        <div class="ds-section">Control Deck</div>
+        <div class="ds-item on"><span class="ds-dot"></span>Overview</div>
+        <div class="ds-item"><span class="ds-dot"></span>Traces</div>
+        <div class="ds-item"><span class="ds-dot"></span>Economics</div>
+        <div class="ds-item"><span class="ds-dot"></span>Models</div>
+        <div class="ds-section">Config</div>
+        <div class="ds-item"><span class="ds-dot"></span>Sessions</div>
+        <div class="ds-item"><span class="ds-dot"></span>Settings</div>
+        <div class="ds-rt">
+          <div class="ds-rt-label">Runtime</div>
+          <div class="ds-rt-row"><span class="ds-pulse"></span>Local collector active</div>
         </div>
       </div>
-      <div class="mmain">
-        <div class="mmain-header">
-          <span class="mmain-title">Operator Surface · Flight Deck</span>
-          <span class="mmain-live"><span class="live-dot"></span>Streaming</span>
+      <div class="dmain">
+        <div class="dhead">
+          <span class="dhead-title">Operator Surface · Flight Deck</span>
+          <span class="dhead-live"><span class="live-dot"></span>Streaming</span>
         </div>
-        <div class="mbanner">
-          <div class="mbanner-tag"><span class="mbanner-tagdot"></span>Live Operator Surface</div>
-          <div class="mbanner-h">Read the behavior of every model call like a live system.</div>
+        <div class="dbanner">
+          <div class="dbanner-tag"><span class="dbanner-tagdot"></span>Live Operator Surface</div>
+          <div class="dbanner-h">Read every model call like a live system.<br>Every cost. Every token. Every decision.</div>
         </div>
-        <div class="mcards">
-          <div class="mcard">
-            <div class="mcard-k">Trace Volume</div>
-            <div class="mcard-v glow" id="mc1">0</div>
-            <div class="mcard-s" id="mc1s">awaiting traffic</div>
+        <div class="dcards">
+          <div class="dcard">
+            <div class="dc-k">Trace Volume</div>
+            <div class="dc-v teal" id="mc1">0</div>
+            <div class="dc-s" id="mc1s">awaiting traffic</div>
           </div>
-          <div class="mcard">
-            <div class="mcard-k">Token Throughput</div>
-            <div class="mcard-v" id="mc2">0</div>
-            <div class="mcard-s">tokens in window</div>
+          <div class="dcard">
+            <div class="dc-k">Token Throughput</div>
+            <div class="dc-v vio" id="mc2">0</div>
+            <div class="dc-s">tokens in window</div>
           </div>
-          <div class="mcard">
-            <div class="mcard-k">Spend Velocity</div>
-            <div class="mcard-v" id="mc3">$0.0000</div>
-            <div class="mcard-s">avg per call</div>
+          <div class="dcard">
+            <div class="dc-k">Spend Velocity</div>
+            <div class="dc-v amb" id="mc3">$0.0000</div>
+            <div class="dc-s">avg per call</div>
           </div>
-          <div class="mcard">
-            <div class="mcard-k">Risk Surface</div>
-            <div class="mcard-v glow" id="mc4">0%</div>
-            <div class="mcard-s">0 failing calls</div>
+          <div class="dcard">
+            <div class="dc-k">Risk Surface</div>
+            <div class="dc-v" id="mc4" style="font-size:24px">0%</div>
+            <div class="dc-s">0 failing calls</div>
           </div>
         </div>
-        <div class="mpulse">
-          <div class="mpulse-head">
-            Token throughput
-            <span id="pulse-val">84.2k / min</span>
-          </div>
+        <div class="dpulse">
+          <div class="dpulse-h">Token throughput <span id="pulse-val">84.2k / min</span></div>
           <canvas id="pulse-canvas"></canvas>
         </div>
       </div>
@@ -1108,90 +1039,137 @@ footer{
   </div>
 </div>
 
-<!-- STATS -->
+<!-- ══════════════════════════════════════════════════════════════
+     STATS TICKER
+══════════════════════════════════════════════════════════════ -->
 <div class="ticker reveal">
-  <div class="tick-item"><span class="tick-n" data-target="12">0</span><span class="tick-l">Providers</span></div>
-  <div class="tick-item"><span class="tick-n" data-target="50">0</span><span class="tick-l">Models priced</span></div>
-  <div class="tick-item"><span class="tick-n">30s</span><span class="tick-l">Setup time</span></div>
-  <div class="tick-item"><span class="tick-n">0</span><span class="tick-l">Cloud accounts needed</span></div>
-  <div class="tick-item"><span class="tick-n">MIT</span><span class="tick-l">License</span></div>
+  <div class="ti"><span class="ti-n" data-target="12">0</span><span class="ti-l">Providers</span></div>
+  <div class="ti"><span class="ti-n" data-target="50">0</span><span class="ti-l">Models priced</span></div>
+  <div class="ti"><span class="ti-n">30s</span><span class="ti-l">Setup time</span></div>
+  <div class="ti"><span class="ti-n v">0</span><span class="ti-l">Cloud accounts</span></div>
+  <div class="ti"><span class="ti-n">MIT</span><span class="ti-l">License</span></div>
 </div>
 
 <!-- MARQUEE -->
-<div class="marquee-wrap">
-  <div class="marquee-track" id="mtrack"></div>
+<div class="mq-wrap">
+  <div class="mq-track" id="mtrack"></div>
 </div>
 
-<!-- FEATURES -->
+<!-- ══════════════════════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════════════════════ -->
 <section class="feat-section reveal" id="features">
-  <div class="feat-eyebrow">// core capabilities</div>
-  <div class="feat-h2">Built for engineers<br>who ship <span>AI agents.</span></div>
+  <div class="section-eyebrow">core capabilities</div>
+  <div class="feat-h2">Built for engineers<br>who ship <span class="c-t">AI</span> <span class="c-v">agents.</span></div>
+
   <div class="feat-grid">
+
+    <!-- SPAN 2: Proxy + live trace side by side -->
     <div class="feat feat-span2">
-      <div class="feat-icon">🔍</div>
-      <div class="feat-title">Transparent ES Proxy instrumentation</div>
-      <div class="feat-desc">Wraps any LLM client — OpenAI, Anthropic, Gemini — with a single function call. Your client behaves 100% identically. Streaming, tool calls, multi-turn conversations, function calling. All traced automatically, zero behavior changes, zero refactoring.</div>
-      <div class="feat-tag">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-        wrap(client) — that's it
+      <div class="fs2">
+        <div>
+          <div class="feat-icon">🔍</div>
+          <div class="feat-title">Transparent ES Proxy instrumentation</div>
+          <div class="feat-desc">Wraps any LLM client — OpenAI, Anthropic, Gemini — with one function call. Streaming, tool use, multi-turn — all traced automatically. Zero behavior changes, zero refactoring, zero friction.</div>
+          <div class="feat-tag">wrap(client) — that's it</div>
+        </div>
+        <div>
+          <div class="trace-demo">
+            <div class="td-hd">
+              <span>Live trace feed</span>
+              <span class="td-live"><span class="live-dot"></span>streaming</span>
+            </div>
+            <div class="td-row">
+              <div class="td-dot" style="background:var(--teal);box-shadow:0 0 5px var(--teal)"></div>
+              <span class="td-model">gpt-4o · chat.completions</span>
+              <span class="td-cost">$0.0084</span>
+              <span class="td-badge">✓ 242ms</span>
+            </div>
+            <div class="td-row">
+              <div class="td-dot" style="background:var(--vio-max);box-shadow:0 0 5px var(--vio)"></div>
+              <span class="td-model">gpt-4o-mini · responses</span>
+              <span class="td-cost">$0.0021</span>
+              <span class="td-badge v">✓ 388ms</span>
+            </div>
+            <div class="td-row">
+              <div class="td-dot" style="background:var(--teal)"></div>
+              <span class="td-model">gemini-1.5-pro · generateContent</span>
+              <span class="td-cost">$0.0009</span>
+              <span class="td-badge">✓ 510ms</span>
+            </div>
+            <div class="td-row">
+              <div class="td-dot" style="background:var(--amb)"></div>
+              <span class="td-model">gpt-4o · tool_use · web_search</span>
+              <span class="td-cost">$0.0140</span>
+              <span class="td-badge slow">↗ 1.2s</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
     <div class="feat">
       <div class="feat-icon">⚡</div>
       <div class="feat-title">Real-time SSE dashboard</div>
-      <div class="feat-desc">Traces stream into the browser via Server-Sent Events the instant they complete. Token counts, latency, full message content — all live.</div>
+      <div class="feat-desc">Traces stream into the browser via Server-Sent Events the instant they complete. Token counts, latency, full message content — all live, all local.</div>
     </div>
-    <div class="feat">
-      <div class="feat-icon">💰</div>
+
+    <div class="feat v-hover">
+      <div class="feat-icon v">💰</div>
       <div class="feat-title">Per-call cost intelligence</div>
-      <div class="feat-desc">Built-in pricing for 50+ models. See exactly which pipeline step burned $0.40, not just the monthly aggregate.</div>
+      <div class="feat-desc">Built-in pricing for 50+ models. See exactly which step burned $0.40 — not just the monthly aggregate that shows up on your credit card.</div>
+      <div class="feat-tag v">Circuit Amber · spend signals</div>
     </div>
+
     <div class="feat">
       <div class="feat-icon">🗺️</div>
       <div class="feat-title">Agent trace grouping</div>
-      <div class="feat-desc">Group multi-step pipelines into a single trace with startTrace(). Total cost and token budget at a glance.</div>
+      <div class="feat-desc">Group multi-step agent pipelines into a single trace with startTrace(). Total cost and token budget visible at a glance across every agent hop.</div>
     </div>
-    <div class="feat">
-      <div class="feat-icon">🔒</div>
+
+    <div class="feat v-hover">
+      <div class="feat-icon v">🔒</div>
       <div class="feat-title">Privacy by default</div>
-      <div class="feat-desc">SQLite on your machine. Your prompts never leave localhost. OTLP export to Datadog, Grafana, or Jaeger when you need it.</div>
+      <div class="feat-desc">SQLite on your machine. Your prompts never leave localhost. OTLP export to Datadog, Grafana, or Jaeger only when you choose it — never by default.</div>
     </div>
+
     <div class="feat">
       <div class="feat-icon">📡</div>
       <div class="feat-title">OpenTelemetry native</div>
-      <div class="feat-desc">Follows GenAI Semantic Conventions. Drop-in OTLP forwarding to any production observability backend.</div>
+      <div class="feat-desc">Follows GenAI Semantic Conventions. Drop-in OTLP forwarding to any production observability backend. No lock-in. Standards all the way down.</div>
     </div>
+
   </div>
 </section>
 
 <!-- CODE -->
 <section class="code-section reveal">
   <div class="code-pair">
-    <div class="cpanel">
-      <div class="cpanel-head">Before LLMTap</div>
+    <div class="cp">
+      <div class="cp-head">Before LLMTap</div>
       <div class="cblock">
 <span class="ck">import</span> <span class="cx">OpenAI</span> <span class="ck">from</span> <span class="cs">"openai"</span><span class="cx">;</span><br><br>
-<span class="ck">const</span> <span class="cx">client</span> <span class="cp">=</span> <span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">();</span><br><br>
+<span class="ck">const</span> <span class="cx">client</span> <span class="cp2">=</span> <span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">();</span><br><br>
 <span class="cc">// which call cost $0.40?</span><br>
 <span class="cc">// what did step 3 actually say?</span><br>
 <span class="cc">// why did the agent loop?</span><br>
 <span class="cc">// ¯\_(ツ)_/¯</span><br><br>
-<span class="ck">const</span> <span class="cx">res</span> <span class="cp">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp">.</span><span class="cx">chat</span><br>
-<span class="cp">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp">.</span><span class="cf">create</span><span class="cx">({...});</span>
+<span class="ck">const</span> <span class="cx">res</span> <span class="cp2">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp2">.</span><span class="cx">chat</span><br>
+<span class="cp2">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp2">.</span><span class="cf">create</span><span class="cx">({...});</span>
       </div>
     </div>
-    <div class="cpanel after">
-      <div class="cpanel-head">After — 2 lines changed</div>
+    <div class="cp after">
+      <div class="cp-head">After — 2 lines changed</div>
       <div class="cblock">
 <span class="ck">import</span> <span class="cx">OpenAI</span> <span class="ck">from</span> <span class="cs">"openai"</span><span class="cx">;</span><br>
 <span class="ca"><span class="ck">import</span> <span class="cx">{ wrap }</span> <span class="ck">from</span> <span class="cs">"@llmtap/sdk"</span><span class="cx">;</span></span><br><br>
-<span class="ck">const</span> <span class="cx">client</span> <span class="cp">=</span> <span class="ca"><span class="cf">wrap</span><span class="cx">(</span></span><span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">()</span><span class="ca"><span class="cx">)</span></span><span class="cx">;</span><br><br>
+<span class="ck">const</span> <span class="cx">client</span> <span class="cp2">=</span> <span class="ca"><span class="cf">wrap</span><span class="cx">(</span></span><span class="ck">new</span> <span class="cf">OpenAI</span><span class="cx">()</span><span class="ca"><span class="cx">)</span></span><span class="cx">;</span><br><br>
 <span class="cc">// open localhost:4781</span><br>
 <span class="cc">// every call traced in real time</span><br>
 <span class="cc">// costs · latency · full content</span><br>
 <span class="cc">// your agent is now readable</span><br><br>
-<span class="ck">const</span> <span class="cx">res</span> <span class="cp">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp">.</span><span class="cx">chat</span><br>
-<span class="cp">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp">.</span><span class="cf">create</span><span class="cx">({...});</span>
+<span class="ck">const</span> <span class="cx">res</span> <span class="cp2">=</span> <span class="ck">await</span> <span class="cx">client</span><span class="cp2">.</span><span class="cx">chat</span><br>
+<span class="cp2">&nbsp;&nbsp;.</span><span class="cx">completions</span><span class="cp2">.</span><span class="cf">create</span><span class="cx">({...});</span>
       </div>
     </div>
   </div>
@@ -1205,42 +1183,45 @@ footer{
     <div class="pchip">Google Gemini</div><div class="pchip">DeepSeek</div>
     <div class="pchip">Groq</div><div class="pchip">Together AI</div>
     <div class="pchip">Fireworks</div><div class="pchip">OpenRouter</div>
-    <div class="pchip">xAI (Grok)</div><div class="pchip">Ollama</div>
+    <div class="pchip">xAI / Grok</div><div class="pchip">Ollama</div>
     <div class="pchip">Vercel AI SDK</div><div class="pchip">Any OpenAI-compatible</div>
   </div>
 </section>
 
 <!-- COMPARE -->
 <section class="compare-section reveal" id="compare">
-  <div class="feat-eyebrow">// comparison</div>
-  <div class="feat-h2" style="margin-bottom:36px">Why not <span>LangSmith?</span></div>
-  <table>
-    <thead>
-      <tr>
-        <th></th><th class="hl">LLMTap</th>
-        <th>LangSmith</th><th>Helicone</th><th>Langfuse</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>Setup</td><td class="hl">npx + 2 lines</td><td>SDK + account</td><td>Proxy + cloud</td><td>SDK + self-host</td></tr>
-      <tr><td>Data location</td><td class="hl">Your machine</td><td>Their cloud</td><td>Their cloud</td><td>Your infra</td></tr>
-      <tr><td>Cost</td><td class="hl">Free, no limits</td><td>$39/seat/mo</td><td>$79/mo</td><td>Free (self-host)</td></tr>
-      <tr><td>Sign-up required</td><td class="hl"><span class="tick">✗ No</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td></tr>
-      <tr><td>Prompts leave machine</td><td class="hl"><span class="tick">✗ Never</span></td><td><span class="cross">✓ Always</span></td><td><span class="cross">✓ Always</span></td><td>Depends</td></tr>
-      <tr><td>OTLP export</td><td class="hl"><span class="tick">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="tick">✓</span></td></tr>
-    </tbody>
-  </table>
+  <div class="section-eyebrow v">comparison</div>
+  <div class="feat-h2" style="margin-bottom:36px">Why not <span class="c-v">LangSmith?</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th><th class="hl">LLMTap</th>
+          <th>LangSmith</th><th>Helicone</th><th>Langfuse</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Setup</td><td class="hl">npx + 2 lines</td><td>SDK + account</td><td>Proxy + cloud</td><td>SDK + self-host</td></tr>
+        <tr><td>Data location</td><td class="hl">Your machine</td><td>Their cloud</td><td>Their cloud</td><td>Your infra</td></tr>
+        <tr><td>Cost</td><td class="hl">Free, no limits</td><td>$39/seat/mo</td><td>$79/mo</td><td>Free (self-host)</td></tr>
+        <tr><td>Sign-up required</td><td class="hl"><span class="tick">✗ No</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td><td><span class="cross">✓ Yes</span></td></tr>
+        <tr><td>Prompts leave machine</td><td class="hl"><span class="tick">✗ Never</span></td><td><span class="cross">✓ Always</span></td><td><span class="cross">✓ Always</span></td><td>Depends</td></tr>
+        <tr><td>OTLP export</td><td class="hl"><span class="tick">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="tick">✓</span></td></tr>
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <!-- CTA -->
 <div class="cta-wrap reveal">
   <div class="cta-box">
     <h2 class="cta-h2">Start in 30 seconds.</h2>
-    <p class="cta-sub">No accounts. No API keys. No proxies.<br>Run one command. Open your browser.</p>
+    <p class="cta-sub">No accounts. No API keys. No proxies.<br>Run one command. Open your browser. See everything.</p>
     <div class="cta-cmd" onclick="doCopy(event)">
       <span class="cta-p">$</span>
       npx llmtap
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="sweep"></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.55">
         <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
       </svg>
     </div>
@@ -1250,181 +1231,366 @@ footer{
 <!-- FOOTER -->
 <footer>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div class="logo-gem" style="width:22px;height:22px;font-size:10px">LT</div>
-    <span style="font-family:var(--font-heading);font-weight:700;font-size:16px;letter-spacing:0.08em;color:var(--text)">LLMTap</span>
+    <div class="logo-gem" aria-hidden="true" style="width:22px;height:22px;box-shadow:0 0 10px var(--teal-glow)"></div>
+    <span style="font-family:var(--fd);font-size:16px;letter-spacing:.08em;">LLMTap</span>
   </div>
   <div class="foot-links">
-    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank">GitHub</a>
-    <a href="#">Docs</a>
-    <a href="#">npm</a>
+    <a href="https://github.com/DivyaanshuXD/LLMTap" target="_blank" rel="noreferrer">GitHub</a>
+    <a href="https://github.com/DivyaanshuXD/LLMTap#quick-start" target="_blank" rel="noreferrer">Docs</a>
+    <a href="https://www.npmjs.com/package/llmtap" target="_blank" rel="noreferrer">npm</a>
     <span>MIT License</span>
   </div>
 </footer>
 
 <div class="toast" id="toast">✓ Copied — npx llmtap</div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════════════════ -->
 <script>
-/* ── custom cursor ── */
+/* ════════════════════════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════════════════════════ */
 const cur=document.getElementById('cur'),curR=document.getElementById('curR');
 let mx=0,my=0,rx=0,ry=0;
 document.addEventListener('mousemove',e=>{
   mx=e.clientX;my=e.clientY;
   cur.style.left=mx+'px';cur.style.top=my+'px';
 });
-(function ringLoop(){
-  rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+(function rl(){
+  rx+=(mx-rx)*.1;ry+=(my-ry)*.1;
   curR.style.left=rx+'px';curR.style.top=ry+'px';
-  requestAnimationFrame(ringLoop);
+  requestAnimationFrame(rl);
 })();
 
-/* ── hero particle canvas ── */
-const hc=document.getElementById('hero-canvas');
-const hctx=hc.getContext('2d');
-let W,H,particles=[];
-
-function resizeHC(){
-  W=hc.width=hc.offsetWidth;
-  H=hc.height=hc.offsetHeight;
+/* ════════════════════════════════════════════════════════════
+   NAV CLOCK
+════════════════════════════════════════════════════════════ */
+function tick(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('en-GB',{hour12:false});
+  document.getElementById('nav-clock').textContent=t;
+  document.getElementById('hero-clock').textContent=t;
 }
+tick();setInterval(tick,1000);
 
-class Particle{
-  constructor(){this.reset(true);}
-  reset(init){
-    this.x=Math.random()*W;
-    this.y=init?Math.random()*H:H+10;
-    this.vy=-(0.15+Math.random()*0.5);
-    this.vx=(Math.random()-0.5)*0.2;
-    this.alpha=0;
-    this.maxAlpha=0.1+Math.random()*0.3;
-    this.r=0.5+Math.random()*1.5;
-    this.life=0;
-    this.maxLife=120+Math.random()*200;
-    this.color=Math.random()>0.7?'#45A29E':'#66FCF1';
-  }
-  update(){
-    this.life++;
-    const t=this.life/this.maxLife;
-    this.alpha=t<0.2?this.maxAlpha*(t/0.2):this.maxAlpha*(1-(t-0.2)/0.8);
-    this.x+=this.vx;this.y+=this.vy;
-    if(this.life>=this.maxLife||this.y<-10)this.reset(false);
-  }
-  draw(){
-    hctx.beginPath();
-    hctx.arc(this.x,this.y,this.r,0,Math.PI*2);
-    hctx.fillStyle=this.color;
-    hctx.globalAlpha=this.alpha;
-    hctx.fill();
-  }
-}
+/* ════════════════════════════════════════════════════════════
+   NAV SCROLL
+════════════════════════════════════════════════════════════ */
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',window.scrollY>60);
+},{ passive:true });
 
-function initParticles(){
-  particles=[];
-  for(let i=0;i<80;i++)particles.push(new Particle());
-}
+/* ════════════════════════════════════════════════════════════
+   MOBILE NAV
+════════════════════════════════════════════════════════════ */
+document.getElementById('ham').addEventListener('click',()=>
+  document.getElementById('drawer').classList.toggle('open')
+);
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');}
 
-/* connection lines between nearby particles */
-function drawLines(){
-  for(let i=0;i<particles.length;i++){
-    for(let j=i+1;j<particles.length;j++){
-      const dx=particles[i].x-particles[j].x;
-      const dy=particles[i].y-particles[j].y;
-      const d=Math.sqrt(dx*dx+dy*dy);
-      if(d<90){
-        hctx.beginPath();
-        hctx.moveTo(particles[i].x,particles[i].y);
-        hctx.lineTo(particles[j].x,particles[j].y);
-        hctx.strokeStyle='#66FCF1';
-        hctx.globalAlpha=(1-d/90)*0.04;
-        hctx.lineWidth=0.5;
-        hctx.stroke();
+/* ════════════════════════════════════════════════════════════
+   BOOT SEQUENCE
+════════════════════════════════════════════════════════════ */
+(function initBoot(){
+  const boot=document.getElementById('boot');
+  const lines=document.querySelectorAll('.boot-line');
+  const fill=document.getElementById('boot-fill');
+
+  // boot canvas — falling katakana
+  const bc=document.getElementById('boot-canvas');
+  const bctx=bc.getContext('2d');
+  bc.width=window.innerWidth;bc.height=window.innerHeight;
+  const KANA='アイウエオカキクケコサシスセソタチツテトナニヌネノ01ABCDEF';
+  const cols=Math.floor(bc.width/18);
+  const drops=Array(cols).fill(0).map(()=>Math.random()*bc.height/20);
+  function bootRain(){
+    bctx.fillStyle='rgba(2,4,7,.18)';bctx.fillRect(0,0,bc.width,bc.height);
+    bctx.font='13px DM Mono,monospace';
+    drops.forEach((y,i)=>{
+      const c=KANA[Math.floor(Math.random()*KANA.length)];
+      bctx.fillStyle=Math.random()>.7?'rgba(0,229,192,.5)':'rgba(0,229,192,.15)';
+      bctx.fillText(c,i*18,y*20);
+      if(y*20>bc.height&&Math.random()>.97)drops[i]=0;
+      else drops[i]++;
+    });
+  }
+  let bootRaf=setInterval(bootRain,40);
+
+  // show lines one by one
+  let maxDelay=0;
+  lines.forEach(l=>{
+    const d=parseInt(l.dataset.delay)||0;
+    if(d>maxDelay)maxDelay=d;
+    setTimeout(()=>l.classList.add('show'),d);
+  });
+
+  // fill bar
+  requestAnimationFrame(()=>{fill.style.width='100%';});
+
+  function dismissBoot(){
+    boot.classList.add('done');
+    clearInterval(bootRaf);
+  }
+
+  // auto-dismiss
+  setTimeout(dismissBoot, maxDelay+600);
+
+  // skip on any key or click
+  const skip=()=>dismissBoot();
+  document.addEventListener('keydown',skip,{once:true});
+  boot.addEventListener('click',skip);
+})();
+
+/* ════════════════════════════════════════════════════════════
+   HERO CANVAS — Digital Rain + Particle Network
+════════════════════════════════════════════════════════════ */
+(function initHeroCanvas(){
+  const hc=document.getElementById('hero-canvas');
+  const ctx=hc.getContext('2d');
+  let W,H;
+
+  function resize(){W=hc.width=hc.offsetWidth;H=hc.height=hc.offsetHeight;}
+
+  // Katakana + hex chars for rain
+  const RAIN_CHARS='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789ABCDEFabcdef';
+
+  class RainColumn{
+    constructor(x){
+      this.x=x;
+      this.y=Math.random()*-H;
+      this.speed=.4+Math.random()*1.8;
+      this.len=8+Math.floor(Math.random()*18);
+      this.chars=Array(this.len).fill('').map(()=>RAIN_CHARS[Math.floor(Math.random()*RAIN_CHARS.length)]);
+      this.hot=Math.random()>.94;
+      this.vio=Math.random()>.85;
+      this.glyphTimer=0;
+    }
+    update(){
+      this.y+=this.speed;
+      this.glyphTimer++;
+      if(this.glyphTimer%4===0){
+        const i=Math.floor(Math.random()*this.len);
+        this.chars[i]=RAIN_CHARS[Math.floor(Math.random()*RAIN_CHARS.length)];
+      }
+      if(this.y-this.len*16>H){
+        this.y=Math.random()*-H*.5;
+        this.speed=.4+Math.random()*1.8;
+        this.hot=Math.random()>.94;
+        this.vio=Math.random()>.85;
+      }
+    }
+    draw(){
+      const fs=11;
+      ctx.font=`${fs}px DM Mono,monospace`;
+      for(let i=0;i<this.len;i++){
+        const cy=this.y-i*fs;
+        if(cy<-fs||cy>H+fs)continue;
+        const fade=1-i/this.len;
+        if(i===0){
+          if(this.hot){
+            ctx.fillStyle=`rgba(255,255,240,${fade*.9})`;
+            ctx.shadowColor='rgba(0,229,192,1)';
+            ctx.shadowBlur=8;
+          } else {
+            ctx.fillStyle=`rgba(0,229,192,${fade*.85})`;
+            ctx.shadowColor='rgba(0,229,192,.6)';
+            ctx.shadowBlur=6;
+          }
+        } else if(this.vio){
+          ctx.fillStyle=`rgba(176,96,255,${fade*.18})`;
+          ctx.shadowBlur=0;
+        } else {
+          ctx.fillStyle=`rgba(0,229,192,${fade*.12})`;
+          ctx.shadowBlur=0;
+        }
+        ctx.fillText(this.chars[i],this.x,cy);
+      }
+      ctx.shadowBlur=0;
+    }
+  }
+
+  // Particle network
+  class Particle{
+    constructor(){this.reset(true);}
+    reset(init){
+      this.x=Math.random()*W;
+      this.y=init?Math.random()*H:H+10;
+      this.vy=-(0.1+Math.random()*.35);
+      this.vx=(Math.random()-.5)*.15;
+      this.alpha=0;this.maxA=.08+Math.random()*.2;
+      this.r=.5+Math.random()*1.2;
+      this.life=0;this.maxLife=150+Math.random()*250;
+      this.color=Math.random()>.6?'#b060ff':'#00e5c0';
+    }
+    update(){
+      this.life++;
+      const t=this.life/this.maxLife;
+      this.alpha=t<.2?this.maxA*(t/.2):this.maxA*(1-(t-.2)/.8);
+      this.x+=this.vx;this.y+=this.vy;
+      if(this.life>=this.maxLife||this.y<-10)this.reset(false);
+    }
+    draw(){
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+      ctx.fillStyle=this.color;
+      ctx.globalAlpha=this.alpha;
+      ctx.fill();
+    }
+  }
+
+  let cols=[],parts=[];
+
+  function init(){
+    resize();
+    cols=[];parts=[];
+    const colCount=Math.floor(W/22);
+    for(let i=0;i<colCount;i++)cols.push(new RainColumn(i*22+Math.random()*10));
+    for(let i=0;i<90;i++)parts.push(new Particle());
+  }
+
+  function drawConnections(){
+    for(let i=0;i<parts.length;i++){
+      for(let j=i+1;j<parts.length;j++){
+        const dx=parts[i].x-parts[j].x,dy=parts[i].y-parts[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<80){
+          ctx.beginPath();
+          ctx.moveTo(parts[i].x,parts[i].y);
+          ctx.lineTo(parts[j].x,parts[j].y);
+          const col=parts[i].color==='#00e5c0'&&parts[j].color==='#00e5c0'?'0,229,192':'176,96,255';
+          ctx.strokeStyle=`rgba(${col},${(1-d/80)*.05})`;
+          ctx.lineWidth=.5;
+          ctx.globalAlpha=1;
+          ctx.stroke();
+        }
       }
     }
   }
-}
 
-function animHero(){
-  hctx.clearRect(0,0,W,H);
-  drawLines();
-  particles.forEach(p=>{p.update();p.draw();});
-  hctx.globalAlpha=1;
-  requestAnimationFrame(animHero);
-}
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    cols.forEach(c=>{c.update();c.draw();});
+    drawConnections();
+    parts.forEach(p=>{p.update();p.draw();});
+    ctx.globalAlpha=1;
+    requestAnimationFrame(frame);
+  }
 
-window.addEventListener('resize',()=>{resizeHC();});
-resizeHC();initParticles();animHero();
+  window.addEventListener('resize',init,{passive:true});
+  init();frame();
+})();
 
-/* ── pulse line canvas ── */
-const pc=document.getElementById('pulse-canvas');
-const pctx=pc.getContext('2d');
-let pulseData=[];
-let pulseFrame=0;
+/* ════════════════════════════════════════════════════════════
+   HERO MOUSE PARALLAX
+════════════════════════════════════════════════════════════ */
+(function initParallax(){
+  const hero=document.querySelector('.hero');
+  const content=document.getElementById('hero-content');
+  hero.addEventListener('mousemove',e=>{
+    const r=hero.getBoundingClientRect();
+    const xPct=(e.clientX-r.left)/r.width-.5;
+    const yPct=(e.clientY-r.top)/r.height-.5;
+    content.style.transform=`translate(${xPct*12}px,${yPct*8}px)`;
+  });
+  hero.addEventListener('mouseleave',()=>{
+    content.style.transform='translate(0,0)';
+    content.style.transition='transform .6s ease';
+    setTimeout(()=>content.style.transition='',600);
+  });
+})();
 
-function resizePC(){
-  pc.width=pc.offsetWidth*window.devicePixelRatio||pc.offsetWidth;
-  pc.height=pc.offsetHeight*window.devicePixelRatio||pc.offsetHeight;
-  pctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
-}
+/* ════════════════════════════════════════════════════════════
+   FEATURE CARD HOLO EFFECT (mouse radial light)
+════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.feat').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=((e.clientX-r.left)/r.width*100).toFixed(1)+'%';
+    const y=((e.clientY-r.top)/r.height*100).toFixed(1)+'%';
+    card.style.setProperty('--mx',x);
+    card.style.setProperty('--my',y);
+    // 3D tilt
+    const xp=(e.clientX-r.left)/r.width-.5;
+    const yp=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`perspective(700px) rotateY(${xp*8}deg) rotateX(${-yp*6}deg) translateZ(6px)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='perspective(700px) rotateY(0) rotateX(0) translateZ(0)';
+    card.style.transition='transform .4s ease,background .3s';
+    setTimeout(()=>card.style.transition='',400);
+  });
+});
 
-function genPulseVal(){
-  const base=40+Math.sin(pulseFrame*0.05)*15;
-  const spike=Math.random()>0.92?Math.random()*50:0;
-  return base+spike+Math.random()*8;
-}
+/* ════════════════════════════════════════════════════════════
+   PULSE CANVAS — Multi-track waveform
+════════════════════════════════════════════════════════════ */
+(function initPulse(){
+  const pc=document.getElementById('pulse-canvas');
+  if(!pc)return;
+  const ctx=pc.getContext('2d');
+  let data1=[],data2=[],frame=0;
 
-function animPulse(){
-  pulseFrame++;
-  pulseData.push(genPulseVal());
-  const W2=pc.offsetWidth,H2=pc.offsetHeight;
-  const maxPoints=W2;
-  if(pulseData.length>maxPoints)pulseData.shift();
+  function resize(){
+    const dpr=window.devicePixelRatio||1;
+    pc.width=pc.offsetWidth*dpr;pc.height=pc.offsetHeight*dpr;
+    ctx.scale(dpr,dpr);
+  }
 
-  pctx.clearRect(0,0,W2,H2);
+  function gen1(){
+    const b=35+Math.sin(frame*.06)*18;
+    const sp=Math.random()>.92?Math.random()*55:0;
+    return b+sp+Math.random()*6;
+  }
+  function gen2(){
+    const b=20+Math.sin(frame*.04+1.5)*12;
+    const sp=Math.random()>.94?Math.random()*30:0;
+    return b+sp+Math.random()*4;
+  }
 
-  if(pulseData.length<2){requestAnimationFrame(animPulse);return;}
+  function draw(){
+    frame++;
+    data1.push(gen1());data2.push(gen2());
+    const W=pc.offsetWidth,H=pc.offsetHeight;
+    const max=Math.max(...data1,...data2,70);
+    if(data1.length>W)data1.shift();
+    if(data2.length>W)data2.shift();
+    ctx.clearRect(0,0,W,H);
 
-  const max=Math.max(...pulseData,100);
-  const pts=pulseData.map((v,i)=>({
-    x:(i/(pulseData.length-1))*W2,
-    y:H2-(v/max)*(H2-8)-4
-  }));
+    function drawTrack(data,color,alpha){
+      if(data.length<2)return;
+      const pts=data.map((v,i)=>({x:(i/(data.length-1))*W,y:H-(v/max)*(H-5)-3}));
+      const grad=ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,color.replace('1)',alpha+')'));
+      grad.addColorStop(1,color.replace('1)','0)'));
+      ctx.beginPath();ctx.moveTo(pts[0].x,H);
+      pts.forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.lineTo(pts[pts.length-1].x,H);ctx.closePath();
+      ctx.fillStyle=grad;ctx.fill();
+      ctx.beginPath();
+      pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.strokeStyle=color.replace('rgba','rgb').replace(',1)','');
+      ctx.lineWidth=1.5;
+      ctx.shadowColor=color.replace('rgba','rgb').replace(',1)',',0.8)');
+      ctx.shadowBlur=5;ctx.stroke();ctx.shadowBlur=0;
+      const last=pts[pts.length-1];
+      ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);
+      ctx.fillStyle=color.replace('rgba','rgb').replace(',1)','');
+      ctx.shadowColor=color.replace('1)','0.9)');ctx.shadowBlur=10;
+      ctx.fill();ctx.shadowBlur=0;
+    }
 
-  // fill
-  const grad=pctx.createLinearGradient(0,0,0,H2);
-  grad.addColorStop(0,'rgba(var(--rgb-accent),0.15)');
-  grad.addColorStop(1,'rgba(var(--rgb-accent),0)');
-  pctx.beginPath();
-  pctx.moveTo(pts[0].x,H2);
-  pts.forEach(p=>pctx.lineTo(p.x,p.y));
-  pctx.lineTo(pts[pts.length-1].x,H2);
-  pctx.closePath();
-  pctx.fillStyle=grad;
-  pctx.fill();
+    drawTrack(data1,'rgba(0,229,192,1)','0.12');
+    drawTrack(data2,'rgba(176,96,255,1)','0.08');
+    requestAnimationFrame(draw);
+  }
+  resize();draw();
+})();
 
-  // line
-  pctx.beginPath();
-  pts.forEach((p,i)=>i===0?pctx.moveTo(p.x,p.y):pctx.lineTo(p.x,p.y));
-  pctx.strokeStyle='#66FCF1';
-  pctx.lineWidth=1.5;
-  pctx.shadowColor='rgba(var(--rgb-accent),0.6)';
-  pctx.shadowBlur=6;
-  pctx.stroke();
-  pctx.shadowBlur=0;
-
-  // dot at end
-  const last=pts[pts.length-1];
-  pctx.beginPath();
-  pctx.arc(last.x,last.y,3,0,Math.PI*2);
-  pctx.fillStyle='#66FCF1';
-  pctx.shadowColor='rgba(var(--rgb-accent),0.8)';
-  pctx.shadowBlur=10;
-  pctx.fill();
-  pctx.shadowBlur=0;
-
-  requestAnimationFrame(animPulse);
-}
-resizePC();animPulse();
-
-/* ── mock card counter animation ── */
+/* ════════════════════════════════════════════════════════════
+   COUNTER ANIMATION
+════════════════════════════════════════════════════════════ */
 function animCount(el,target,prefix,suffix,decimals,duration){
   let start=null;
   const step=ts=>{
@@ -1438,32 +1604,38 @@ function animCount(el,target,prefix,suffix,decimals,duration){
   requestAnimationFrame(step);
 }
 
-/* trigger when preview enters viewport */
-const prevObs=new IntersectionObserver(entries=>{
-  if(entries[0].isIntersecting){
-    setTimeout(()=>animCount(document.getElementById('mc1'),247,'','',0,2000),200);
-    setTimeout(()=>animCount(document.getElementById('mc2'),84200,'','',0,2200),400);
-    setTimeout(()=>animCount(document.getElementById('mc3'),0.0042,'$','',4,1800),600);
-    document.getElementById('mc1s').textContent='↑ 12 in last 5m';
-    prevObs.disconnect();
-  }
-},{threshold:0.3});
-prevObs.observe(document.querySelector('.preview-outer'));
+(function(){
+  const el=document.querySelector('.preview-wrap');
+  if(!el)return;
+  const ob=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      setTimeout(()=>animCount(document.getElementById('mc1'),247,'','',0,2000),200);
+      setTimeout(()=>animCount(document.getElementById('mc2'),84200,'','',0,2200),400);
+      setTimeout(()=>animCount(document.getElementById('mc3'),0.0042,'$','',4,1800),600);
+      setTimeout(()=>{document.getElementById('mc1s').textContent='up 12 in last 5m';},200);
+      ob.disconnect();
+    }
+  },{threshold:.3});
+  ob.observe(el);
+})();
 
-/* ── stat counters ── */
-const statObs=new IntersectionObserver(entries=>{
-  if(entries[0].isIntersecting){
-    document.querySelectorAll('.tick-n[data-target]').forEach(el=>{
-      const t=parseInt(el.dataset.target);
-      animCount(el,t,'','',0,1200);
-    });
-    statObs.disconnect();
-  }
-},{threshold:0.5});
-statObs.observe(document.querySelector('.ticker'));
+(function(){
+  const ticker=document.querySelector('.ticker');
+  const ob=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      document.querySelectorAll('.ti-n[data-target]').forEach(el=>{
+        animCount(el,parseInt(el.dataset.target),'','',0,1400);
+      });
+      ob.disconnect();
+    }
+  },{threshold:.5});
+  ob.observe(ticker);
+})();
 
-/* ── marquee ── */
-const features=[
+/* ════════════════════════════════════════════════════════════
+   MARQUEE
+════════════════════════════════════════════════════════════ */
+const MQ=[
   {icon:'⚡',t:'Real-time SSE traces'},
   {icon:'💰',t:'Per-call cost tracking'},
   {icon:'🔍',t:'ES Proxy instrumentation'},
@@ -1475,32 +1647,33 @@ const features=[
   {icon:'📊',t:'SQLite storage'},
   {icon:'🔄',t:'Streaming support'},
 ];
-
 const track=document.getElementById('mtrack');
-// duplicate for seamless loop
-[...features,...features].forEach(f=>{
+[...MQ,...MQ].forEach(f=>{
   const d=document.createElement('div');
-  d.className='marquee-item';
+  d.className='mq-item';
   d.innerHTML=`<span>${f.icon}</span>${f.t}`;
   track.appendChild(d);
 });
 
-/* ── scroll reveal ── */
-const io=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target);}});
-},{threshold:0.06});
-document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+/* ════════════════════════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════════════════════════ */
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');revObs.unobserve(e.target);}});
+},{threshold:.05});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
 
-/* ── copy ── */
+/* ════════════════════════════════════════════════════════════
+   COPY
+════════════════════════════════════════════════════════════ */
 function doCopy(e){
   e.preventDefault();
   navigator.clipboard.writeText('npx llmtap').then(()=>{
     const t=document.getElementById('toast');
     t.classList.add('on');
-    setTimeout(()=>t.classList.remove('on'),2400);
-  });
+    setTimeout(()=>t.classList.remove('on'),2500);
+  }).catch(()=>{});
 }
 </script>
 </body>
 </html>
-

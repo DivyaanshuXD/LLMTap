@@ -1,4 +1,13 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  clearDemoTraffic,
+  createDemoTraffic,
+  createDemoTrace,
+  fetchHealth,
+  fetchTraces,
+} from "@/api/client.ts";
+import { useLiveRefreshState } from "@/hooks/useLiveRefresh.ts";
 
 const STORAGE_KEY = "llmtap.quick-connect.minimized";
 
@@ -60,7 +69,7 @@ const cssVariables = `
     --qc-easing-out: cubic-bezier(0, 0, 0.2, 1);
 
     /* Dimensions */
-    --qc-widget-width: 360px;
+    --qc-widget-width: 392px;
     --qc-launcher-size: 46px;
     --qc-radius-sm: 6px;
     --qc-radius-md: 8px;
@@ -74,12 +83,22 @@ const cssVariables = `
 // ============================================================================
 type Mode = 'test' | 'observe';
 type Provider = 'openai' | 'anthropic' | 'google' | 'compatible';
+type AppStack = 'nextjs' | 'node' | 'express' | 'langchain' | 'custom';
 
 interface ProviderConfig {
   id: Provider;
   name: string;
   defaultModel: string;
+  packageName: string;
   snippet: string;
+}
+
+interface StackConfig {
+  id: AppStack;
+  name: string;
+  files: string[];
+  note: string;
+  buildSnippet: (provider: ProviderConfig) => string;
 }
 
 // ============================================================================
@@ -90,40 +109,121 @@ const PROVIDERS: ProviderConfig[] = [
     id: 'openai',
     name: 'OpenAI',
     defaultModel: 'gpt-4o-mini',
+    packageName: 'openai',
     snippet: `import OpenAI from "openai";
 import { wrap } from "@llmtap/sdk";
 
-const client = wrap(new OpenAI());`,
+export const client = wrap(new OpenAI());`,
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
     defaultModel: 'claude-3-7-sonnet-latest',
+    packageName: '@anthropic-ai/sdk',
     snippet: `import Anthropic from "@anthropic-ai/sdk";
 import { wrap } from "@llmtap/sdk";
 
-const client = wrap(new Anthropic());`,
+export const client = wrap(new Anthropic());`,
   },
   {
     id: 'google',
     name: 'Gemini',
     defaultModel: 'gemini-2.5-flash',
+    packageName: '@google/generative-ai',
     snippet: `import { GoogleGenerativeAI } from "@google/generative-ai";
 import { wrap } from "@llmtap/sdk";
 
-const client = wrap(new GoogleGenerativeAI(process.env.GOOGLE_API_KEY));`,
+export const client = wrap(new GoogleGenerativeAI(process.env.GOOGLE_API_KEY));`,
   },
   {
     id: 'compatible',
     name: 'OpenAI-compatible',
     defaultModel: 'model-name',
+    packageName: 'openai',
     snippet: `import OpenAI from "openai";
 import { wrap } from "@llmtap/sdk";
 
-const client = wrap(new OpenAI({
+export const client = wrap(new OpenAI({
   baseURL: "https://api.provider.com/v1",
   apiKey: process.env.PROVIDER_API_KEY,
 }), { provider: "provider-name" });`,
+  },
+];
+
+const installCommand = (provider: ProviderConfig) =>
+  `pnpm add @llmtap/sdk ${provider.packageName}`;
+
+const STACKS: StackConfig[] = [
+  {
+    id: 'nextjs',
+    name: 'Next.js / Vercel app',
+    files: ['app/api/chat/route.ts', 'src/lib/llm.ts', 'app/actions/*.ts'],
+    note: 'Wrap the server-side client used by your route handler or server action.',
+    buildSnippet: (provider) => `${installCommand(provider)}
+
+// src/lib/llm.ts
+${provider.snippet}
+
+// app/api/chat/route.ts
+import { client } from "@/lib/llm";
+
+// Keep your existing request handler. Replace only the raw SDK client import
+// with this wrapped client, then run one normal chat request.`,
+  },
+  {
+    id: 'node',
+    name: 'Node script / agent runner',
+    files: ['src/agent.ts', 'src/lib/llm.ts', 'scripts/run-agent.ts'],
+    note: 'Wrap the client once where your agent runner creates the model client.',
+    buildSnippet: (provider) => `${installCommand(provider)}
+
+// src/lib/llm.ts
+${provider.snippet}
+
+// src/agent.ts
+import { client } from "./lib/llm";
+
+// Use client exactly where your runner already calls the provider.`,
+  },
+  {
+    id: 'express',
+    name: 'Express / API server',
+    files: ['src/server.ts', 'src/routes/chat.ts', 'src/services/ai.ts'],
+    note: 'Wrap inside the API service layer, not inside the LLMTap folder.',
+    buildSnippet: (provider) => `${installCommand(provider)}
+
+// src/services/ai.ts
+${provider.snippet}
+
+// src/routes/chat.ts
+import { client } from "../services/ai";
+
+// Your route keeps the same response flow. Only the provider client is wrapped.`,
+  },
+  {
+    id: 'langchain',
+    name: 'LangChain / workflow',
+    files: ['src/chains/*.ts', 'src/agent.ts', 'src/models.ts'],
+    note: 'Wrap the underlying provider SDK client before your chain or graph invokes it.',
+    buildSnippet: (provider) => `${installCommand(provider)}
+
+// src/models.ts
+${provider.snippet}
+
+// Pass this wrapped provider client into your chain/model adapter where supported.
+// If your framework hides the raw SDK, use LLMTap proxy or OTLP export instead.`,
+  },
+  {
+    id: 'custom',
+    name: 'Custom app',
+    files: ['wherever your LLM client is created', 'provider factory', 'agent bootstrap'],
+    note: 'Find the one file that constructs the provider client. Wrap there once.',
+    buildSnippet: (provider) => `${installCommand(provider)}
+
+// Your provider-client file
+${provider.snippet}
+
+// After this, run one real model call in that same app.`,
   },
 ];
 
@@ -720,6 +820,195 @@ const styles = `
     margin: 0;
   }
 
+  /* Connection Doctor */
+  .qc-doctor {
+    border: 1px solid var(--qc-border-subtle);
+    border-radius: var(--qc-radius-lg);
+    background: linear-gradient(180deg, rgba(var(--rgb-surface), 0.46), rgba(var(--rgb-ink), 0.62));
+    padding: var(--qc-space-3);
+    margin-bottom: var(--qc-space-3);
+  }
+
+  .qc-doctor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--qc-space-3);
+    margin-bottom: var(--qc-space-3);
+  }
+
+  .qc-doctor-title {
+    font-family: var(--qc-font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--qc-accent-primary);
+  }
+
+  .qc-doctor-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .qc-doctor-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--qc-space-3);
+    border: 1px solid var(--qc-border-subtle);
+    border-radius: var(--qc-radius-md);
+    background: rgba(var(--rgb-ink), 0.42);
+    padding: 0.48rem var(--qc-space-3);
+  }
+
+  .qc-doctor-label {
+    display: flex;
+    align-items: center;
+    gap: var(--qc-space-2);
+    min-width: 0;
+    color: var(--qc-text-secondary);
+    font-size: 0.75rem;
+  }
+
+  .qc-doctor-value {
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--qc-font-mono);
+    font-size: 0.68rem;
+    color: var(--qc-text-tertiary);
+  }
+
+  .qc-doctor-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--qc-text-muted);
+    flex: 0 0 auto;
+  }
+
+  .qc-doctor-dot.ok {
+    background: var(--qc-accent-primary);
+    box-shadow: 0 0 12px rgba(var(--rgb-accent), 0.7);
+  }
+
+  .qc-doctor-dot.warn {
+    background: var(--qc-accent-warning);
+    box-shadow: 0 0 12px rgba(var(--rgb-warning), 0.38);
+  }
+
+  .qc-doctor-dot.off {
+    background: var(--qc-accent-error);
+    box-shadow: 0 0 12px rgba(var(--rgb-error), 0.3);
+  }
+
+  .qc-demo-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--qc-space-2);
+    margin-top: var(--qc-space-3);
+  }
+
+  .qc-btn-mini {
+    min-height: 34px;
+    flex: 1 1 0;
+    border-radius: var(--qc-radius-md);
+    border: 1px solid var(--qc-border-accent);
+    background: rgba(var(--rgb-accent), 0.08);
+    color: var(--qc-accent-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-family: var(--qc-font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0 var(--qc-space-2);
+    text-transform: uppercase;
+    transition: all var(--qc-duration-fast) var(--qc-easing-default);
+  }
+
+  .qc-btn-mini:hover:not(:disabled) {
+    border-color: var(--qc-border-focus);
+    background: rgba(var(--rgb-accent), 0.14);
+    box-shadow: 0 0 18px rgba(var(--rgb-accent), 0.14);
+  }
+
+  .qc-btn-mini:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  .qc-btn-mini svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    stroke-width: 2.4;
+  }
+
+  .qc-btn-mini .qc-spinner {
+    width: 13px;
+    height: 13px;
+    margin-right: 0;
+  }
+
+  .qc-demo-status {
+    min-width: 0;
+    flex: 1 1 100%;
+    font-size: 0.72rem;
+    color: var(--qc-text-tertiary);
+  }
+
+  .qc-timeline {
+    list-style: none;
+    margin: var(--qc-space-2) 0 0;
+    padding: var(--qc-space-2) 0 0;
+    border-top: 1px solid var(--qc-border-subtle);
+    display: grid;
+    gap: var(--qc-space-2);
+  }
+
+  .qc-timeline-step {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    align-items: center;
+    gap: var(--qc-space-2);
+    font-family: var(--qc-font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    color: var(--qc-text-muted);
+    text-transform: uppercase;
+  }
+
+  .qc-timeline-step::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--qc-text-muted);
+  }
+
+  .qc-timeline-step.done {
+    color: var(--qc-text-secondary);
+  }
+
+  .qc-timeline-step.done::before {
+    background: var(--qc-accent-primary);
+    box-shadow: 0 0 12px rgba(var(--rgb-accent), 0.58);
+  }
+
+  .qc-timeline-meta {
+    color: var(--qc-text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
   /* Advanced Section */
   .qc-advanced {
     margin-top: var(--qc-space-4);
@@ -791,12 +1080,12 @@ const styles = `
     background: var(--qc-bg-deep);
     border: 1px solid var(--qc-border-subtle);
     border-radius: var(--qc-radius-md);
-    margin-bottom: var(--qc-space-4);
+    margin-bottom: var(--qc-space-3);
   }
 
   .qc-explanation-text {
     font-size: 0.8125rem;
-    line-height: 1.6;
+    line-height: 1.5;
     color: var(--qc-text-secondary);
     margin: 0;
   }
@@ -817,6 +1106,13 @@ const styles = `
     font-size: 0.625rem;
     letter-spacing: 0.04em;
     padding: 0.3125rem var(--qc-space-2);
+  }
+
+  .qc-stack-note {
+    margin-top: var(--qc-space-2);
+    color: var(--qc-text-tertiary);
+    font-size: 0.74rem;
+    line-height: 1.5;
   }
 
   /* Spinner */
@@ -901,11 +1197,14 @@ const Icons = {
 // ============================================================================
 export default function QuickConnectWidget() {
   // State
+  const queryClient = useQueryClient();
+  const liveState = useLiveRefreshState();
   const [isExpanded, setIsExpanded] = useState(() =>
     typeof window === "undefined" ? true : window.localStorage.getItem(STORAGE_KEY) !== "true"
   );
   const [mode, setMode] = useState<Mode>('observe');
   const [provider, setProvider] = useState<Provider>('openai');
+  const [stack, setStack] = useState<AppStack>('nextjs');
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [model, setModel] = useState('');
@@ -915,8 +1214,20 @@ export default function QuickConnectWidget() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [demoStatus, setDemoStatus] = useState<"idle" | "running" | "traffic" | "clearing" | "sent" | "cleared" | "error">("idle");
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const healthQuery = useQuery({
+    queryKey: ["quick-connect", "health"],
+    queryFn: fetchHealth,
+    refetchInterval: isExpanded ? 5000 : false,
+    retry: 1,
+  });
+  const latestTraceQuery = useQuery({
+    queryKey: ["quick-connect", "latest-trace"],
+    queryFn: () => fetchTraces({ limit: 1, offset: 0 }),
+    refetchInterval: isExpanded ? 5000 : false,
+  });
 
   // Update model when provider changes
   useEffect(() => {
@@ -958,12 +1269,60 @@ export default function QuickConnectWidget() {
 
   const handleCopy = useCallback(() => {
     const p = PROVIDERS.find(pr => pr.id === provider);
-    if (p) {
-      navigator.clipboard.writeText(p.snippet);
+    const s = STACKS.find(st => st.id === stack);
+    if (p && s) {
+      navigator.clipboard.writeText(s.buildSnippet(p));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [provider]);
+  }, [provider, stack]);
+
+  const refreshDashboardData = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["stats"] }),
+      queryClient.invalidateQueries({ queryKey: ["traces"] }),
+      queryClient.invalidateQueries({ queryKey: ["quick-connect", "latest-trace"] }),
+    ]);
+  }, [queryClient]);
+
+  const handleCreateDemoTrace = useCallback(async () => {
+    setDemoStatus("running");
+    setError(null);
+    try {
+      await createDemoTrace({ provider, model });
+      setDemoStatus("sent");
+      await refreshDashboardData();
+    } catch (err) {
+      setDemoStatus("error");
+      setError(err instanceof Error ? err.message : "Failed to create demo trace");
+    }
+  }, [model, provider, refreshDashboardData]);
+
+  const handleCreateDemoTraffic = useCallback(async () => {
+    setDemoStatus("traffic");
+    setError(null);
+    try {
+      await createDemoTraffic({ provider, model });
+      setDemoStatus("sent");
+      await refreshDashboardData();
+    } catch (err) {
+      setDemoStatus("error");
+      setError(err instanceof Error ? err.message : "Failed to create demo traffic");
+    }
+  }, [model, provider, refreshDashboardData]);
+
+  const handleClearDemoTraffic = useCallback(async () => {
+    setDemoStatus("clearing");
+    setError(null);
+    try {
+      await clearDemoTraffic();
+      setDemoStatus("cleared");
+      await refreshDashboardData();
+    } catch (err) {
+      setDemoStatus("error");
+      setError(err instanceof Error ? err.message : "Failed to clear demo traffic");
+    }
+  }, [refreshDashboardData]);
 
   const handleSwitchMode = useCallback(() => {
     setMode('observe');
@@ -977,6 +1336,31 @@ export default function QuickConnectWidget() {
   }, []);
 
   const currentProvider = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
+  const currentStack = STACKS.find(s => s.id === stack) || STACKS[0];
+  const currentSnippet = currentStack.buildSnippet(currentProvider);
+  const latestTrace = latestTraceQuery.data?.traces[0];
+  const hasObservedTraffic = Boolean(latestTrace || liveState.lastEventAt);
+  const collectorOnline = healthQuery.data?.status === "ok";
+  const streamOnline = liveState.status === "connected";
+  const lastTraceLabel = latestTrace
+    ? latestTrace.name
+    : latestTraceQuery.isLoading
+      ? "checking"
+      : "none yet";
+  const demoStatusLabel =
+    demoStatus === "running"
+      ? "Writing one local sample trace..."
+      : demoStatus === "traffic"
+        ? "Simulating a multi-provider traffic burst..."
+        : demoStatus === "clearing"
+          ? "Clearing Quick Connect demo spans..."
+          : demoStatus === "sent"
+            ? "Demo traffic sent. Overview and Traces should update."
+            : demoStatus === "cleared"
+              ? "Demo spans cleared. Your real traces were left untouched."
+              : demoStatus === "error"
+                ? error || "Demo action failed. Collector may be offline."
+                : "No API key needed. Demo writes local synthetic spans only.";
 
   // Render
   return (
@@ -1151,11 +1535,112 @@ export default function QuickConnectWidget() {
                       Do this in your app project, not the folder where you ran npx llmtap. Find the file that creates your LLM client and wrap it once.
                     </p>
                     <div className="qc-path-list" aria-label="Common files to wrap">
-                      <span className="qc-path-pill">app/api/chat/route.ts</span>
-                      <span className="qc-path-pill">src/lib/openai.ts</span>
-                      <span className="qc-path-pill">services/ai.ts</span>
-                      <span className="qc-path-pill">agent runner</span>
+                      {currentStack.files.map((file) => (
+                        <span className="qc-path-pill" key={file}>{file}</span>
+                      ))}
                     </div>
+                    <p className="qc-stack-note">{currentStack.note}</p>
+                  </div>
+
+                  <div className="qc-doctor" aria-label="Connection Doctor">
+                    <div className="qc-doctor-head">
+                      <div className="qc-doctor-title">Connection Doctor</div>
+                      <span className="qc-doctor-value">localhost:4781</span>
+                    </div>
+                    <div className="qc-doctor-grid">
+                      <div className="qc-doctor-item">
+                        <span className="qc-doctor-label">
+                          <span className={`qc-doctor-dot ${collectorOnline ? 'ok' : healthQuery.isError ? 'off' : 'warn'}`} />
+                          Collector
+                        </span>
+                        <span className="qc-doctor-value">
+                          {collectorOnline ? 'online' : healthQuery.isError ? 'offline' : 'checking'}
+                        </span>
+                      </div>
+                      <div className="qc-doctor-item">
+                        <span className="qc-doctor-label">
+                          <span className={`qc-doctor-dot ${streamOnline ? 'ok' : liveState.status === 'reconnecting' ? 'warn' : 'off'}`} />
+                          Live stream
+                        </span>
+                        <span className="qc-doctor-value">{liveState.status}</span>
+                      </div>
+                      <div className="qc-doctor-item">
+                        <span className="qc-doctor-label">
+                          <span className={`qc-doctor-dot ${hasObservedTraffic ? 'ok' : 'warn'}`} />
+                          App traffic
+                        </span>
+                        <span className="qc-doctor-value">
+                          {hasObservedTraffic ? 'observed' : 'awaiting'}
+                        </span>
+                      </div>
+                      <div className="qc-doctor-item">
+                        <span className="qc-doctor-label">
+                          <span className={`qc-doctor-dot ${latestTrace ? 'ok' : 'warn'}`} />
+                          Latest trace
+                        </span>
+                        <span className="qc-doctor-value" title={latestTrace?.name}>{lastTraceLabel}</span>
+                      </div>
+                    </div>
+                    <div className="qc-demo-row">
+                      <button
+                        className="qc-btn-mini"
+                        disabled={demoStatus === "running" || demoStatus === "traffic" || demoStatus === "clearing"}
+                        onClick={handleCreateDemoTrace}
+                        type="button"
+                      >
+                        {demoStatus === "running" ? <span className="qc-spinner" /> : <Icons.zap />}
+                        Demo trace
+                      </button>
+                      <button
+                        className="qc-btn-mini"
+                        disabled={demoStatus === "running" || demoStatus === "traffic" || demoStatus === "clearing"}
+                        onClick={handleCreateDemoTraffic}
+                        type="button"
+                      >
+                        {demoStatus === "traffic" ? <span className="qc-spinner" /> : <Icons.zap />}
+                        Simulate traffic
+                      </button>
+                      <button
+                        className="qc-btn-mini"
+                        disabled={demoStatus === "running" || demoStatus === "traffic" || demoStatus === "clearing"}
+                        onClick={handleClearDemoTraffic}
+                        type="button"
+                      >
+                        {demoStatus === "clearing" ? <span className="qc-spinner" /> : <Icons.x />}
+                        Reset samples
+                      </button>
+                      <span className="qc-demo-status">
+                        {demoStatusLabel}
+                      </span>
+                    </div>
+                    <ol className="qc-timeline" aria-label="Setup diagnostics">
+                      <li className={`qc-timeline-step ${collectorOnline ? 'done' : ''}`}>
+                        <span>Collector booted</span>
+                        <span className="qc-timeline-meta">{collectorOnline ? 'ok' : 'waiting'}</span>
+                      </li>
+                      <li className={`qc-timeline-step ${streamOnline ? 'done' : ''}`}>
+                        <span>Live channel open</span>
+                        <span className="qc-timeline-meta">{liveState.status}</span>
+                      </li>
+                      <li className={`qc-timeline-step ${hasObservedTraffic ? 'done' : ''}`}>
+                        <span>First app trace</span>
+                        <span className="qc-timeline-meta">{hasObservedTraffic ? 'seen' : 'pending'}</span>
+                      </li>
+                    </ol>
+                  </div>
+
+                  {/* App Shape Select */}
+                  <div className="qc-field">
+                    <label className="qc-label">App Shape</label>
+                    <select
+                      className="qc-select"
+                      value={stack}
+                      onChange={(e) => setStack(e.target.value as AppStack)}
+                    >
+                      {STACKS.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Provider Select */}
@@ -1187,24 +1672,15 @@ export default function QuickConnectWidget() {
                         )}
                       </button>
                     </div>
-                    <pre className="qc-code-content">{currentProvider.snippet}</pre>
+                    <pre className="qc-code-content">{currentSnippet}</pre>
                   </div>
 
-                  {/* Checklist */}
-                  <ul className="qc-checklist">
-                    <li className="qc-checklist-item">
-                      <span className="qc-check-icon"><Icons.check /></span>
-                      <span>Keep your API key where your app already uses it</span>
-                    </li>
-                    <li className="qc-checklist-item">
-                      <span className="qc-check-icon"><Icons.check /></span>
-                      <span>Wrap the client in the app that makes LLM calls</span>
-                    </li>
-                    <li className="qc-checklist-item">
-                      <span className="qc-check-icon"><Icons.check /></span>
-                      <span>Run one real request and the trace should appear automatically</span>
-                    </li>
-                  </ul>
+                  <div className="qc-note">
+                    <span className="qc-note-icon"><Icons.info /></span>
+                    <p className="qc-note-text">
+                      Keep the API key in your app. LLMTap only wraps the client and listens to the local collector.
+                    </p>
+                  </div>
                 </div>
               )}
 

@@ -32,5 +32,8 @@ jobs:
       - name: Build
         run: pnpm -r build
 
+      - name: Check dashboard bundle
+        run: pnpm bundle:check
+
       - name: Test
         run: pnpm -r test

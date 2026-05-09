@@ -46,6 +46,12 @@ export async function registerStatsRoute(
     }
     const periodHours = parsed.data.period;
     const since = Date.now() - periodHours * 60 * 60 * 1000;
+    const bucketMs =
+      periodHours <= 168
+        ? 60 * 1000
+        : periodHours <= 720
+          ? 15 * 60 * 1000
+          : 60 * 60 * 1000;
 
     const db = getDb();
 
@@ -108,7 +114,7 @@ export async function registerStatsRoute(
       .prepare(
         `
       SELECT
-        (startTime / 3600000) * 3600000 as bucket,
+        (startTime / @bucketMs) * @bucketMs as bucket,
         COALESCE(SUM(totalCost), 0) as cost,
         COALESCE(SUM(totalTokens), 0) as tokens,
         COUNT(*) as spans
@@ -118,7 +124,7 @@ export async function registerStatsRoute(
       ORDER BY bucket ASC
     `
       )
-      .all({ since }) as CostRow[];
+      .all({ since, bucketMs }) as CostRow[];
 
     return reply.send({
       period: `${periodHours}h`,

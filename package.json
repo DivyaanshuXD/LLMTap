@@ -7,6 +7,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
+    "bundle:check": "node scripts/check-dashboard-bundle.mjs",
     "release:check": "node scripts/verify-publish-manifests.mjs"
   },
   "devDependencies": {

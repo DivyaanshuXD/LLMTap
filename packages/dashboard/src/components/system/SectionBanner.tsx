@@ -31,20 +31,20 @@ export function SectionBanner({
       }}
     >
       <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(var(--ch-accent),0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--ch-accent),0.8)_1px,transparent_1px)] [background-size:84px_84px]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.92] [mask-image:radial-gradient(circle_at_center,black,transparent_84%)]">
+      <div className="absolute inset-0 opacity-[0.98] [mask-image:radial-gradient(circle_at_center,black,transparent_88%)]">
         <StarsBackground
           className="h-full w-full"
-          speed={110}
-          factor={0.008}
-          starColor="rgba(var(--rgb-text-frost), 0.2)"
+          speed={96}
+          factor={0.016}
+          starColor="rgba(var(--rgb-accent-max), 0.34)"
           pointerEvents={false}
           transparent
-          blendMode="normal"
-          fieldOpacity={0.82}
+          blendMode="screen"
+          fieldOpacity={0.98}
           layers={[
-            { count: 240, size: 1, durationMultiplier: 1 },
-            { count: 92, size: 2, durationMultiplier: 1.8 },
-            { count: 36, size: 3, durationMultiplier: 2.6 },
+            { count: 320, size: 1, durationMultiplier: 1 },
+            { count: 120, size: 2, durationMultiplier: 1.8 },
+            { count: 44, size: 3, durationMultiplier: 2.6 },
           ]}
         />
       </div>
@@ -93,7 +93,7 @@ export function SectionBanner({
 
             <div className="space-y-4">
               <h1
-                className="max-w-[9ch] text-[var(--color-text-primary)]"
+                className="impact-shimmer max-w-[9ch] text-[var(--color-text-primary)]"
                 style={{
                   fontFamily: "var(--font-operator)",
                   fontSize: "clamp(42px, 5.2vw, 84px)",

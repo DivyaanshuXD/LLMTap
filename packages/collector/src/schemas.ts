@@ -64,6 +64,7 @@ export const TracesQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
   status: z.enum(["ok", "error"]).optional(),
   provider: z.string().max(MAX_SHORT_STRING).optional(),
+  sessionId: z.string().max(MAX_ID_LEN).optional(),
   q: z.string().max(MAX_SHORT_STRING).optional(),
   periodHours: z.coerce.number().int().min(1).max(8760).optional(), // max 1 year
 });

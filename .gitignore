@@ -17,6 +17,8 @@ build/
 
 # Testing
 coverage/
+test-results/
+packages/dashboard/test-results/
 
 # OS files
 .DS_Store

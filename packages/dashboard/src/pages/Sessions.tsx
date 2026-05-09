@@ -33,6 +33,7 @@ export default function Sessions() {
   const { data, isLoading } = useQuery({
     queryKey: ["sessions"],
     queryFn: () => fetchSessions(168),
+    refetchInterval: 5000,
   });
 
   const sessions = data?.sessions ?? [];
@@ -46,7 +47,7 @@ export default function Sessions() {
         header: "Session ID",
         cell: ({ row }) => (
           <Link
-            to={`/traces?q=${encodeURIComponent(row.original.sessionId)}`}
+            to={`/traces?sessionId=${encodeURIComponent(row.original.sessionId)}&periodHours=168`}
             className="group inline-flex min-w-0 items-center gap-3"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-panel)] border border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.03)] text-[var(--color-accent)] transition-colors hover:border-[var(--border-default)] hover:text-[var(--color-accent)]">

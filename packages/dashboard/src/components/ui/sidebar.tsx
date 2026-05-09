@@ -172,20 +172,20 @@ function SidebarChrome({
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.58]">
+      <div className="absolute inset-0 opacity-[0.9]">
         <StarsBackground
           className="h-full w-full"
-          speed={140}
-          factor={0}
-          starColor="rgba(var(--rgb-text-frost), 0.16)"
+          speed={128}
+          factor={0.01}
+          starColor="rgba(var(--rgb-accent-max), 0.28)"
           pointerEvents={false}
           transparent
-          blendMode="normal"
-          fieldOpacity={0.72}
+          blendMode="screen"
+          fieldOpacity={0.9}
           layers={[
-            { count: 110, size: 1, durationMultiplier: 1 },
-            { count: 42, size: 2, durationMultiplier: 1.8 },
-            { count: 16, size: 3, durationMultiplier: 2.6 },
+            { count: 145, size: 1, durationMultiplier: 1 },
+            { count: 54, size: 2, durationMultiplier: 1.8 },
+            { count: 18, size: 3, durationMultiplier: 2.6 },
           ]}
         />
       </div>

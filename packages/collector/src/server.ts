@@ -14,6 +14,7 @@ import { registerDbInfoRoute } from "./routes/db-info.js";
 import { registerInsightsRoute } from "./routes/insights.js";
 import { registerReplayRoute } from "./routes/replay.js";
 import { registerOtlpExportRoute } from "./routes/otlp.js";
+import { registerDemoRoute } from "./routes/demo.js";
 import { initOtlpForwarder, getOtlpEndpoint } from "./otlp-forwarder.js";
 
 export interface CollectorOptions {
@@ -32,6 +33,7 @@ const rateLimitConfigs: Record<string, { max: number; windowMs: number }> = {
   "POST:/v1/spans": { max: 300, windowMs: 60_000 },
   "POST:/v1/reset": { max: 5, windowMs: 60_000 },
   "POST:/v1/replay": { max: 30, windowMs: 60_000 },
+  "POST:/v1/demo/clear": { max: 10, windowMs: 60_000 },
   "POST:/v1/retention": { max: 10, windowMs: 60_000 },
   "POST:/v1/export/otlp/forward": { max: 20, windowMs: 60_000 },
   "GET:/v1/insights": { max: 60, windowMs: 60_000 },
@@ -150,6 +152,7 @@ export async function createServer(options: CollectorOptions = {}) {
   await registerInsightsRoute(app);
   await registerReplayRoute(app);
   await registerOtlpExportRoute(app);
+  await registerDemoRoute(app);
 
   // Health check
   app.get("/health", async () => ({ status: "ok" }));

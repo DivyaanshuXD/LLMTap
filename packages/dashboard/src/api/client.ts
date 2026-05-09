@@ -83,6 +83,7 @@ export interface TraceQuery {
   q?: string;
   status?: "ok" | "error";
   provider?: string;
+  sessionId?: string;
   periodHours?: number;
 }
 
@@ -106,6 +107,7 @@ export async function fetchTraces(
   if (query.q) params.set("q", query.q);
   if (query.status) params.set("status", query.status);
   if (query.provider) params.set("provider", query.provider);
+  if (query.sessionId) params.set("sessionId", query.sessionId);
   if (query.periodHours) params.set("periodHours", String(query.periodHours));
 
   return fetchJSON(`/v1/traces?${params.toString()}`);
@@ -117,6 +119,236 @@ export async function fetchTraceSpans(traceId: string): Promise<{ spans: Span[] 
 
 export async function fetchStats(period = 24): Promise<Stats> {
   return fetchJSON(`/v1/stats?period=${period}`);
+}
+
+export async function fetchHealth(): Promise<{ status: string }> {
+  return fetchJSON("/health");
+}
+
+function makeId(prefix: string) {
+  const random =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "")
+      : Math.random().toString(16).slice(2) + Date.now().toString(16);
+  return `${prefix}_${random.slice(0, 24)}`;
+}
+
+interface DemoSpanPayload {
+  spanId: string;
+  traceId: string;
+  name: string;
+  operationName: string;
+  providerName: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  requestModel: string;
+  responseModel: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  inputCost: number;
+  outputCost: number;
+  totalCost: number;
+  temperature: number;
+  maxTokens: number;
+  inputMessages: Message[];
+  outputMessages?: Message[];
+  status: "ok" | "error";
+  errorType?: string;
+  errorMessage?: string;
+  tags: Record<string, string>;
+  sessionId: string;
+}
+
+const DEMO_SCENARIOS = [
+  {
+    name: "agent planning",
+    operationName: "chat",
+    providerName: "openai",
+    requestModel: "gpt-4o-mini",
+    duration: 428,
+    inputTokens: 96,
+    outputTokens: 142,
+    totalCost: 0.000099,
+    prompt: "Plan a three-step local observability rollout.",
+    response: "Plan created with collector startup, SDK wrapping, and trace review.",
+    status: "ok" as const,
+  },
+  {
+    name: "tool routing decision",
+    operationName: "chat",
+    providerName: "anthropic",
+    requestModel: "claude-3-7-sonnet-latest",
+    duration: 812,
+    inputTokens: 420,
+    outputTokens: 236,
+    totalCost: 0.0061,
+    prompt: "Choose the safest tool for reading local trace metadata.",
+    response: "Selected read-only metadata lookup and avoided exporting payload content.",
+    status: "ok" as const,
+  },
+  {
+    name: "rag answer synthesis",
+    operationName: "chat",
+    providerName: "google",
+    requestModel: "gemini-2.5-flash",
+    duration: 1190,
+    inputTokens: 1360,
+    outputTokens: 318,
+    totalCost: 0.0034,
+    prompt: "Summarize retrieved docs into an answer with citations.",
+    response: "Synthesized a concise answer from three retrieved passages.",
+    status: "ok" as const,
+  },
+  {
+    name: "budget guardrail",
+    operationName: "chat",
+    providerName: "openai",
+    requestModel: "gpt-4o-mini",
+    duration: 264,
+    inputTokens: 86,
+    outputTokens: 22,
+    totalCost: 0.000027,
+    prompt: "Check whether this request should be routed to a cheaper model.",
+    response: "Recommended the mini model because the prompt is short and low risk.",
+    status: "ok" as const,
+  },
+  {
+    name: "provider timeout",
+    operationName: "chat",
+    providerName: "openrouter",
+    requestModel: "meta-llama/llama-3.1-70b-instruct",
+    duration: 4100,
+    inputTokens: 690,
+    outputTokens: 0,
+    totalCost: 0,
+    prompt: "Generate a multi-tool plan for a browser agent.",
+    response: "",
+    status: "error" as const,
+    errorType: "TimeoutError",
+    errorMessage: "Provider did not return within the configured timeout.",
+  },
+  {
+    name: "final response polish",
+    operationName: "chat",
+    providerName: "groq",
+    requestModel: "llama-3.1-8b-instant",
+    duration: 218,
+    inputTokens: 310,
+    outputTokens: 124,
+    totalCost: 0.000041,
+    prompt: "Rewrite a status update in a direct engineering tone.",
+    response: "Condensed the update and preserved the verification details.",
+    status: "ok" as const,
+  },
+];
+
+function buildDemoSpan(
+  scenario: (typeof DEMO_SCENARIOS)[number],
+  index: number,
+  options: { provider?: string; model?: string; now: number }
+): DemoSpanPayload {
+  const providerName = index === 0 ? options.provider || scenario.providerName : scenario.providerName;
+  const requestModel = index === 0 ? options.model?.trim() || scenario.requestModel : scenario.requestModel;
+  const totalTokens = scenario.inputTokens + scenario.outputTokens;
+  const startTime = options.now - (DEMO_SCENARIOS.length - index) * 95_000 - scenario.duration;
+  const endTime = startTime + scenario.duration;
+
+  return {
+    spanId: makeId(`sp_demo_${index}`),
+    traceId: makeId(`tr_demo_${index}`),
+    name: scenario.name,
+    operationName: scenario.operationName,
+    providerName,
+    startTime,
+    endTime,
+    duration: scenario.duration,
+    requestModel,
+    responseModel: requestModel,
+    inputTokens: scenario.inputTokens,
+    outputTokens: scenario.outputTokens,
+    totalTokens,
+    inputCost: scenario.totalCost * 0.35,
+    outputCost: scenario.totalCost * 0.65,
+    totalCost: scenario.totalCost,
+    temperature: 0.7,
+    maxTokens: 512,
+    inputMessages: [
+      {
+        role: "user",
+        content: scenario.prompt,
+      },
+    ],
+    outputMessages:
+      scenario.status === "ok"
+        ? [
+            {
+              role: "assistant",
+              content: scenario.response,
+            },
+          ]
+        : undefined,
+    status: scenario.status,
+    errorType: scenario.errorType,
+    errorMessage: scenario.errorMessage,
+    tags: {
+      source: "quick-connect",
+      demo: "true",
+      simulator: "true",
+    },
+    sessionId: `quick-connect-demo-${options.now}`,
+  };
+}
+
+async function postDemoSpans(spans: DemoSpanPayload[]): Promise<{ accepted: number }> {
+  const res = await fetch(`${BASE}/v1/spans`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spans }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}${body ? `: ${body.slice(0, 200)}` : ""}`);
+  }
+
+  return res.json() as Promise<{ accepted: number }>;
+}
+
+export async function createDemoTrace(options: {
+  provider?: string;
+  model?: string;
+} = {}): Promise<{ accepted: number }> {
+  const now = Date.now();
+  return postDemoSpans([buildDemoSpan(DEMO_SCENARIOS[0], 0, { ...options, now })]);
+}
+
+export async function createDemoTraffic(options: {
+  provider?: string;
+  model?: string;
+} = {}): Promise<{ accepted: number }> {
+  const now = Date.now();
+  return postDemoSpans(
+    DEMO_SCENARIOS.map((scenario, index) =>
+      buildDemoSpan(scenario, index, { ...options, now })
+    )
+  );
+}
+
+export async function clearDemoTraffic(): Promise<{ deletedSpans: number }> {
+  const res = await fetch(`${BASE}/v1/demo/clear`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: true }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}${body ? `: ${body.slice(0, 200)}` : ""}`);
+  }
+
+  return res.json() as Promise<{ deletedSpans: number }>;
 }
 
 export function createSSEConnection(onSpan: (span: Span) => void): EventSource {
@@ -190,13 +422,24 @@ export async function exportTraces(
   format: "json" | "csv",
   query: TraceQuery = {}
 ): Promise<string> {
-  const data = await fetchTraces({ ...query, limit: 10000, offset: 0 });
+  const limit = 200;
+  const allTraces: Trace[] = [];
+  let offset = 0;
+  let total = 0;
+
+  do {
+    const data = await fetchTraces({ ...query, limit, offset });
+    allTraces.push(...data.traces);
+    total = data.total;
+    offset += limit;
+  } while (allTraces.length < total);
+
   if (format === "json") {
-    return JSON.stringify(data.traces, null, 2);
+    return JSON.stringify(allTraces, null, 2);
   }
-  if (data.traces.length === 0) return "";
+  if (allTraces.length === 0) return "";
   const headers: (keyof Trace)[] = ["traceId", "name", "status", "spanCount", "totalTokens", "totalCost", "startTime"];
-  const rows = data.traces.map((t) =>
+  const rows = allTraces.map((t) =>
     headers.map((h) => {
       const val = t[h];
       const str = String(val ?? "");

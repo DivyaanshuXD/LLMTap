@@ -673,6 +673,7 @@ export default function Traces() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get("q") ?? "";
   const deferredSearch = useDeferredValue(searchTerm);
+  const sessionId = searchParams.get("sessionId") ?? "";
   const status = searchParams.get("status");
   const validStatus = status === "ok" || status === "error" ? status : "";
   const periodHours = Number(searchParams.get("periodHours") ?? "24");
@@ -698,12 +699,13 @@ export default function Traces() {
       limit: effectivePageSize,
       offset,
       q: deferredSearch.trim() || undefined,
+      sessionId: sessionId.trim() || undefined,
       status: (validStatus || undefined) as "ok" | "error" | undefined,
       periodHours: PERIOD_OPTIONS.some((o) => o.value === periodHours)
         ? periodHours
         : 24,
     }),
-    [deferredSearch, effectivePageSize, offset, periodHours, validStatus]
+    [deferredSearch, effectivePageSize, offset, periodHours, sessionId, validStatus]
   );
 
   const { data: tracesData, isLoading } = useQuery({
@@ -776,6 +778,7 @@ export default function Traces() {
   /* ---- URL param helper ---- */
   const hasActiveFilters =
     searchTerm.length > 0 ||
+    sessionId.length > 0 ||
     validStatus.length > 0 ||
     traceQuery.periodHours !== 24;
 
@@ -849,6 +852,11 @@ export default function Traces() {
         }
       >
         <div className="pill-strip w-fit max-w-full overflow-x-auto">
+          {sessionId ? (
+            <span className="pill-item">
+              session <strong>{sessionId.slice(0, 18)}</strong>
+            </span>
+          ) : null}
           <span className="pill-item">
             window <strong>{traceQuery.periodHours}h</strong>
           </span>
@@ -942,6 +950,7 @@ export default function Traces() {
                   onClick={() =>
                     updateParams({
                       q: undefined,
+                      sessionId: undefined,
                       status: undefined,
                       periodHours: undefined,
                     })
@@ -1022,7 +1031,18 @@ export default function Traces() {
             <>
               <div className="overflow-hidden rounded-[22px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.9),rgba(var(--ch-bg-deep),0.96),rgba(var(--ch-bg-base),0.99))] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.04),0_24px_56px_rgba(0,0,0,0.3)]">
                 <div className="overflow-x-auto">
-                <table className="w-full min-w-[980px] border-collapse text-sm">
+                <table className="w-full min-w-[1040px] table-fixed border-collapse text-sm">
+                  <colgroup>
+                    <col className="w-12" />
+                    <col className="w-20" />
+                    <col className="w-[260px]" />
+                    <col className="w-[150px]" />
+                    <col className="w-24" />
+                    <col className="w-28" />
+                    <col className="w-28" />
+                    <col className="w-28" />
+                    <col className="w-28" />
+                  </colgroup>
                   <thead className="sticky top-0 z-10 bg-[rgba(var(--ch-bg-base),0.94)] backdrop-blur-xl">
                     <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
                       <th className="px-4 py-3 text-center">
@@ -1124,7 +1144,7 @@ export default function Traces() {
                             </div>
                           </td>
                           <td className="px-4 py-3.5">
-                            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                            <span className="inline-block max-w-full truncate font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                               {trace.traceId.slice(0, 12)}
                             </span>
                           </td>

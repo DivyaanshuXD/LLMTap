@@ -1,6 +1,6 @@
 {
   "name": "@llmtap/collector",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "LLMTap Collector - Local ingestion server and storage",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

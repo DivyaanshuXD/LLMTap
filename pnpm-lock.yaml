@@ -45,7 +45,7 @@ importers:
   packages/cli:
     dependencies:
       '@llmtap/collector':
-        specifier: ^0.1.5
+        specifier: ^0.1.7
         version: link:../collector
       '@llmtap/shared':
         specifier: ^0.1.5

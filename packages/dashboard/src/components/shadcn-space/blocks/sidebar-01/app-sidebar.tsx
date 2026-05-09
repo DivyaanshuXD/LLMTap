@@ -8,9 +8,9 @@ import {
   List,
   MessageSquareMore,
   Settings2,
-  TowerControl,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { BrandMark } from "@/components/BrandMark.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -75,12 +75,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           to="/"
           end
           className={`group flex min-w-0 items-center rounded-[26px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.92),rgba(var(--ch-bg-panel),0.98))] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.05),0_24px_56px_rgba(0,0,0,0.22)] transition-[background,border-color,box-shadow] duration-[240ms] ease-[var(--ease-out)] hover:border-[var(--border-default)] hover:bg-[linear-gradient(180deg,var(--color-card),var(--color-panel))] ${
-            expanded ? "gap-3.5 px-4 py-3.5" : "mx-auto h-[3.75rem] w-[3.75rem] justify-center px-0 py-0"
+            expanded ? "gap-3 px-4 py-3" : "mx-auto h-[3.35rem] w-[3.35rem] justify-center px-0 py-0"
           }`}
         >
-          <div className={`flex shrink-0 items-center justify-center rounded-[18px] border border-[var(--border-default)] bg-[linear-gradient(145deg,var(--color-accent-max),var(--color-accent-2))] text-[var(--color-bg-base)] shadow-[0_14px_30px_rgba(var(--ch-accent),0.22)] transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:scale-[1.03] ${expanded ? "h-10 w-10" : "h-11 w-11"}`}>
-            <TowerControl className="size-4" />
-          </div>
+          <BrandMark className="transition-[transform,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:scale-[1.03]" size="sm" />
           {expanded ? (
             <div className="min-w-0">
               <div className="truncate text-[11px] font-medium uppercase tracking-[0.3em] text-[var(--color-accent-max)]/72">
@@ -151,14 +149,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <div
           className={`rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-surface),0.88),rgba(var(--ch-bg-panel),0.98))] shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.05)] transition-[background,border-color,box-shadow] duration-[240ms] ease-[var(--ease-out)] ${
-            expanded ? "px-4 py-3" : "mx-auto flex h-[3.75rem] w-[3.75rem] items-center justify-center px-0 py-0"
+            expanded ? "px-4 py-3" : "mx-auto flex h-[3.35rem] w-[3.35rem] items-center justify-center px-0 py-0"
           }`}
         >
           {expanded ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]">
-                <TowerControl className="h-4 w-4" />
-              </div>
+              <BrandMark className="bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]" size="sm" />
               <div className="min-w-0">
                 <SidebarLabel className="block text-sm font-medium text-[var(--color-text-primary)]">
                   LLMTap
@@ -169,9 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             </div>
           ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-[20px] border border-[var(--border-dim)] bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]">
-              <TowerControl className="h-4 w-4" />
-            </div>
+            <BrandMark className="bg-[var(--color-bg-base)]/72 text-[var(--color-accent-max)]" size="sm" />
           )}
         </div>
       </SidebarFooter>

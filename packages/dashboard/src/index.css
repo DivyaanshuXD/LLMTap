@@ -560,6 +560,27 @@ textarea {
   color: var(--color-text-primary);
 }
 
+.impact-shimmer {
+  --impact-shimmer-width: 34%;
+  color: transparent;
+  background:
+    linear-gradient(
+      100deg,
+      var(--color-text-primary) 0%,
+      var(--color-text-primary) 31%,
+      var(--color-accent-max) 44%,
+      rgba(var(--rgb-text-frost), 1) 50%,
+      var(--color-violet-max) 56%,
+      var(--color-text-primary) 69%,
+      var(--color-text-primary) 100%
+    );
+  background-size: 230% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 18px 60px rgba(0, 0, 0, 0.42), 0 0 28px rgba(var(--ch-accent), 0.08);
+  animation: impact-shimmer 7.5s var(--ease-out) infinite;
+}
+
 .page-section-copy {
   max-width: 52rem;
   font-size: 15px;
@@ -748,6 +769,19 @@ textarea {
   background-size: 72px 72px;
   mask-image: radial-gradient(circle at center, black 24%, transparent 84%);
   animation: grid-float 18s ease-in-out infinite;
+}
+
+@keyframes impact-shimmer {
+  0%,
+  72%,
+  100% {
+    background-position: 120% 0;
+  }
+
+  28%,
+  44% {
+    background-position: -120% 0;
+  }
 }
 
 .grid-haze {

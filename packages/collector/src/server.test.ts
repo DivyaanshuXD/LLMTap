@@ -174,6 +174,69 @@ describe("@llmtap/collector", () => {
     }
   });
 
+  it("filters traces by session id", async () => {
+    const dbDir = createTempDbDir();
+    process.env.LLMTAP_DB_DIR = dbDir;
+
+    const { app } = await createServer({ quiet: true });
+    try {
+      await app.inject({
+        method: "POST",
+        url: ROUTES.INGEST_SPANS,
+        payload: {
+          spans: [
+            {
+              spanId: "sp_session_match",
+              traceId: "tr_session_match",
+              name: "session matched trace",
+              operationName: "chat",
+              providerName: "openai",
+              startTime: Date.now(),
+              endTime: Date.now() + 10,
+              duration: 10,
+              requestModel: "gpt-4o-mini",
+              totalTokens: 15,
+              totalCost: 0.003,
+              status: "ok",
+              sessionId: "session-alpha",
+            },
+            {
+              spanId: "sp_session_other",
+              traceId: "tr_session_other",
+              name: "session other trace",
+              operationName: "chat",
+              providerName: "openai",
+              startTime: Date.now() + 100,
+              endTime: Date.now() + 110,
+              duration: 10,
+              requestModel: "gpt-4o-mini",
+              totalTokens: 15,
+              totalCost: 0.003,
+              status: "ok",
+              sessionId: "session-beta",
+            },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `${ROUTES.LIST_TRACES}?sessionId=session-alpha`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const payload = response.json() as {
+        total: number;
+        traces: Array<{ traceId: string }>;
+      };
+      expect(payload.total).toBe(1);
+      expect(payload.traces[0]?.traceId).toBe("tr_session_match");
+    } finally {
+      await closeServer(app);
+      fs.rmSync(dbDir, { recursive: true, force: true });
+    }
+  });
+
   // -----------------------------------------------------------------------
   // Reset endpoint validation
   // -----------------------------------------------------------------------
@@ -230,6 +293,68 @@ describe("@llmtap/collector", () => {
       expect(res.json()).toMatchObject({ status: "ok" });
 
       expect(countSpans()).toBe(0);
+    } finally {
+      await closeServer(app);
+      fs.rmSync(dbDir, { recursive: true, force: true });
+    }
+  });
+
+  it("clears only Quick Connect demo spans", async () => {
+    const dbDir = createTempDbDir();
+    process.env.LLMTAP_DB_DIR = dbDir;
+
+    const { app } = await createServer({ quiet: true });
+    try {
+      await app.inject({
+        method: "POST",
+        url: ROUTES.INGEST_SPANS,
+        payload: {
+          spans: [
+            {
+              spanId: "sp_demo_clear",
+              traceId: "tr_demo_clear",
+              name: "quick-connect demo trace",
+              operationName: "chat",
+              providerName: "openai",
+              startTime: Date.now(),
+              endTime: Date.now() + 10,
+              duration: 10,
+              requestModel: "gpt-4o-mini",
+              totalTokens: 20,
+              totalCost: 0.001,
+              status: "ok",
+              sessionId: "quick-connect-demo-test",
+            },
+            {
+              spanId: "sp_real_keep",
+              traceId: "tr_real_keep",
+              name: "real trace",
+              operationName: "chat",
+              providerName: "openai",
+              startTime: Date.now(),
+              endTime: Date.now() + 10,
+              duration: 10,
+              requestModel: "gpt-4o-mini",
+              totalTokens: 20,
+              totalCost: 0.001,
+              status: "ok",
+              sessionId: "real-session",
+            },
+          ],
+        },
+      });
+
+      expect(countSpans()).toBe(2);
+
+      const res = await app.inject({
+        method: "POST",
+        url: "/v1/demo/clear",
+        payload: { confirm: true },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ status: "ok", deletedSpans: 1 });
+
+      expect(countSpans()).toBe(1);
     } finally {
       await closeServer(app);
       fs.rmSync(dbDir, { recursive: true, force: true });

@@ -118,16 +118,16 @@ function MetaCard({
   value: string;
 }) {
   return (
-    <div className="deck-card h-full rounded-[calc(var(--radius-panel)+4px)] p-4">
+    <div className="deck-card h-full min-w-0 rounded-[calc(var(--radius-panel)+4px)] p-4">
       <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
         <Icon className="h-3 w-3" />
         {label}
       </div>
       <div
-        className="text-[var(--color-text-primary)]"
+        className="truncate text-[var(--color-text-primary)]"
         style={{
           fontFamily: "var(--font-operator)",
-          fontSize: "28px",
+          fontSize: "24px",
           fontWeight: 700,
           lineHeight: "0.92",
           letterSpacing: "-0.04em",
@@ -156,9 +156,9 @@ function InlineMetric({
         : "border-[var(--border-dim)] bg-[rgba(var(--ch-text-primary),0.035)] text-[var(--color-text-primary)]";
 
   return (
-    <div className={`rounded-2xl border px-3 py-2 ${toneClass}`}>
+    <div className={`min-w-0 rounded-2xl border px-3 py-2 ${toneClass}`}>
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">{label}</div>
-      <div className="mt-1 font-mono text-xs font-semibold">{value}</div>
+      <div className="mt-1 truncate font-mono text-xs font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -351,7 +351,7 @@ function SpanDetailPanel({ span, copied, onCopy }: { span: Span; copied: string 
     >
       <div className="overflow-hidden">
         <div className="mx-4 mb-4 rounded-[24px] border border-[var(--border-dim)] bg-[linear-gradient(180deg,rgba(var(--ch-bg-panel),0.92),rgba(var(--ch-bg-deep),0.97),rgba(var(--ch-bg-base),0.99))] p-5 text-sm shadow-[inset_0_1px_0_rgba(var(--ch-text-primary),0.04),0_26px_60px_rgba(0,0,0,0.22)]">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-5">
               <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
                 <MetaCard icon={Hash} label="Model" value={span.responseModel ?? span.requestModel ?? "-"} />
@@ -796,7 +796,7 @@ export default function TraceDetail() {
                 setSelectedSpanId(isSelected ? null : node.span.spanId);
               }
             }}
-            className={`grid w-full gap-3 px-4 py-3 text-left transition-colors sm:grid-cols-[minmax(0,380px)_minmax(0,1fr)_110px] sm:items-center sm:px-5 ${
+            className={`grid w-full gap-3 px-4 py-3 text-left transition-colors sm:grid-cols-[minmax(0,420px)_minmax(240px,1fr)_132px] sm:items-center sm:px-5 ${
               isSelected ? "bg-[rgba(var(--ch-accent),0.06)]" : "hover:bg-[rgba(var(--ch-text-primary),0.03)]"
             }`}
           >
@@ -868,7 +868,7 @@ export default function TraceDetail() {
               </div>
             </div>
 
-            <div className="text-right font-mono text-[11px] text-[var(--color-text-tertiary)]">
+            <div className="justify-self-end text-right font-mono text-[11px] tabular-nums text-[var(--color-text-tertiary)]">
               <div className="text-[var(--color-text-secondary)]">{formatCost(node.span.totalCost)}</div>
               <div>{node.span.totalTokens.toLocaleString()} tok</div>
             </div>
@@ -1033,7 +1033,7 @@ export default function TraceDetail() {
 
         {tree.length > 0 ? (
           <div className="py-2">
-            <div className="grid gap-3 border-b border-[var(--border-dim)] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] sm:grid-cols-[minmax(0,380px)_minmax(0,1fr)_110px] sm:px-5">
+            <div className="grid gap-3 border-b border-[var(--border-dim)] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] sm:grid-cols-[minmax(0,420px)_minmax(240px,1fr)_132px] sm:px-5">
               <span>Span</span>
               <span>Timeline</span>
               <span className="text-right">Spend / Tokens</span>

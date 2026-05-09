@@ -292,6 +292,20 @@ export function resetDb(): void {
   d.exec("VACUUM");
 }
 
+/** Delete only synthetic Quick Connect demo spans. */
+export function deleteDemoSpans(): number {
+  const d = getDb();
+  const result = d
+    .prepare("DELETE FROM spans WHERE sessionId LIKE 'quick-connect-demo%'")
+    .run();
+
+  if (result.changes > 0) {
+    d.exec("VACUUM");
+  }
+
+  return result.changes;
+}
+
 // ---------- Data retention ----------
 
 /**

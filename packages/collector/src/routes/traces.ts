@@ -82,7 +82,7 @@ export async function registerTraceRoutes(
     if (!parsed.success) {
       return reply.status(400).send({ error: "Invalid query parameters", details: parsed.error.flatten() });
     }
-    const { limit, offset, status, provider, q, periodHours } = parsed.data;
+    const { limit, offset, status, provider, sessionId, q, periodHours } = parsed.data;
 
     const db = getDb();
 
@@ -100,11 +100,18 @@ export async function registerTraceRoutes(
       params.provider = provider;
     }
 
+    if (sessionId) {
+      whereConditions.push("sessionId = @sessionId");
+      params.sessionId = sessionId;
+    }
+
     if (q) {
       const escaped = q.replace(/[%_]/g, "\\$&");
       whereConditions.push(`
         (
+          traceId LIKE @search ESCAPE '\\' OR
           name LIKE @search ESCAPE '\\' OR
+          COALESCE(sessionId, '') LIKE @search ESCAPE '\\' OR
           providerName LIKE @search ESCAPE '\\' OR
           requestModel LIKE @search ESCAPE '\\' OR
           COALESCE(responseModel, '') LIKE @search ESCAPE '\\' OR

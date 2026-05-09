@@ -5,6 +5,7 @@ import {
   BarChart2,
   LayoutGrid,
   PlaneTakeoff,
+  RotateCcw,
   Video,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -66,6 +67,14 @@ export function CommandPalette() {
         short: "G X",
         end: "Page",
       },
+      {
+        id: "replay-boot",
+        label: "Replay Boot",
+        icon: <RotateCcw className="h-4 w-4 text-[var(--color-accent)]" />,
+        description: "startup sequence",
+        short: "B O",
+        end: "Command",
+      },
     ],
     []
   );
@@ -74,7 +83,7 @@ export function CommandPalette() {
     <ActionSearchBar
       actions={actions}
       placeholder="Type a command or search..."
-      className="max-w-[44rem]"
+      className="max-w-[29rem]"
       onAction={(action) => {
         switch (action.id) {
           case "overview":
@@ -94,6 +103,9 @@ export function CommandPalette() {
             break;
           case "settings":
             navigate("/settings");
+            break;
+          case "replay-boot":
+            window.dispatchEvent(new Event("llmtap:replay-boot-sequence"));
             break;
           default:
             break;
