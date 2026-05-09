@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="./assets/llmtap-og.png" width="256" />
+  <img src="./assets/llmtap-og.png" width="300" />
 </p>
-
-<h1 align="center">LLMTap</h1>
 
 <p align="center">
   <strong>Local-first observability for AI agent developers.</strong><br />
